@@ -1,24 +1,51 @@
-﻿#include <iostream>
+#include <iostream>
 #include <iomanip>
+#include <cmath> // Для pow
 
-class Bob {
+// Общий класс для расходов и доходов
+class PersonExpenses {
+protected:
+    double salary;
+    double food_expenses;
+    double transport_expenses;
+    double savings;
+    int months;                 // Прошедшие месяцы
+
+public:
+    PersonExpenses(double sal, double food, double transport)
+        : salary(sal), food_expenses(food), transport_expenses(transport),
+        savings(0), months(0) {}
+
+    virtual ~PersonExpenses() = default;
+
+    virtual void simulateMonth() = 0; // Чисто виртуальный метод для переработки в наследниках
+
+    void addIncome(double amount) {
+        savings += amount;
+    }
+
+    virtual void printStatus() const = 0;
+};
+
+// Класс для Боба
+class Bob : public PersonExpenses {
 private:
-    double salary;          // руб/мес
-    double rent;            // руб/мес
-    double food_expenses;   // руб/мес
-    double transport_expenses; // руб/мес
-    double cat_food;        // руб/мес
-    double cat_grooming;    // руб раз в 2 месяца
-    double savings;         // накопления
-    int months;             // прошедшие месяцы
+    double rent;                // руб/мес
+    double cat_food;            // руб/мес
+    double cat_grooming;        // руб раз в 2 месяца
+    int months_since_rent_increase;
 
 public:
     Bob()
-        : salary(80000), rent(30000), food_expenses(4000), transport_expenses(1500),
-        cat_food(2000), cat_grooming(3000), savings(0), months(0) {}
+        : PersonExpenses(80000, 4000, 1500),
+        rent(30000),
+        cat_food(2000),
+        cat_grooming(3000),
+        months_since_rent_increase(0) {}
 
-    void simulateMonth() {
+    void simulateMonth() override {
         months++;
+        months_since_rent_increase++;
 
         // Индексация аренды раз в 12 месяцев на 5%
         if (months % 12 == 1 && months != 1) {
@@ -30,63 +57,63 @@ public:
 
         double total_expenses = rent + food_expenses + transport_expenses + cat_food + cat_grooming_this_month;
 
-        savings += salary - total_expenses;
+        addIncome(salary - total_expenses);
     }
 
-    void printStatus() const {
+    void printStatus() const override {
         std::cout << "Bob's status after " << months << " months:\n";
         std::cout << "  Savings: " << std::fixed << std::setprecision(2) << savings << " rub\n";
         std::cout << "  Current rent: " << rent << " rub/month\n";
     }
 };
 
-class Alice {
+// Класс для Алисы
+class Alice : public PersonExpenses {
 private:
-    double salary;          // руб/мес
-    double apartment_cost;  // стоимость квартиры
-    double food_expenses;   // руб/мес
-    double transport_expenses; // руб/мес
-    double savings;         // накопления
-    int months;             // прошедшие месяцы
-
+    double apartment_cost;     // стоимость квартиры
     // Ипотека параметры
     double annual_interest_rate; // 12% годовых
     int loan_term_months;        // срок ипотеки в месяцах
     double monthly_payment;      // ежемесячный платёж по ипотеке
     double loan_balance;         // остаток долга
 
-    // Рассчитаем ежемесячный платёж по ипотеке (аннуитет)
-    double calculateMonthlyPayment(double principal, double annual_rate, int months) {
-        double monthly_rate = annual_rate / 12.0;
-        return principal * (monthly_rate * pow(1 + monthly_rate, months)) / (pow(1 + monthly_rate, months) - 1);
-    }
-
 public:
     Alice()
-        : salary(200000), apartment_cost(10000000), food_expenses(4000), transport_expenses(1500),
-        savings(0), months(0), annual_interest_rate(0.12), loan_term_months(240) // 20 лет
+        : PersonExpenses(200000, 4000, 1500),
+        apartment_cost(10000000),
+        annual_interest_rate(0.12),
+        loan_term_months(240) // 20 лет
     {
         loan_balance = apartment_cost;
         monthly_payment = calculateMonthlyPayment(loan_balance, annual_interest_rate, loan_term_months);
     }
 
-    void simulateMonth() {
+    double calculateMonthlyPayment(double principal, double annual_rate, int months) {
+        double monthly_rate = annual_rate / 12.0;
+        return principal * (monthly_rate * pow(1 + monthly_rate, months)) /
+            (pow(1 + monthly_rate, months) - 1);
+    }
+
+    void simulateMonth() override {
         months++;
 
         // Платёж по ипотеке
-        // Рассчитаем проценты за месяц и уменьшение основного долга
         double monthly_rate = annual_interest_rate / 12.0;
         double interest = loan_balance * monthly_rate;
         double principal_payment = monthly_payment - interest;
+        // Общая сумма ежемесячного платежа по ипотеке(monthly_payment);
+        // Часть, которая идет на погашение основного долга(principal_payment); 
+        // Оставшаяся часть — это проценты за этот месяц(interest).
+
         loan_balance -= principal_payment;
         if (loan_balance < 0) loan_balance = 0;
 
         double total_expenses = food_expenses + transport_expenses + monthly_payment;
 
-        savings += salary - total_expenses;
+        addIncome(salary - total_expenses);
     }
 
-    void printStatus() const {
+    void printStatus() const override {
         std::cout << "Alice's status after " << months << " months:\n";
         std::cout << "  Savings: " << std::fixed << std::setprecision(2) << savings << " rub\n";
         std::cout << "  Remaining loan balance: " << loan_balance << " rub\n";

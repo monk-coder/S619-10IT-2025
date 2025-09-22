@@ -1,0 +1,69 @@
+class Person:
+    def __init__(self, name, salary, rent, spending, savings_rate, travel_expense, travel_period):
+        self.name = name
+        self.salary = salary
+        self.rent = rent
+        self.spending = spending
+        self.savings_rate = savings_rate  
+        self.travel_expense = travel_expense
+        self.travel_period = travel_period  
+        
+        self.balance = 100000  
+
+    def monthly_expense(self):
+        return self.rent + self.spending
+
+    def monthly_income(self):
+        if self.name == "Bob":
+            return self.salary + self.savings_rate
+        return self.salary
+        
+    def apply_travel(self):
+        if self.travel_period is not None and self.month % self.travel_period == 0:
+            self.balance -= self.travel_expense
+            self.salary += self.salary * 0.2  
+    def month_end(self):
+        self.balance += self.monthly_income() - self.monthly_expense()
+        self.apply_travel()
+
+class Alice(Person):
+    def __init__(self, salary, mortgage_payment):
+        super().__init__("Alice", salary, 0, 75000, 0, 0, None)
+        self.mortgage_payment = mortgage_payment
+        
+    def monthly_expense(self):
+        return self.mortgage_payment + self.spending
+
+class Bob(Person):
+    def __init__(self, salary, rent, spending):
+        super().__init__("Bob", salary, rent, spending, 10000, 4000, 10)
+
+def calculate_finances(years, months):
+    mortgage_amount = 10000000
+    annual_interest_rate = 0.12
+    term_years = 30
+
+    monthly_interest_rate = annual_interest_rate / 12
+    num_payments = term_years * 12
+    monthly_payment = (mortgage_amount * monthly_interest_rate) / (1 - (1 + monthly_interest_rate) ** -num_payments)
+
+    alice = Alice(200000, monthly_payment)
+    bob = Bob(80000, 50000, 30000)  
+    
+    total_months = int(years * 12 + months)
+
+    for month in range(total_months):
+        bob.month = month
+        alice.month = month
+        bob.month_end()
+        alice.month_end()
+
+    return bob.balance, alice.balance
+
+input_time = input("Введите время:")
+years, months = map(float, input_time.split('.'))
+
+bob_balance, alice_balance = calculate_finances(int(years), int(months))
+
+print(f"Баланс Боба через {years} лет и {months} месяцев: {bob_balance:.2f}")
+print(f"Баланс Алисы через {years} лет и {months} месяцев: {alice_balance:.2f}")

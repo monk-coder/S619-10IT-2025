@@ -1,7 +1,7 @@
 {
-  "name": "cosmic-weather-dashboard",
+  "name": "aegis-weather",
   "version": "1.0.0",
-  "description": "Космический дашборд погоды с задачами и историей поиска",
+  "description": "Интеллигентный дашборд погоды с задачами и историей поиска",
   "main": "index.html",
   "scripts": {
     "dev": "python -m http.server 8080",
@@ -12,7 +12,7 @@
     "setup-backend": "python scripts/backend_setup.py"
   },
   "keywords": ["weather", "dashboard", "cosmic", "tasks", "javascript"],
-  "author": "Your Name",
+  "author": "S1rEx1",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {},

@@ -1,6 +1,6 @@
-# 🌌 Cosmic Weather Dashboard
+# 🛡️ Aegis Weather
 
-Космический дашборд погоды с задачами и историей поиска, построенный на vanilla JavaScript с FastAPI backend.
+Интеллигентный дашборд погоды с задачами и историей поиска, построенный на vanilla JavaScript с FastAPI backend.
 
 ## ✨ Особенности
 
@@ -41,7 +41,7 @@ cd server
 pip install -r requirements.txt
 
 # Настройка базы данных
-python scripts/database_setup.py
+# База данных и таблицы создаются автоматически при запуске сервера
 
 # Получение API ключа OpenWeatherMap
 # Зарегистрируйтесь на https://openweathermap.org/api
@@ -61,7 +61,8 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 2. Обновите `api_config.json`:
    ```json
    {
-     "openweather_api_key": "ваш-api-ключ"
+     "openweather_api_key": "ваш-api-ключ",
+     "base_url": "http://localhost:8000/api"
    }
    ```
 

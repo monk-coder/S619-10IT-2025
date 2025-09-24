@@ -1,8 +1,9 @@
-// Weather Dashboard App
+// Aegis Weather App
 class WeatherDashboard {
   constructor() {
-    this.apiKey = this.loadApiKey()
-    this.baseUrl = "http://localhost:8000/api" // Backend API URL
+    this.apiKey = ""
+    this.baseUrl = "http://localhost:8000/api"
+    this.cacheDurationMs = 2 * 60 * 60 * 1000
     this.currentUser = null
     this.searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
     this.tasks = JSON.parse(localStorage.getItem("tasks")) || []
@@ -10,11 +11,13 @@ class WeatherDashboard {
     this.isOnline = navigator.onLine
     this.settings = this.loadSettings()
     this.autoUpdateInterval = null
+    this.lastSuccessfulCity = null
 
-    this.init()
+    this.init().catch((e) => console.error("Init error", e))
   }
 
-  init() {
+  async init() {
+    await this.loadConfig()
     this.bindEvents()
     this.checkAuthStatus()
     this.renderSearchHistory()
@@ -25,7 +28,27 @@ class WeatherDashboard {
     this.applySettings()
   }
 
-  loadApiKey() {
+  async loadConfig() {
+    try {
+      const res = await fetch("api_config.json", { cache: "no-store" })
+      if (res.ok) {
+        const cfg = await res.json()
+        this.apiKey = cfg.openweather_api_key || this.apiKey
+        this.baseUrl = (document.getElementById('settings-base-url')?.value?.trim()) || cfg.base_url || this.baseUrl
+        const hrs = cfg?.rate_limit?.cache_duration_hours
+        if (typeof hrs === 'number' && hrs > 0) {
+          this.cacheDurationMs = hrs * 60 * 60 * 1000
+        }
+        if (cfg.default_units && !localStorage.getItem('appSettings')) {
+          this.settings.units = cfg.default_units
+        }
+        if (Array.isArray(cfg.supported_languages) && !localStorage.getItem('appSettings')) {
+          this.settings.language = cfg.supported_languages.includes(this.settings.language) ? this.settings.language : cfg.supported_languages[0]
+        }
+      }
+    } catch (e) {
+      console.warn("Не удалось загрузить api_config.json", e)
+    }
   }
 
   bindEvents() {
@@ -51,6 +74,16 @@ class WeatherDashboard {
     // Close modal on outside click
     document.getElementById("auth-modal").addEventListener("click", (e) => {
       if (e.target.id === "auth-modal") this.hideAuthModal()
+    })
+
+    // Quick theme toggle
+    document.getElementById('theme-toggle-quick')?.addEventListener('click', () => {
+      this.settings.darkTheme = !this.settings.darkTheme
+      this.applyTheme()
+      this.saveSettingsToStorage()
+      const btn = document.getElementById('theme-toggle-quick')
+      if (btn) btn.textContent = this.settings.darkTheme ? '🌙' : '☀️'
+      this.showNotification('Тема переключена', 'success')
     })
   }
 
@@ -105,10 +138,10 @@ class WeatherDashboard {
       return
     }
 
-    // Check rate limiting (не чаще 1 раза в 2 часа для одного города)
+    // Check rate limiting by cached duration for the same city
     const lastSearch = this.searchHistory.find((item) => item.city.toLowerCase() === city.toLowerCase())
 
-    if (lastSearch && Date.now() - lastSearch.timestamp < 2 * 60 * 60 * 1000) {
+    if (lastSearch && Date.now() - lastSearch.timestamp < this.cacheDurationMs) {
       this.displayWeatherFromCache(lastSearch)
       return
     }
@@ -118,6 +151,7 @@ class WeatherDashboard {
       const weatherData = await this.fetchWeatherData(city)
       this.displayWeather(weatherData)
       this.addToSearchHistory(city, weatherData)
+      this.lastSuccessfulCity = city
       cityInput.value = ""
     } catch (error) {
       this.showNotification(this.getErrorMessage(error), "error")
@@ -151,9 +185,12 @@ class WeatherDashboard {
 
     // Прямой запрос к OpenWeatherMap API
     try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${this.apiKey}&units=metric&lang=ru`
-      )
+      if (!this.apiKey) {
+        throw new Error("Требуется API ключ OpenWeather")
+      }
+      const units = this.settings.units === 'kelvin' ? 'standard' : this.settings.units
+      const lang = this.settings.language || 'ru'
+      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${this.apiKey}&units=${encodeURIComponent(units)}&lang=${encodeURIComponent(lang)}`)
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -225,13 +262,15 @@ class WeatherDashboard {
       month: "long",
       day: "numeric",
     })
-    document.getElementById("temperature").textContent = `${data.main.temp}°C`
-    document.getElementById("feels-like").textContent = `Ощущается как ${data.main.feels_like}°C`
+    const { tempText, feelsLikeText, windText, pressureText } = this.formatWeatherValues(data)
+    document.getElementById("temperature").textContent = tempText
+    document.getElementById("feels-like").textContent = feelsLikeText
     document.getElementById("weather-description").textContent = data.weather[0].description
     document.getElementById("humidity").textContent = `${data.main.humidity}%`
-    document.getElementById("pressure").textContent = `${data.main.pressure} гПа`
-    document.getElementById("visibility").textContent = `${(data.visibility / 1000).toFixed(1)} км`
-    document.getElementById("wind").textContent = `${data.wind.speed} м/с`
+    document.getElementById("pressure").textContent = pressureText
+    const visibilityKm = typeof data.visibility === 'number' ? (data.visibility / 1000).toFixed(1) : '—'
+    document.getElementById("visibility").textContent = `${visibilityKm} км`
+    document.getElementById("wind").textContent = windText
     document.getElementById("uv-index").textContent = "Умеренный"
     document.getElementById("clouds").textContent = `${data.clouds.all}%`
 
@@ -245,6 +284,35 @@ class WeatherDashboard {
     if (this.currentUser) {
       tasksSection.classList.remove("hidden")
     }
+  }
+
+  formatWeatherValues(data) {
+    const units = this.settings.units
+    let temp = data.main.temp
+    let feels = data.main.feels_like
+    let wind = data.wind.speed
+    let pressure = data.main.pressure
+
+    let tempUnit = '°C'
+    let windUnit = 'м/с'
+    let pressureText = `${pressure} гПа`
+
+    if (units === 'imperial') {
+      tempUnit = '°F'
+      windUnit = 'mph'
+      // pressure stays hPa typically; convert to inHg if desired
+      pressureText = `${(pressure * 0.02953).toFixed(2)} inHg`
+    } else if (units === 'kelvin' || units === 'standard') {
+      tempUnit = 'K'
+      // OpenWeather standard uses m/s for wind
+    }
+
+    const safeRound = (v) => (typeof v === 'number' && isFinite(v) ? Math.round(v) : '—')
+    const tempText = `${safeRound(temp)}${tempUnit}`
+    const feelsLikeText = `Ощущается как ${safeRound(feels)}${tempUnit}`
+    const windText = `${safeRound(wind)} ${windUnit}`
+
+    return { tempText, feelsLikeText, windText, pressureText }
   }
 
   displayWeatherFromCache(cachedData) {
@@ -298,7 +366,7 @@ class WeatherDashboard {
       .map(
         (item) => `
             <div class="flex items-center justify-between p-3 bg-card/30 rounded-lg border border-border/30 hover:bg-card/50 transition-colors cursor-pointer"
-                 onclick="weatherApp.searchFromHistory('${item.city}')">
+                 data-action="search-from-history" data-city="${item.city}">
                 <div class="flex items-center space-x-3">
                     <span class="text-2xl">${this.getWeatherEmoji(item.data.weather[0].main)}</span>
                     <div>
@@ -309,13 +377,21 @@ class WeatherDashboard {
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-cosmic-blue">${item.data.main.temp}°C</div>
+                    <div class="font-bold text-cosmic-blue">${this.formatWeatherValues(item.data).tempText}</div>
                     <div class="text-sm text-muted-foreground capitalize">${item.data.weather[0].description}</div>
                 </div>
             </div>
         `,
       )
       .join("")
+
+    // Delegate clicks
+    historyContainer.onclick = (e) => {
+      const card = e.target.closest('[data-action="search-from-history"]')
+      if (!card) return
+      const city = card.getAttribute('data-city')
+      if (city) this.searchFromHistory(city)
+    }
   }
 
   searchFromHistory(city) {
@@ -412,15 +488,21 @@ class WeatherDashboard {
       body: JSON.stringify({ email, password })
     })
 
-    const data = await response.json()
+    let data
+    try { data = await response.json() } catch { data = {} }
 
     if (!response.ok) {
-      throw new Error(data.error || 'Ошибка аутентификации')
+      // backend возвращает detail в FastAPI
+      throw new Error(data.detail || data.error || 'Ошибка аутентификации')
     }
 
-    if (mode === "login" && data.token) {
-      this.setAuthToken(data.token)
+    if (mode === "register") {
+      // Автовход сразу после регистрации
+      await this.authenticateWithAPI(email, password, 'login')
+      return
     }
+
+    if (mode === "login" && data.token) this.setAuthToken(data.token)
   }
 
   async simulateAuth(email, password, mode) {
@@ -437,6 +519,7 @@ class WeatherDashboard {
     this.updateAuthUI()
     document.getElementById("tasks-section").classList.add("hidden")
     this.showNotification("Вы вышли из системы", "info")
+    this.removeAuthToken()
   }
 
   checkAuthStatus() {
@@ -521,7 +604,7 @@ class WeatherDashboard {
                         <input 
                             type="checkbox" 
                             ${task.completed ? "checked" : ""} 
-                            onchange="weatherApp.toggleTask(${task.id})"
+                            data-action="toggle-task" data-task-id="${task.id}"
                             class="mt-1 w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary focus:ring-2"
                         >
                         <div class="flex-1">
@@ -534,8 +617,8 @@ class WeatherDashboard {
                         </div>
                     </div>
                     <button 
-                        onclick="weatherApp.deleteTask(${task.id})" 
                         class="text-destructive hover:text-destructive/80 transition-colors ml-4"
+                        data-action="delete-task" data-task-id="${task.id}"
                         title="Удалить задачу"
                     >
                         🗑️
@@ -545,6 +628,23 @@ class WeatherDashboard {
         `,
       )
       .join("")
+
+    // Delegate clicks/changes
+    tasksList.onclick = (e) => {
+      const delBtn = e.target.closest('[data-action="delete-task"]')
+      if (delBtn) {
+        const id = Number(delBtn.getAttribute('data-task-id'))
+        if (!Number.isNaN(id)) this.deleteTask(id)
+        return
+      }
+    }
+    tasksList.onchange = (e) => {
+      const checkbox = e.target.closest('[data-action="toggle-task"]')
+      if (checkbox) {
+        const id = Number(checkbox.getAttribute('data-task-id'))
+        if (!Number.isNaN(id)) this.toggleTask(id)
+      }
+    }
   }
 
   toggleTask(taskId) {
@@ -637,6 +737,7 @@ class WeatherDashboard {
     const errorMessages = {
       "Город не найден": "Город не найден",
       "Неверный API ключ": "Ошибка настройки API ключа",
+      "Требуется API ключ OpenWeather": "Добавьте API ключ в api_config.json",
       "Превышен лимит запросов к API": "Слишком много запросов, попробуйте позже",
       "Network error": "Ошибка сети",
       "Failed to fetch": "Нет соединения с интернетом",
@@ -655,6 +756,8 @@ class WeatherDashboard {
       autoUpdate: false,
       soundNotifications: false,
       weatherAlerts: true,
+      baseUrl: 'http://localhost:8000/api',
+      cacheHours: 2,
     }
     
     const saved = localStorage.getItem('appSettings')
@@ -669,37 +772,65 @@ class WeatherDashboard {
     // Bind settings events
     document.getElementById('save-settings-btn')?.addEventListener('click', () => this.saveSettings())
     document.getElementById('reset-settings-btn')?.addEventListener('click', () => this.resetSettings())
+    document.getElementById('test-connection-btn')?.addEventListener('click', () => this.testConnection())
     
     // Bind individual setting changes
     document.getElementById('dark-theme-toggle')?.addEventListener('change', (e) => {
       this.settings.darkTheme = e.target.checked
       this.applyTheme()
+      this.saveSettingsToStorage()
+      this.showNotification('Тема сохранена', 'success')
     })
     
     document.getElementById('animations-toggle')?.addEventListener('change', (e) => {
       this.settings.animations = e.target.checked
       this.applyAnimations()
+      this.saveSettingsToStorage()
+      this.showNotification('Анимации сохранены', 'success')
     })
     
     document.getElementById('units-select')?.addEventListener('change', (e) => {
       this.settings.units = e.target.value
+      this.saveSettingsToStorage()
+      this.refetchCurrentCity()
     })
     
     document.getElementById('language-select')?.addEventListener('change', (e) => {
       this.settings.language = e.target.value
+      this.saveSettingsToStorage()
+      this.refetchCurrentCity()
     })
     
     document.getElementById('auto-update-toggle')?.addEventListener('change', (e) => {
       this.settings.autoUpdate = e.target.checked
       this.setupAutoUpdate()
+      this.saveSettingsToStorage()
+      this.showNotification('Автообновление сохранено', 'success')
     })
     
-    document.getElementById('sound-toggle')?.addEventListener('change', (e) => {
-      this.settings.soundNotifications = e.target.checked
+    // уведомления UI удалены
+
+    // Advanced settings inputs
+    const baseUrlInput = document.getElementById('settings-base-url')
+    const cacheHoursInput = document.getElementById('settings-cache-hours')
+
+    baseUrlInput?.addEventListener('input', (e) => {
+      const val = e.target.value.trim()
+      try { if (val) new URL(val) } catch { this.showNotification('Некорректный URL', 'error'); return }
+      this.baseUrl = val
+      this.settings.baseUrl = val
+      this.saveSettingsToStorage()
+      this.showNotification('Backend URL сохранён', 'success')
     })
-    
-    document.getElementById('weather-alerts-toggle')?.addEventListener('change', (e) => {
-      this.settings.weatherAlerts = e.target.checked
+
+    cacheHoursInput?.addEventListener('input', (e) => {
+      const hrs = parseFloat(e.target.value)
+      if (!Number.isNaN(hrs) && hrs >= 0) {
+        this.cacheDurationMs = hrs * 60 * 60 * 1000
+        this.settings.cacheHours = hrs
+        this.saveSettingsToStorage()
+        this.showNotification('Длительность кэша сохранена', 'success')
+      }
     })
   }
 
@@ -721,23 +852,42 @@ class WeatherDashboard {
     
     // Load settings into UI
     this.loadSettingsIntoUI()
+
+    // Sync runtime with saved settings
+    if (typeof this.settings.cacheHours === 'number') {
+      this.cacheDurationMs = this.settings.cacheHours * 60 * 60 * 1000
+    }
+    if (this.settings.baseUrl) this.baseUrl = this.settings.baseUrl
   }
 
   loadSettingsIntoUI() {
-    document.getElementById('dark-theme-toggle').checked = this.settings.darkTheme
+    const darkToggle = document.getElementById('dark-theme-toggle')
+    if (darkToggle) darkToggle.checked = this.settings.darkTheme
     document.getElementById('animations-toggle').checked = this.settings.animations
     document.getElementById('units-select').value = this.settings.units
     document.getElementById('language-select').value = this.settings.language
     document.getElementById('auto-update-toggle').checked = this.settings.autoUpdate
-    document.getElementById('sound-toggle').checked = this.settings.soundNotifications
-    document.getElementById('weather-alerts-toggle').checked = this.settings.weatherAlerts
+    // уведомления UI удалены
+
+    // Fill advanced settings if present
+    const baseUrlInput = document.getElementById('settings-base-url')
+    const cacheHoursInput = document.getElementById('settings-cache-hours')
+    if (baseUrlInput) baseUrlInput.value = this.settings.baseUrl || this.baseUrl || ''
+    if (cacheHoursInput) cacheHoursInput.value = (this.settings.cacheHours ?? (this.cacheDurationMs / (60 * 60 * 1000))).toString()
+
+    // Sync quick theme button icon
+    const btn = document.getElementById('theme-toggle-quick')
+    if (btn) btn.textContent = this.settings.darkTheme ? '🌙' : '☀️'
   }
 
   applyTheme() {
+    const root = document.documentElement
     if (this.settings.darkTheme) {
-      document.documentElement.classList.add('dark')
+      root.classList.add('dark')
+      root.classList.remove('light')
     } else {
-      document.documentElement.classList.remove('dark')
+      root.classList.remove('dark')
+      root.classList.add('light')
     }
   }
 
@@ -752,13 +902,40 @@ class WeatherDashboard {
   applyUnits() {
     // This would be used when fetching weather data
     // For now, we'll just store the preference
-    console.log('Units changed to:', this.settings.units)
+    // no-op
   }
 
   applyLanguage() {
     // This would be used for API calls and UI text
     // For now, we'll just store the preference
-    console.log('Language changed to:', this.settings.language)
+    // no-op
+  }
+
+  refetchCurrentCity() {
+    const displayedCity = document.getElementById('city-name')?.textContent?.trim()
+    const city = displayedCity || this.lastSuccessfulCity
+    if (city) {
+      document.getElementById('city-input').value = city
+      this.searchWeather()
+    }
+  }
+
+  async testConnection() {
+    try {
+      // test backend
+      const backendOk = await fetch(`${this.baseUrl}/`, { method: 'GET' }).then(r => r.ok).catch(() => false)
+      // test OWM key if backend not available or as a second check
+      let owmOk = false
+      if (this.apiKey) {
+        owmOk = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=London&appid=${this.apiKey}&units=metric`, { method: 'GET' })
+          .then(r => r.ok)
+          .catch(() => false)
+      }
+      const msg = `Backend: ${backendOk ? 'OK' : 'NO'} • OpenWeather: ${owmOk ? 'OK' : 'NO'}`
+      this.showNotification(msg, backendOk && owmOk ? 'success' : (backendOk || owmOk ? 'info' : 'error'))
+    } catch (e) {
+      this.showNotification('Ошибка проверки соединения', 'error')
+    }
   }
 
   setupAutoUpdate() {
@@ -770,8 +947,10 @@ class WeatherDashboard {
     if (this.settings.autoUpdate) {
       // Update every 30 minutes
       this.autoUpdateInterval = setInterval(() => {
-        const cityInput = document.getElementById('city-input')
-        if (cityInput.value.trim()) {
+        const displayedCity = document.getElementById('city-name')?.textContent?.trim()
+        const city = displayedCity || this.lastSuccessfulCity
+        if (city) {
+          document.getElementById('city-input').value = city
           this.searchWeather()
         }
       }, 30 * 60 * 1000) // 30 minutes

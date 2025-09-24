@@ -47,6 +47,37 @@
   --sidebar-ring: var(--primary);
 }
 
+/* Light theme overrides */
+.light {
+  --background: #f7f8fa;
+  --foreground: #0f1113;
+  --card: #ffffff;
+  --card-foreground: #0f1113;
+  --popover: #ffffff;
+  --popover-foreground: #0f1113;
+  --primary: #7c3aed; /* violet */
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f5;
+  --secondary-foreground: #0f1113;
+  --muted: #e6eaf0;
+  --muted-foreground: #586174;
+  --accent: #a78bfa;
+  --accent-foreground: #0f1113;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+  --border: #d7dbe3;
+  --input: #e9edf3;
+  --ring: #7c3aed;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f5;
+  --sidebar-accent-foreground: #1f2937;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: var(--primary);
+}
+
 body {
   font-family: "DM Sans", sans-serif;
   background: var(--background);
@@ -318,6 +349,10 @@ h6 {
   position: relative;
 }
 
+.light .cosmic-bg {
+  background: linear-gradient(180deg, #f6f7fb 0%, #eef1f7 100%);
+}
+
 .cosmic-bg::before {
   content: "";
   position: fixed;
@@ -352,6 +387,12 @@ h6 {
   border: 1px solid rgba(88, 91, 112, 0.25);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   position: relative;
+}
+
+.light .glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .glass-effect::before {
@@ -469,6 +510,12 @@ h6 {
   position: relative;
 }
 
+.light .input-field {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
 .input-field:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(203, 166, 247, 0.2);
@@ -484,6 +531,11 @@ h6 {
   background: linear-gradient(180deg, var(--sidebar) 0%, #11111b 100%);
   border-right: 1px solid rgba(88, 91, 112, 0.3);
   position: relative;
+}
+
+.light .sidebar {
+  background: linear-gradient(180deg, var(--sidebar) 0%, #f3f5f9 100%);
+  border-right-color: rgba(0, 0, 0, 0.08);
 }
 
 .sidebar::before {
@@ -524,6 +576,10 @@ h6 {
 .nav-item:hover {
   background: rgba(203, 166, 247, 0.1);
   transform: translateX(5px);
+}
+
+.light .nav-item:hover {
+  background: rgba(124, 58, 237, 0.12);
 }
 
 .nav-item:hover::before {

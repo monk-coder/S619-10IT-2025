@@ -4,6 +4,7 @@ FastAPI Backend для Weather Dashboard
 """
 
 from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -15,16 +16,17 @@ from jose import jwt
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-from config import OPENWEATHER_API_KEY, SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRATION_HOURS
+from config import OPENWEATHER_API_KEY, SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRATION_HOURS, ALLOWED_ORIGINS
 
 load_dotenv()
 
-app = FastAPI(title="Weather Dashboard API", version="1.0.0")
+app = FastAPI(title="Aegis Weather API", version="1.0.0")
+api = APIRouter(prefix="/api")
 
 # CORS настройки
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,37 +36,76 @@ app.add_middleware(
 
 security = HTTPBearer()
 
-# Pydantic модели
-class UserRegister(BaseModel):
-    email: str
-    password: str
+# Ensure DB exists on startup
+def init_db():
+    conn = get_db_connection()
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL
+        );
 
-class UserLogin(BaseModel):
-    email: str
-    password: str
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
 
-class WeatherResponse(BaseModel):
-    success: bool
-    data: Optional[dict] = None
-    cached: bool = False
-    error: Optional[str] = None
+        CREATE TABLE IF NOT EXISTS cities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        );
 
-class TaskCreate(BaseModel):
-    title: str
-    description: Optional[str] = ""
-    city: str
-    priority: str = "medium"
+        CREATE TABLE IF NOT EXISTS weather_data (
+            city_id INTEGER PRIMARY KEY,
+            temperature REAL,
+            feels_like REAL,
+            humidity INTEGER,
+            pressure INTEGER,
+            description TEXT,
+            icon TEXT,
+            wind_speed REAL,
+            wind_direction INTEGER,
+            visibility INTEGER,
+            clouds INTEGER,
+            updated_at DATETIME DEFAULT (datetime('now')),
+            FOREIGN KEY(city_id) REFERENCES cities(id)
+        );
 
-class TaskResponse(BaseModel):
-    id: int
-    title: str
-    description: str
-    city: str
-    priority: str
-    completed: bool
-    created_at: str
+        CREATE TRIGGER IF NOT EXISTS trg_weather_updated
+        AFTER INSERT ON weather_data
+        BEGIN
+            UPDATE weather_data SET updated_at = datetime('now') WHERE city_id = NEW.city_id;
+        END;
 
-# Утилиты для работы с базой данных
+        CREATE TABLE IF NOT EXISTS weather_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            city_id INTEGER,
+            title TEXT NOT NULL,
+            description TEXT,
+            priority TEXT DEFAULT 'medium',
+            completed INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT (datetime('now')),
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(city_id) REFERENCES cities(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS search_history (
+            user_id INTEGER NOT NULL,
+            city_id INTEGER NOT NULL,
+            searched_at DATETIME DEFAULT (datetime('now')),
+            PRIMARY KEY (user_id, city_id),
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(city_id) REFERENCES cities(id)
+        );
+        """
+    )
+    conn.commit()
+    conn.close()
+
 def get_db_connection():
     conn = sqlite3.connect('weather_dashboard.db')
     conn.row_factory = sqlite3.Row
@@ -113,7 +154,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 async def root():
     return {"message": "Weather Dashboard API", "version": "1.0.0"}
 
-@app.post("/auth/register/", response_model=dict)
+@api.post("/auth/register/", response_model=dict)
 async def register(user_data: UserRegister):
     conn = get_db_connection()
     
@@ -145,7 +186,7 @@ async def register(user_data: UserRegister):
     
     return {"success": True, "message": "Пользователь успешно зарегистрирован"}
 
-@app.post("/auth/login/", response_model=dict)
+@api.post("/auth/login/", response_model=dict)
 async def login(user_data: UserLogin):
     conn = get_db_connection()
     
@@ -167,7 +208,7 @@ async def login(user_data: UserLogin):
         "user": {"id": user["id"], "email": user["email"]}
     }
 
-@app.get("/weather/{city_name}/", response_model=WeatherResponse)
+@api.get("/weather/{city_name}/", response_model=WeatherResponse)
 async def get_weather_public(city_name: str):
     """Публичный endpoint для получения погоды без аутентификации"""
     if not OPENWEATHER_API_KEY or OPENWEATHER_API_KEY == "":
@@ -198,11 +239,21 @@ async def get_weather_public(city_name: str):
     
     if cached_weather:
         conn.close()
-        return WeatherResponse(
-            success=True,
-            data=dict(cached_weather),
-            cached=True
-        )
+        payload = dict(cached_weather)
+        response_data = {
+            "city": {"name": city_name.title()},
+            "temperature": payload.get("temperature"),
+            "feels_like": payload.get("feels_like"),
+            "humidity": payload.get("humidity"),
+            "pressure": payload.get("pressure"),
+            "description": payload.get("description"),
+            "icon": payload.get("icon"),
+            "wind_speed": payload.get("wind_speed"),
+            "wind_direction": payload.get("wind_direction"),
+            "visibility": payload.get("visibility"),
+            "clouds": payload.get("clouds"),
+        }
+        return WeatherResponse(success=True, data=response_data, cached=True)
     
     # Запрос к OpenWeatherMap API
     try:
@@ -248,17 +299,14 @@ async def get_weather_public(city_name: str):
         conn.commit()
         conn.close()
         
-        return WeatherResponse(
-            success=True,
-            data=weather_data,
-            cached=False
-        )
+        response_data = {"city": {"name": city_name.title()}, **weather_data}
+        return WeatherResponse(success=True, data=response_data, cached=False)
         
     except requests.RequestException as e:
         conn.close()
         raise HTTPException(status_code=503, detail="Ошибка при получении данных о погоде")
 
-@app.get("/weather-auth/{city_name}/", response_model=WeatherResponse)
+@api.get("/weather-auth/{city_name}/", response_model=WeatherResponse)
 async def get_weather_auth(city_name: str, current_user: dict = Depends(get_current_user)):
     
     conn = get_db_connection()
@@ -286,11 +334,21 @@ async def get_weather_auth(city_name: str, current_user: dict = Depends(get_curr
     
     if cached_weather:
         conn.close()
-        return WeatherResponse(
-            success=True,
-            data=dict(cached_weather),
-            cached=True
-        )
+        payload = dict(cached_weather)
+        response_data = {
+            "city": {"name": city_name.title()},
+            "temperature": payload.get("temperature"),
+            "feels_like": payload.get("feels_like"),
+            "humidity": payload.get("humidity"),
+            "pressure": payload.get("pressure"),
+            "description": payload.get("description"),
+            "icon": payload.get("icon"),
+            "wind_speed": payload.get("wind_speed"),
+            "wind_direction": payload.get("wind_direction"),
+            "visibility": payload.get("visibility"),
+            "clouds": payload.get("clouds"),
+        }
+        return WeatherResponse(success=True, data=response_data, cached=True)
     
     # Запрос к OpenWeatherMap API
     try:
@@ -342,17 +400,14 @@ async def get_weather_auth(city_name: str, current_user: dict = Depends(get_curr
         conn.commit()
         conn.close()
         
-        return WeatherResponse(
-            success=True,
-            data=weather_data,
-            cached=False
-        )
+        response_data = {"city": {"name": city_name.title()}, **weather_data}
+        return WeatherResponse(success=True, data=response_data, cached=False)
         
     except requests.RequestException as e:
         conn.close()
         raise HTTPException(status_code=503, detail="Ошибка при получении данных о погоде")
 
-@app.get("/tasks/", response_model=List[TaskResponse])
+@api.get("/tasks/", response_model=List[TaskResponse])
 async def get_tasks(current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()
     
@@ -379,7 +434,7 @@ async def get_tasks(current_user: dict = Depends(get_current_user)):
         for task in tasks
     ]
 
-@app.post("/tasks/", response_model=TaskResponse)
+@api.post("/tasks/", response_model=TaskResponse)
 async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()
     
@@ -416,7 +471,7 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
         created_at=datetime.now().isoformat()
     )
 
-@app.get("/history/", response_model=List[dict])
+@api.get("/history/", response_model=List[dict])
 async def get_search_history(current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()
     
@@ -436,3 +491,6 @@ async def get_search_history(current_user: dict = Depends(get_current_user)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Mount the API router
+app.include_router(api)

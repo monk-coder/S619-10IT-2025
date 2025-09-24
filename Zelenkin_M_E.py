@@ -68,9 +68,7 @@ def simulate_life(months):
         if month % 12 == 0:
             alice.update_mortgage(0.12)
 
-        print(f"Month {month}:")
-        print(f"  {bob.name} Balance: {bob.balance:.2f} руб")
-        print(f"  {alice.name} Balance: {alice.balance:.2f} руб")
+        print(f"Month {month}: /t"{bob.name} Balance: {bob.balance:.2f} руб /t"{alice.name} Balance: {alice.balance:.2f} руб")
         print()
 
 # Симуляция жизни Bob'a и Alice's на 24 месяца

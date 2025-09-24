@@ -1,0 +1,77 @@
+class Person:
+    def __init__(self, name, salary, rent=None, mortgage=None, expenses=None):
+        self.name = name
+        self.salary = salary
+        self.rent = rent
+        self.mortgage = mortgage
+        self.expenses = expenses or {}
+        self.balance = 0
+
+    def monthly_balance(self):
+        total_expenses = self.calculate_expenses()
+        return self.salary - total_expenses
+
+    def calculate_expenses(self):
+        total = 0
+        if self.rent:
+            total += self.rent
+        if self.mortgage:
+            total += self.mortgage
+        total += sum(self.expenses.values())
+        return total
+
+    def update_rent(self, increase_rate):
+        if self.rent:
+            self.rent *= (1 + increase_rate)
+
+    def update_mortgage(self, interest_rate):
+        if self.mortgage:
+            self.mortgage *= (1 + interest_rate)
+
+    def add_income(self):
+        self.balance += self.monthly_balance()
+
+def simulate_life(months):
+    # Параметры Bob
+    bob = Person(
+        name="Bob",
+        salary=80000,
+        rent=30000,
+        expenses={
+            "food": 4000,
+            "transport": 1500,
+            "cat_food": 2000,
+            "cat_grooming": 1500  # 3000 руб раз в 2 месяца (1500 руб в месяц)
+        }
+    )
+
+    # Параметры Alice
+    alice = Person(
+        name="Alice",
+        salary=200000,
+        mortgage=10000000 * (0.12 / 12),  # ежемесячный платеж по ипотеке
+        expenses={
+            "food": 4000,
+            "transport": 1500
+        }
+    )
+
+    for month in range(1, months + 1):
+        bob.add_income()
+        alice.add_income()
+
+        # Каждый год (каждые 12 месяцев) увеличиваем аренду Bob'a на 5%
+        if month % 12 == 0:
+            bob.update_rent(0.05)
+
+        # Каждый год (каждые 12 месяцев) увеличиваем ипотеку Alice на 12%
+        if month % 12 == 0:
+            alice.update_mortgage(0.12)
+
+        print(f"Month {month}:")
+        print(f"  {bob.name} Balance: {bob.balance:.2f} руб")
+        print(f"  {alice.name} Balance: {alice.balance:.2f} руб")
+        print()
+
+# Симуляция жизни Bob'a и Alice's на 24 месяца
+simulate_life(24)

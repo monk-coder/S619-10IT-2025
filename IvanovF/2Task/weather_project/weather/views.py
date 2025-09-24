@@ -17,10 +17,28 @@ def index(request):
             if response.status_code == 200:
                 data = response.json()
                 if "data" in data and data["data"]:
+                    info = data["data"][0]
+
+                    # Определяем фон в зависимости от описания погоды
+                    description = info["weather"]["description"].lower()
+                    if "ясн" in description:
+                        bg_class = "sunny"
+                    elif "дожд" in description:
+                        bg_class = "rainy"
+                    elif "снег" in description:
+                        bg_class = "snowy"
+                    elif "облач" in description:
+                        bg_class = "cloudy"
+                    else:
+                        bg_class = "default"
+
                     weather_data = {
                         "city": city,
-                        "temperature": data["data"][0]["temp"],
-                        "description": data["data"][0]["weather"]["description"],
+                        "temperature": info["temp"],
+                        "humidity": info["rh"],
+                        "description": info["weather"]["description"],
+                        "icon": f"https://www.weatherbit.io/static/img/icons/{info['weather']['icon']}.png",
+                        "bg_class": bg_class,
                     }
                 else:
                     error = "Не удалось найти данные о погоде."

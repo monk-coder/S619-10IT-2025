@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Погода</title>
+</head>
+<body>
+    <h1>Проверка погоды</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="city" placeholder="Введите город">
+        <button type="submit">Узнать</button>
+    </form>
+
+    {% if weather %}
+        <h2>Погода в {{ weather.city }}</h2>
+        <p>Температура: {{ weather.temperature }} °C</p>
+        <p>Описание: {{ weather.description }}</p>
+    {% endif %}
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html>

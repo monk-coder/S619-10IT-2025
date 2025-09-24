@@ -6,6 +6,7 @@ class Person:
         self.mortgage = mortgage
         self.expenses = expenses or {}
         self.balance = 0
+        self.cat_grooming_counter = 0  # Счетчик для расходов на кота
 
     def monthly_balance(self):
         total_expenses = self.calculate_expenses()
@@ -17,7 +18,18 @@ class Person:
             total += self.rent
         if self.mortgage:
             total += self.mortgage
-        total += sum(self.expenses.values())
+
+        # Добавляем расходы на кота только раз в два месяца
+        if self.cat_grooming_counter % 2 == 0:
+            if 'cat_grooming' in self.expenses:
+                total += self.expenses['cat_grooming']
+
+        # Добавляем остальные расходы
+        for key, value in self.expenses.items():
+            if key not in ['cat_grooming']:
+                total += value
+
+        self.cat_grooming_counter += 1  # Увеличиваем счетчик
         return total
 
     def update_rent(self, increase_rate):
@@ -31,6 +43,7 @@ class Person:
     def add_income(self):
         self.balance += self.monthly_balance()
 
+
 def simulate_life(months):
     # Параметры Bob
     bob = Person(
@@ -41,7 +54,7 @@ def simulate_life(months):
             "food": 4000,
             "transport": 1500,
             "cat_food": 2000,
-            "cat_grooming": 1500  # 3000 руб раз в 2 месяца (1500 руб в месяц)
+            "cat_grooming": 3000  # Теперь 3000 руб раз в 2 месяца
         }
     )
 
@@ -68,8 +81,9 @@ def simulate_life(months):
         if month % 12 == 0:
             alice.update_mortgage(0.12)
 
-        print(f"Month {month}: /t"{bob.name} Balance: {bob.balance:.2f} руб /t"{alice.name} Balance: {alice.balance:.2f} руб")
-        print()
+        print(
+            f"Month {month}:\n\t{bob.name} Balance: {bob.balance:.2f} руб\n\t{alice.name} Balance: {alice.balance:.2f} руб")
+
 
 # Симуляция жизни Bob'a и Alice's на 24 месяца
 simulate_life(24)

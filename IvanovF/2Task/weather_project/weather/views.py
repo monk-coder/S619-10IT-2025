@@ -1,8 +1,8 @@
 import requests
+import os
 from django.shortcuts import render
 
-# Вставь сюда свой API-ключ с weatherbit.io
-API_KEY = "cюдаключ"
+API_KEY = os.getenv("WEATHERBIT_API_KEY")
 
 def index(request):
     weather_data = None

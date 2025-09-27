@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление задачи - Дашборд погоды{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3><i class="fas fa-exclamation-triangle"></i> Подтверждение удаления</h3>
+            </div>
+            <div class="card-body">
+                <p>Вы уверены, что хотите удалить задачу <strong>"{{ task.title }}"</strong>?</p>
+                <p class="text-muted">Это действие нельзя отменить.</p>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Информация о задаче:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Город:</strong> {{ task.city }}</li>
+                        <li><strong>Приоритет:</strong> {{ task.get_priority_display }}</li>
+                        <li><strong>Статус:</strong> {{ task.get_status_display }}</li>
+                        <li><strong>Создано:</strong> {{ task.created_at|date:"d.m.Y H:i" }}</li>
+                    </ul>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Да, удалить
+                        </button>
+                        <a href="{% url 'task_detail' task.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

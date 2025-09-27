@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд - Дашборд погоды{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Мой дашборд</h2>
+        <p class="text-muted">Обзор ваших задач и активности</p>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_tasks }}</h4>
+                        <p class="mb-0">Всего задач</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ completed_tasks }}</h4>
+                        <p class="mb-0">Завершено</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ pending_tasks }}</h4>
+                        <p class="mb-0">В ожидании</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Последние задачи -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-tasks"></i> Последние задачи</h5>
+                <a href="{% url 'tasks_list' %}" class="btn btn-sm btn-outline-primary">Все задачи</a>
+            </div>
+            <div class="card-body">
+                {% if recent_tasks %}
+                    {% for task in recent_tasks %}
+                    <div class="task-card card mb-2 priority-{{ task.priority }}">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">{{ task.title }}</h6>
+                                    <p class="card-text small text-muted mb-1">{{ task.city }}</p>
+                                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}warning{% elif task.status == 'cancelled' %}secondary{% else %}primary{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'task_detail' task.id %}">Просмотр</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'task_edit' task.id %}">Редактировать</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">У вас пока нет задач</h5>
+                        <p class="text-muted">Создайте свою первую задачу</p>
+                        <a href="{% url 'task_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Создать задачу
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- История поиска -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> История поиска</h5>
+                <a href="{% url 'search_history' %}" class="btn btn-sm btn-outline-primary">Вся история</a>
+            </div>
+            <div class="card-body">
+                {% if recent_searches %}
+                    {% for search in recent_searches %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <i class="fas fa-map-marker-alt text-info"></i>
+                            <strong>{{ search.city }}</strong>
+                            {% if search.country %}
+                            <small class="text-muted">({{ search.country }})</small>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ search.searched_at|date:"d.m" }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">История поиска пуста</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'task_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Новая задача
+                    </a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-cloud-sun"></i> Поиск погоды
+                    </a>
+                    <a href="{% url 'tasks_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> Все задачи
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

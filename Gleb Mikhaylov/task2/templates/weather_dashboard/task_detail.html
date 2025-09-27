@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} - Дашборд погоды{% endblock %}
+
+{% block content %}
+<!-- CSRF токен для AJAX запросов -->
+{% csrf_token %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3><i class="fas fa-tasks"></i> {{ task.title }}</h3>
+                <div class="btn-group">
+                    <a href="{% url 'task_edit' task.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <a href="{% url 'task_delete' task.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Удалить
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if task.description %}
+                <div class="mb-4">
+                    <h5>Описание:</h5>
+                    <p class="text-muted">{{ task.description }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Информация о задаче:</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Город:</strong></td>
+                                <td><i class="fas fa-map-marker-alt text-info"></i> {{ task.city }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Приоритет:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% else %}success{% endif %}">
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Статус:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}warning{% elif task.status == 'cancelled' %}secondary{% else %}primary{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Создано:</strong></td>
+                                <td><i class="fas fa-calendar text-muted"></i> {{ task.created_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% if task.updated_at != task.created_at %}
+                            <tr>
+                                <td><strong>Обновлено:</strong></td>
+                                <td><i class="fas fa-edit text-muted"></i> {{ task.updated_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if task.due_date %}
+                            <tr>
+                                <td><strong>Срок выполнения:</strong></td>
+                                <td><i class="fas fa-clock text-warning"></i> {{ task.due_date|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Быстрые действия:</h5>
+                        <div class="d-grid gap-2">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Изменить статус
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'pending')">Ожидает</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'in_progress')">В процессе</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'completed')">Завершена</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'cancelled')">Отменена</a></li>
+                                </ul>
+                            </div>
+                            <a href="{% url 'task_edit' task.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-edit"></i> Редактировать задачу
+                            </a>
+                            <a href="{% url 'tasks_list' %}" class="btn btn-outline-info">
+                                <i class="fas fa-list"></i> К списку задач
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Информация</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Эта задача связана с городом <strong>{{ task.city }}</strong>. 
+                    Вы можете проверить текущую погоду для этого города на главной странице.
+                </p>
+                <div class="text-center">
+                    <a href="{% url 'home' %}" class="btn btn-primary">
+                        <i class="fas fa-cloud-sun"></i> Проверить погоду
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateTaskStatus(taskId, status) {
+    // Получаем CSRF токен
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        alert('Ошибка: CSRF токен не найден');
+        return;
+    }
+    
+    fetch(`/tasks/${taskId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken.value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${status}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при обновлении статуса: ' + (data.error || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при обновлении статуса');
+    });
+}
+</script>
+{% endblock %}

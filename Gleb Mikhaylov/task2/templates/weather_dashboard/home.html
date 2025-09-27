@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Главная - Дашборд погоды{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Поиск погоды -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4><i class="fas fa-search"></i> Поиск погоды</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% crispy search_form %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Результат поиска погоды -->
+        {% if weather_data %}
+        <div class="weather-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-3">
+                        <i class="fas fa-map-marker-alt"></i> {{ weather_data.city }}, {{ weather_data.country }}
+                    </h2>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="weather-icon">
+                            {% if weather_data.icon %}
+                                <img src="http://openweathermap.org/img/wn/{{ weather_data.icon }}@2x.png" alt="{{ weather_data.description }}">
+                            {% else %}
+                                <i class="fas fa-sun"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h1 class="display-4 mb-0">{{ weather_data.temperature }}°C</h1>
+                            <p class="lead mb-0">{{ weather_data.description }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-tint text-info"></i>
+                                <div class="small">Влажность</div>
+                                <strong>{{ weather_data.humidity }}%</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-wind text-success"></i>
+                                <div class="small">Ветер</div>
+                                <strong>{{ weather_data.wind_speed }} м/с</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-thermometer-half text-warning"></i>
+                                <div class="small">Давление</div>
+                                <strong>{{ weather_data.pressure }} гПа</strong>
+                            </div>
+                        </div>
+                        {% if weather_data.feels_like %}
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <i class="fas fa-thermometer-quarter text-danger"></i>
+                                <div class="small">Ощущается</div>
+                                <strong>{{ weather_data.feels_like }}°C</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if weather_data.cached %}
+            <div class="mt-3">
+                <small class="text-light">
+                    <i class="fas fa-clock"></i> Данные обновлены: {{ weather_data.cached_at|date:"d.m.Y H:i" }}
+                </small>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {% if user.is_authenticated %}
+        <!-- Последние задачи пользователя -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-tasks"></i> Мои задачи</h5>
+                <a href="{% url 'tasks_list' %}" class="btn btn-sm btn-outline-primary">Все задачи</a>
+            </div>
+            <div class="card-body">
+                {% if user_tasks %}
+                    {% for task in user_tasks %}
+                    <div class="task-card card mb-2 priority-{{ task.priority }}">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">{{ task.title }}</h6>
+                                    <p class="card-text small text-muted mb-1">{{ task.city }}</p>
+                                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}warning{% elif task.status == 'cancelled' %}secondary{% else %}primary{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'task_detail' task.id %}">Просмотр</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'task_edit' task.id %}">Редактировать</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'task_delete' task.id %}">Удалить</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">У вас пока нет задач</p>
+                    <div class="text-center">
+                        <a href="{% url 'task_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Создать задачу
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Быстрые действия -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'task_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Новая задача
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt"></i> Мой дашборд
+                    </a>
+                    <a href="{% url 'search_history' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-history"></i> История поиска
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Приглашение к регистрации -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-plus"></i> Присоединяйтесь!</h5>
+            </div>
+            <div class="card-body text-center">
+                <p>Зарегистрируйтесь, чтобы:</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Создавать персональные задачи</li>
+                    <li><i class="fas fa-check text-success"></i> Сохранять историю поиска</li>
+                    <li><i class="fas fa-check text-success"></i> Получать уведомления о погоде</li>
+                </ul>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'register' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Зарегистрироваться
+                    </a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

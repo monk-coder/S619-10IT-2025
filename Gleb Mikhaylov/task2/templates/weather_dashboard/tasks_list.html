@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои задачи - Дашборд погоды{% endblock %}
+
+{% block content %}
+<!-- CSRF токен для AJAX запросов -->
+{% csrf_token %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tasks"></i> Мои задачи</h2>
+    <a href="{% url 'task_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Новая задача
+    </a>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" placeholder="Поиск по названию, описанию или городу" value="{{ search_query }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="priority">
+                    <option value="">Все приоритеты</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Высокий</option>
+                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Средний</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Низкий</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">Все статусы</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Ожидает</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>В процессе</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Завершена</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Отменена</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-search"></i> Фильтр
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Список задач -->
+{% if page_obj %}
+    {% for task in page_obj %}
+    <div class="card mb-3 task-card priority-{{ task.priority }}">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <div class="form-check">
+                                <input class="form-check-input task-checkbox" type="checkbox" 
+                                       data-task-id="{{ task.id }}" 
+                                       {% if task.status == 'completed' %}checked{% endif %}>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ task.title }}</h5>
+                            {% if task.description %}
+                            <p class="card-text text-muted">{{ task.description }}</p>
+                            {% endif %}
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info me-2">
+                                    <i class="fas fa-map-marker-alt"></i> {{ task.city }}
+                                </span>
+                                <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% else %}success{% endif %} me-2">
+                                    {{ task.get_priority_display }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ task.created_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            {{ task.get_status_display }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'pending')">Ожидает</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'in_progress')">В процессе</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'completed')">Завершена</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateTaskStatus({{ task.id }}, 'cancelled')">Отменена</a></li>
+                        </ul>
+                    </div>
+                    <div class="btn-group mt-2" role="group">
+                        <a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'task_edit' task.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'task_delete' task.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Пагинация -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Первая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Предыдущая</a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Следующая</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Последняя</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">Задач не найдено</h4>
+    <p class="text-muted">Создайте свою первую задачу или измените фильтры поиска</p>
+    <a href="{% url 'task_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Создать задачу
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateTaskStatus(taskId, status) {
+    // Получаем CSRF токен
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        alert('Ошибка: CSRF токен не найден');
+        return;
+    }
+    
+    fetch(`/tasks/${taskId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken.value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${status}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при обновлении статуса: ' + (data.error || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при обновлении статуса');
+    });
+}
+
+// Обработка чекбоксов
+document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const taskId = this.dataset.taskId;
+        const status = this.checked ? 'completed' : 'pending';
+        updateTaskStatus(taskId, status);
+    });
+});
+</script>
+{% endblock %}

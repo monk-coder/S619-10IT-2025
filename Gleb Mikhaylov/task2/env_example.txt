@@ -1,0 +1,9 @@
+# Django Settings
+SECRET_KEY=django-insecure-change-this-in-production-key
+DEBUG=True
+
+# OpenWeatherMap API
+OPENWEATHER_API_KEY=your_api_key_here
+
+# Database (optional - defaults to SQLite)
+# DATABASE_URL=postgresql://user:password@localhost:5432/weather_db

@@ -8,13 +8,13 @@ const weatherTemp = document.getElementById("weather-temp");
 const weatherDesc = document.getElementById("weather-desc");
 const weatherIcon = document.getElementById("weather-icon");
 
-const FLOORS_BATCH = 32;
+const FLOOR_WINDOW_RADIUS = 50;
 const MIN_EVENT_GAP = 12;
 const MAX_EVENT_GAP = 160;
 const MIN_SEGMENT = 200;
 const MAX_SEGMENT = 500;
 
-let totalFloors = 0;
+let maxGeneratedFloor = 0;
 let scheduledEventFloor = 1;
 let lastKnownFloor = 1;
 let activeTheme = "";
@@ -24,6 +24,12 @@ let currentSegmentIndex = 0;
 let segmentEndFloor = MAX_SEGMENT;
 let hasReachedMurino = false;
 let weatherCache = {};
+const renderedFloors = new Map();
+let topSpacer;
+let bottomSpacer;
+let currentWindowMin = 1;
+let currentWindowMax = 1;
+let floorUnit = window.innerHeight || 1;
 
 const layers = [
   { name: "ядро Земли", threshold: 80, className: "is-core" },
@@ -54,7 +60,9 @@ async function init() {
   await loadEnvKey();
   segmentEndFloor = selectNextSegmentEnd(0);
   scheduledEventFloor = computeNextEventFloor(1);
-  appendFloors(FLOORS_BATCH * 2);
+  setupTowerSpacers();
+  ensureGeneratedUpTo(1 + FLOOR_WINDOW_RADIUS);
+  maintainFloorWindow(1);
   updateFloorIndicator(1);
   updateLayerLabel(1);
   updateJourneyInfo();
@@ -105,33 +113,6 @@ function parseEnv(raw) {
     }, {});
 }
 
-function appendFloors(batchSize = FLOORS_BATCH) {
-  for (let i = 0; i < batchSize; i += 1) {
-    if (hasReachedMurino) {
-      return;
-    }
-    totalFloors += 1;
-    const floor = document.createElement("section");
-    floor.className = "floor";
-    floor.dataset.floor = String(totalFloors);
-    const layerConfig = applyLayerClass(floor, totalFloors);
-    if (layerConfig) {
-      floor.dataset.layer = layerConfig.name;
-    }
-
-    const label = document.createElement("div");
-    label.className = "floor__label";
-    label.textContent = `этаж ${totalFloors}`;
-
-    floor.appendChild(label);
-    tower.appendChild(floor);
-
-    if (!hasReachedMurino && totalFloors >= segmentEndFloor) {
-      advanceSegment(totalFloors);
-    }
-  }
-}
-
 function applyLayerClass(floorElement, floorNumber) {
   const layerConfig = getLayerForFloor(floorNumber);
   if (!layerConfig) return null;
@@ -163,8 +144,8 @@ function computeNextEventFloor(fromFloor) {
 }
 
 async function handleScroll() {
-  ensureFutureFloors();
   const currentFloor = detectCurrentFloor(lastKnownFloor);
+  maintainFloorWindow(currentFloor);
   if (currentFloor !== lastKnownFloor) {
     lastKnownFloor = currentFloor;
     updateFloorIndicator(currentFloor);
@@ -176,27 +157,143 @@ async function handleScroll() {
   }
 }
 
-function ensureFutureFloors() {
-  if (hasReachedMurino) return;
-  const lastFloor = tower.lastElementChild;
-  if (!lastFloor) return;
-  const { top } = lastFloor.getBoundingClientRect();
-  if (top < window.innerHeight + 900) {
-    appendFloors();
-  }
-}
-
 function detectCurrentFloor(fallback) {
-  const elements = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-  const floorElement = elements.find((el) => el.classList && el.classList.contains("floor"));
-  if (floorElement) {
-    return Number.parseInt(floorElement.dataset.floor, 10);
+  const viewportHeight = window.innerHeight || floorUnit || 1;
+  const centerY = window.scrollY + viewportHeight / 2;
+  const unit = floorUnit || viewportHeight || 1;
+  const approxFloor = Math.max(1, Math.floor(centerY / unit) + 1);
+  if (Number.isNaN(approxFloor)) {
+    return fallback;
   }
-  return fallback;
+  return approxFloor;
 }
 
 function updateFloorIndicator(floor) {
   floorCounter.textContent = String(floor);
+}
+
+function ensureGeneratedUpTo(targetFloor) {
+  while (!hasReachedMurino && maxGeneratedFloor < targetFloor) {
+    maxGeneratedFloor += 1;
+    if (!hasReachedMurino && maxGeneratedFloor >= segmentEndFloor) {
+      advanceSegment(maxGeneratedFloor);
+    }
+    if (hasReachedMurino) {
+      break;
+    }
+  }
+}
+
+function maintainFloorWindow(currentFloor) {
+  const desiredMinFloor = Math.max(1, currentFloor - FLOOR_WINDOW_RADIUS);
+  const desiredMaxFloorCandidate = hasReachedMurino
+    ? Math.min(currentFloor + FLOOR_WINDOW_RADIUS, maxGeneratedFloor)
+    : currentFloor + FLOOR_WINDOW_RADIUS;
+
+  ensureGeneratedUpTo(desiredMaxFloorCandidate);
+  const effectiveMaxFloor = Math.max(
+    desiredMinFloor,
+    Math.min(desiredMaxFloorCandidate, maxGeneratedFloor)
+  );
+
+  const toRemove = [];
+  renderedFloors.forEach((_element, floorNumber) => {
+    if (floorNumber < desiredMinFloor || floorNumber > effectiveMaxFloor) {
+      toRemove.push(floorNumber);
+    }
+  });
+
+  for (const floorNumber of toRemove) {
+    const element = renderedFloors.get(floorNumber);
+    if (element && element.parentElement === tower) {
+      tower.removeChild(element);
+    }
+    renderedFloors.delete(floorNumber);
+  }
+
+  for (let floorNumber = desiredMinFloor; floorNumber <= effectiveMaxFloor; floorNumber += 1) {
+    if (!renderedFloors.has(floorNumber)) {
+      const floorElement = buildFloorElement(floorNumber);
+      insertFloorElement(floorNumber, floorElement);
+      renderedFloors.set(floorNumber, floorElement);
+    }
+  }
+
+  currentWindowMin = desiredMinFloor;
+  currentWindowMax = effectiveMaxFloor;
+  const sampleFloor =
+    renderedFloors.get(currentFloor) ??
+    renderedFloors.get(currentWindowMin) ??
+    (() => {
+      const iterator = renderedFloors.values().next();
+      return iterator.done ? null : iterator.value;
+    })();
+  if (sampleFloor) {
+    const measured = sampleFloor.getBoundingClientRect().height;
+    if (measured) {
+      floorUnit = measured;
+    }
+  }
+  updateTowerSpacers();
+}
+
+function buildFloorElement(floorNumber) {
+  const floor = document.createElement("section");
+  floor.className = "floor";
+  floor.dataset.floor = String(floorNumber);
+  const layerConfig = applyLayerClass(floor, floorNumber);
+  if (layerConfig) {
+    floor.dataset.layer = layerConfig.name;
+  }
+  return floor;
+}
+
+function insertFloorElement(floorNumber, floorElement) {
+  let offset = 1;
+  while (offset <= FLOOR_WINDOW_RADIUS * 2 + 1) {
+    const previous = renderedFloors.get(floorNumber - offset);
+    if (previous && previous.parentElement === tower) {
+      tower.insertBefore(floorElement, previous.nextSibling);
+      return;
+    }
+    const next = renderedFloors.get(floorNumber + offset);
+    if (next && next.parentElement === tower) {
+      tower.insertBefore(floorElement, next);
+      return;
+    }
+    offset += 1;
+  }
+  if (bottomSpacer && bottomSpacer.parentElement === tower) {
+    tower.insertBefore(floorElement, bottomSpacer);
+  } else {
+    tower.appendChild(floorElement);
+  }
+}
+
+function setupTowerSpacers() {
+  if (topSpacer && bottomSpacer) {
+    return;
+  }
+  topSpacer = document.createElement("div");
+  topSpacer.id = "tower-spacer-top";
+  topSpacer.className = "tower__spacer";
+  bottomSpacer = document.createElement("div");
+  bottomSpacer.id = "tower-spacer-bottom";
+  bottomSpacer.className = "tower__spacer";
+  tower.prepend(topSpacer);
+  tower.appendChild(bottomSpacer);
+  updateTowerSpacers();
+}
+
+function updateTowerSpacers() {
+  if (!topSpacer || !bottomSpacer) {
+    return;
+  }
+  const unit = floorUnit || window.innerHeight || 1;
+  const topHeight = Math.max(0, currentWindowMin - 1) * unit;
+  const bottomHeight = Math.max(0, maxGeneratedFloor - currentWindowMax) * unit;
+  topSpacer.style.height = `${topHeight}px`;
+  bottomSpacer.style.height = `${bottomHeight}px`;
 }
 
 function triggerRandomEvent(currentFloor) {
@@ -229,11 +326,15 @@ function flashOverlay(message, variant) {
   if (overlayTimeout) {
     clearTimeout(overlayTimeout);
   }
+  document.body.classList.remove("is-shaking");
+  void document.body.offsetWidth;
   overlay.textContent = message;
   overlay.className = `overlay overlay-${variant} active`;
+  document.body.classList.add("is-shaking");
   overlayTimeout = setTimeout(() => {
     overlay.className = "overlay";
     overlay.textContent = "";
+    document.body.classList.remove("is-shaking");
   }, 2400);
 }
 

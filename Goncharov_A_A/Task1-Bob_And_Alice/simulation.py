@@ -32,7 +32,7 @@ class Events(Enum):
 
 
 class Simulation:
-    def __init__(self, years=5, output_frequency=1, people: list=None):
+    def __init__(self, years=5, output_frequency=1, people: list):
         if people is None:
             people = []
         self.months = years * 12

@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/game/progress/", views.api_game_progress, name="api_game_progress"),
     path("api/weather/lookup/", views.api_weather_lookup, name="api_weather_lookup"),
     path("api/weather/history/", views.api_weather_history, name="api_weather_history"),
+    path("api/upgrades/", views.api_upgrades, name="api_upgrades"),
     path("api/tasks/", views.api_tasks, name="api_tasks"),
     path("api/tasks/<int:task_id>/", views.api_task_detail, name="api_task_detail"),
 ]

@@ -9,6 +9,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <div id="toast-root" class="toast-root" aria-live="assertive"></div>
     {% block content %}{% endblock %}
     <script src="{% static 'game/js/main.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Dict
 
 import requests
@@ -13,8 +14,18 @@ class WeatherServiceError(Exception):
     pass
 
 
+_CITY_SANITIZE_PATTERN = re.compile(r"[^A-Za-zА-Яа-яЁё\-\s']")
+
+
 def normalize_city(city: str) -> str:
-    return city.strip().title()
+    if not city:
+        return ""
+    cleaned = _CITY_SANITIZE_PATTERN.sub(" ", city.strip())
+    parts = [part for part in cleaned.split() if part]
+    if not parts:
+        return ""
+    normalized = " ".join(part.capitalize() for part in parts)
+    return normalized[:128]
 
 
 def get_weather(city: str) -> Dict[str, Any]:
@@ -27,7 +38,9 @@ def get_weather(city: str) -> Dict[str, Any]:
         return snapshot.payload
 
     if not config.API_KEY:
-        raise WeatherServiceError("Добавьте API-ключ OpenWeather в game/config.py")
+        if snapshot:
+            return snapshot.payload
+        raise WeatherServiceError("Добавьте API-ключ OpenWeather в переменные окружения")
 
     params = {
         "q": normalized,
@@ -39,6 +52,8 @@ def get_weather(city: str) -> Dict[str, Any]:
     try:
         response = requests.get(config.API_BASE_URL, params=params, timeout=config.API_TIMEOUT)
     except requests.RequestException as exc:
+        if snapshot:
+            return snapshot.payload
         raise WeatherServiceError("Погодный сервис недоступен") from exc
 
     if response.status_code != 200:
@@ -47,9 +62,17 @@ def get_weather(city: str) -> Dict[str, Any]:
             message = payload.get("message") or "Не удалось получить данные"
         except ValueError:
             message = "Не удалось получить данные"
+        if snapshot:
+            return snapshot.payload
         raise WeatherServiceError(message.capitalize())
 
-    payload = response.json()
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        if snapshot:
+            return snapshot.payload
+        raise WeatherServiceError("Получены некорректные данные погоды") from exc
+
     WeatherSnapshot.objects.update_or_create(
         city=normalized,
         defaults={"payload": payload, "fetched_at": timezone.now()},

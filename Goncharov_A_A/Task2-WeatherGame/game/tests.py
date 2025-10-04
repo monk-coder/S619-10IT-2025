@@ -6,7 +6,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from . import config
-from .models import CitySearchHistory, PlayerState, WeatherTask
+from .models import CitySearchHistory, PlayerState, PlayerUpgrade, WeatherTask
 
 
 User = get_user_model()
@@ -69,6 +69,7 @@ class GameApiTests(TestCase):
         self.assertTrue(CitySearchHistory.objects.filter(user=self.user, city="Москва").exists())
 
     def test_tasks_crud_flow(self):
+        PlayerUpgrade.objects.create(user=self.user, upgrade_key="task_slot", level=1)
         create_url = reverse("game:api_tasks")
         payload = {"city": "Москва", "title": "Взять зонт", "notes": "проверить шторм"}
         response = self.client.post(create_url, data=json.dumps(payload), content_type="application/json")
@@ -88,6 +89,20 @@ class GameApiTests(TestCase):
         response = self.client.delete(update_url)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(WeatherTask.objects.filter(id=task_id).exists())
-from django.test import TestCase
 
-# Create your tests here.
+    def test_task_creation_prevents_duplicates(self):
+        PlayerUpgrade.objects.create(user=self.user, upgrade_key="task_slot", level=1)
+        payload = {"city": "Москва", "title": "Зонтик"}
+        url = reverse("game:api_tasks")
+        first = self.client.post(url, data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(first.status_code, 200)
+        duplicate = self.client.post(url, data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertIn("существ", duplicate.json()["error"].lower())
+
+    def test_game_progress_rejects_large_jump(self):
+        url = reverse("game:api_game_progress")
+        payload = {"current_floor": config.MAX_FLOOR_ABSOLUTE + 1, "floors_travelled": 0}
+        response = self.client.post(url, data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("этаж", response.json()["error"].lower())

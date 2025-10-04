@@ -13,6 +13,18 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 
+
+def _env_bool(value: str | None, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,12 +33,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-p+k0vfrw0!@&0mzvnf%nzm9m%kf#^)^1@5e3cu0&s#ps=tmnm('
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-placeholder-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool(os.getenv("DJANGO_DEBUG"), default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = _env_list(os.getenv("DJANGO_ALLOWED_HOSTS"))
+if DEBUG:
+    ALLOWED_HOSTS.extend(["localhost", "127.0.0.1", "[::1]"])
+
+CSRF_TRUSTED_ORIGINS = _env_list(os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS"))
 
 
 # Application definition
@@ -118,6 +134,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "0"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(os.getenv("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS"))
+    SECURE_HSTS_PRELOAD = _env_bool(os.getenv("DJANGO_SECURE_HSTS_PRELOAD"))
 
 LOGIN_REDIRECT_URL = 'game:index'
 LOGOUT_REDIRECT_URL = 'game:login'

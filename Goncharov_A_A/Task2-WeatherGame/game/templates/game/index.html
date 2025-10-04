@@ -17,6 +17,9 @@
             <span>Игрок:</span>
             <strong>{{ request.user.username }}</strong>
         </div>
+        <div class="hud__group hud__group--status" id="hud-effects" data-hidden>
+            <span id="hud-effects-label"></span>
+        </div>
         <div class="hud__actions">
             <button class="btn" id="btn-upgrades">Улучшения</button>
             <button class="btn btn--accent" id="btn-weather">Погода</button>
@@ -49,6 +52,7 @@
                         <p><span id="weather-description"></span></p>
                         <p>Температура: <strong id="weather-temp"></strong> °C</p>
                         <p>Ощущается как: <strong id="weather-feels"></strong> °C</p>
+                        <p class="weather__updated">Обновлено: <strong id="weather-updated"></strong></p>
                     </div>
                     <div class="weather__icon">
                         <img id="weather-icon" alt="Иконка погоды" />
@@ -64,6 +68,7 @@
             <section class="tasks" id="tasks" data-hidden>
                 <header class="tasks__header">
                     <h3>Задачи города</h3>
+                    <span class="tasks__limit" id="task-limit" data-hidden></span>
                     <button class="btn btn--ghost" id="task-add-toggle">Новая задача</button>
                 </header>
                 <form class="tasks__form" id="task-form" data-hidden>

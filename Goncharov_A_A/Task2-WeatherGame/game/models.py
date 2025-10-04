@@ -21,13 +21,15 @@ class PlayerState(models.Model):
 class PlayerUpgrade(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="upgrades")
     upgrade_key = models.CharField(max_length=64)
+    level = models.PositiveIntegerField(default=1)
     purchased_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ("user", "upgrade_key")
 
     def __str__(self) -> str:
-        return f"Upgrade<{self.upgrade_key} for {self.user_id}>"
+        return f"Upgrade<{self.upgrade_key} x{self.level} for {self.user_id}>"
 
 
 class WeatherSnapshot(models.Model):

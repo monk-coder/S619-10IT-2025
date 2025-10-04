@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<main class="auth">
+    <section class="auth__card">
+        <h1 class="auth__title">Вход</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="auth__fields">
+                {% for field in form %}
+                <label class="auth__field">
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {% if field.errors %}
+                    <span class="auth__error">{{ field.errors|striptags }}</span>
+                    {% endif %}
+                </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn">Войти</button>
+        </form>
+        <p class="auth__hint">Нет аккаунта? <a href="{% url 'game:register' %}">Регистрация</a></p>
+    </section>
+</main>
+{% endblock %}

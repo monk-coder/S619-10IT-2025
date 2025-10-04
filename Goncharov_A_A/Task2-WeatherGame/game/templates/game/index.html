@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Weather Game{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <header class="hud">
+        <div class="hud__group">
+            <span>Этаж:</span>
+            <strong id="hud-floor">0</strong>
+        </div>
+        <div class="hud__group">
+            <span>Монеты:</span>
+            <strong id="hud-coins">0</strong>
+        </div>
+        <div class="hud__group">
+            <span>Игрок:</span>
+            <strong>{{ request.user.username }}</strong>
+        </div>
+        <div class="hud__actions">
+            <button class="btn" id="btn-upgrades">Улучшения</button>
+            <button class="btn btn--accent" id="btn-weather">Погода</button>
+            <a class="btn btn--ghost" href="{% url 'game:logout' %}">Выйти</a>
+        </div>
+    </header>
+
+    <main class="game">
+        <div class="game__floors" id="floors"></div>
+    </main>
+</div>
+
+<div class="modal" id="weather-modal" data-hidden>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2>Погодный дашборд</h2>
+            <button class="modal__close" data-close>×</button>
+        </div>
+        <div class="weather">
+            <form class="weather__search" id="weather-form">
+                {% csrf_token %}
+                <input type="text" id="weather-city" placeholder="Например, Москва" autocomplete="off" required>
+                <button type="submit" class="btn btn--accent" id="weather-submit">Показать (−<span id="weather-price">0</span> монет)</button>
+            </form>
+            <div class="weather__message" id="weather-message"></div>
+            <section class="weather__info" id="weather-info" data-hidden>
+                <div class="weather__primary">
+                    <div>
+                        <h3 id="weather-city-name"></h3>
+                        <p><span id="weather-description"></span></p>
+                        <p>Температура: <strong id="weather-temp"></strong> °C</p>
+                        <p>Ощущается как: <strong id="weather-feels"></strong> °C</p>
+                    </div>
+                    <div class="weather__icon">
+                        <img id="weather-icon" alt="Иконка погоды" />
+                    </div>
+                </div>
+                <div class="weather__secondary">
+                    <p>Влажность: <strong id="weather-humidity"></strong>%</p>
+                    <p>Давление: <strong id="weather-pressure"></strong> гПа</p>
+                    <p>Ветер: <strong id="weather-wind"></strong> м/с</p>
+                </div>
+            </section>
+
+            <section class="tasks" id="tasks" data-hidden>
+                <header class="tasks__header">
+                    <h3>Задачи города</h3>
+                    <button class="btn btn--ghost" id="task-add-toggle">Новая задача</button>
+                </header>
+                <form class="tasks__form" id="task-form" data-hidden>
+                    {% csrf_token %}
+                    <input type="text" id="task-title" placeholder="Что нужно сделать?" required>
+                    <textarea id="task-notes" rows="2" placeholder="Комментарий (опционально)"></textarea>
+                    <div class="tasks__form-actions">
+                        <button type="submit" class="btn btn--accent">Сохранить</button>
+                        <button type="button" class="btn btn--ghost" id="task-cancel">Отмена</button>
+                    </div>
+                </form>
+                <ul class="tasks__list" id="task-list"></ul>
+            </section>
+
+            <section class="history" id="history" data-hidden>
+                <h3>Последние города</h3>
+                <ul id="history-list"></ul>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="upgrades-modal" data-hidden>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2>Улучшения</h2>
+            <button class="modal__close" data-close>×</button>
+        </div>
+        <div class="upgrades" id="upgrades-content">
+            <p>Улучшения появятся позже. Структура уже готова — добавьте их в <code>game/config.py</code>.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ game_config|json_script:"game-config" }}
+{% endblock %}

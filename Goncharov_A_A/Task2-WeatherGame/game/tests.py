@@ -106,3 +106,54 @@ class GameApiTests(TestCase):
         response = self.client.post(url, data=json.dumps(payload), content_type="application/json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("этаж", response.json()["error"].lower())
+
+    def test_reset_progress_clears_state(self):
+        state = PlayerState.objects.get(user=self.user)
+        state.current_floor = 42
+        state.coins = 999
+        state.total_floors_travelled = 120
+        state.save(update_fields=["current_floor", "coins", "total_floors_travelled", "updated_at"])
+
+        PlayerUpgrade.objects.create(user=self.user, upgrade_key="task_slot", level=2)
+        WeatherTask.objects.create(user=self.user, city="Москва", title="Зонтик", notes="")
+        CitySearchHistory.objects.create(user=self.user, city="Москва")
+
+        url = reverse("game:api_game_reset")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["data"]
+        self.assertEqual(payload["currentFloor"], 0)
+        self.assertEqual(payload["coins"], 0)
+        self.assertEqual(payload["totalFloorsTravelled"], 0)
+        self.assertFalse(PlayerUpgrade.objects.filter(user=self.user).exists())
+        self.assertFalse(WeatherTask.objects.filter(user=self.user).exists())
+        self.assertFalse(CitySearchHistory.objects.filter(user=self.user).exists())
+        new_state = PlayerState.objects.get(user=self.user)
+        self.assertEqual(new_state.current_floor, 0)
+        self.assertEqual(new_state.coins, 0)
+        self.assertEqual(new_state.total_floors_travelled, 0)
+
+
+class LoginViewTests(TestCase):
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(username="loginuser", email="login@example.com", password="pass12345")
+
+    def test_login_rejects_invalid_password(self):
+        url = reverse("game:login")
+        response = self.client.post(url, {"email": "login@example.com", "password": "wrong"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertContains(response, "Неверный email или пароль", html=False)
+
+    def test_login_with_valid_credentials(self):
+        url = reverse("game:login")
+        response = self.client.post(url, {"email": "login@example.com", "password": "pass12345"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("game:index"))
+
+    def test_logout_via_post(self):
+        self.client.login(username="loginuser", password="pass12345")
+        response = self.client.post(reverse("game:logout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("game:login"))
+        self.assertFalse(response.wsgi_request.user.is_authenticated)

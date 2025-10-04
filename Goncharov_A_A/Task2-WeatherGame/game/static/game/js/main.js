@@ -15,6 +15,7 @@
     const state = {
         currentFloor: 0,
         coins: 0,
+        totalFloorsTravelled: 0,
         floorsTraversedBuffer: 0,
         floorWindow: config.floorBuffer ?? 50,
         weatherPrice: config.weatherLookupPrice ?? 250,
@@ -39,6 +40,7 @@
         hudCoins: document.getElementById('hud-coins'),
         weatherButton: document.getElementById('btn-weather'),
         upgradesButton: document.getElementById('btn-upgrades'),
+        resetButton: document.getElementById('btn-reset'),
         weatherModal: document.getElementById('weather-modal'),
         upgradesModal: document.getElementById('upgrades-modal'),
         weatherForm: document.getElementById('weather-form'),
@@ -186,6 +188,43 @@
                 state.upgradeLevels[item.key] = item.level ?? 0;
             }
         });
+    }
+
+    function clearWeatherPanels() {
+        if (elements.weatherInfo) {
+            elements.weatherInfo.setAttribute('data-hidden', 'true');
+        }
+        if (elements.weatherMessage) {
+            elements.weatherMessage.textContent = '';
+        }
+        if (elements.weatherCityInput) {
+            elements.weatherCityInput.value = '';
+            elements.weatherCityInput.disabled = false;
+        }
+        if (elements.tasksSection) {
+            elements.tasksSection.setAttribute('data-hidden', 'true');
+        }
+        if (elements.historySection) {
+            elements.historySection.setAttribute('data-hidden', 'true');
+        }
+        if (elements.tasksList) {
+            elements.tasksList.innerHTML = '';
+        }
+        if (elements.taskForm) {
+            elements.taskForm.setAttribute('data-hidden', 'true');
+        }
+        if (elements.taskTitle) {
+            elements.taskTitle.value = '';
+        }
+        if (elements.taskNotes) {
+            elements.taskNotes.value = '';
+        }
+        if (elements.historyList) {
+            elements.historyList.innerHTML = '';
+        }
+        state.currentCity = null;
+        state.currentTasksCount = 0;
+        updateTaskControls();
     }
 
     function updateHud() {
@@ -670,6 +709,7 @@
             const response = await apiRequest('/api/game/state/');
             state.currentFloor = response.data.currentFloor;
             state.coins = clampCoins(response.data.coins);
+            state.totalFloorsTravelled = response.data.totalFloorsTravelled ?? state.totalFloorsTravelled;
             state.weatherPrice = response.data.weatherLookupPrice;
             state.floorWindow = response.data.floorBuffer;
             setUpgradeData(response.data.upgrades);
@@ -710,6 +750,39 @@
             }
         } catch (error) {
             showToast(error.message, 'error');
+        }
+    }
+
+    async function handleResetProgress() {
+        if (!elements.resetButton) {
+            return;
+        }
+        const confirmed = window.confirm('Сбросить весь прогресс? Действие нельзя отменить.');
+        if (!confirmed) {
+            return;
+        }
+        setButtonBusy(elements.resetButton, true);
+        try {
+            const response = await apiRequest('/api/game/reset/', {
+                method: 'POST',
+            });
+            const payload = response.data;
+            state.currentFloor = payload.currentFloor ?? 0;
+            state.coins = clampCoins(payload.coins ?? 0);
+            state.floorsTraversedBuffer = 0;
+            state.totalFloorsTravelled = payload.totalFloorsTravelled ?? 0;
+            state.weatherPrice = payload.weatherPrice ?? state.weatherPrice;
+            setUpgradeData(payload.upgrades);
+            applyUpgradeEffects(payload.effects);
+            clearWeatherPanels();
+            recenterFloors(state.currentFloor);
+            updateHud();
+            renderUpgrades();
+            showToast('Прогресс сброшен', 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            setButtonBusy(elements.resetButton, false);
         }
     }
 
@@ -863,11 +936,19 @@
         window.addEventListener('resize', () => recenterFloors(state.currentFloor));
     }
 
+    function setupResetButton() {
+        if (!elements.resetButton) {
+            return;
+        }
+        elements.resetButton.addEventListener('click', handleResetProgress);
+    }
+
     async function init() {
         setupFloors();
         setupModals();
         setupWeatherForm();
         setupTaskForm();
+        setupResetButton();
         await loadGameState();
         await loadHistory();
     }

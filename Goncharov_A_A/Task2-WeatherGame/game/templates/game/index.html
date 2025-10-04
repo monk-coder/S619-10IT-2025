@@ -23,7 +23,11 @@
         <div class="hud__actions">
             <button class="btn" id="btn-upgrades">Улучшения</button>
             <button class="btn btn--accent" id="btn-weather">Погода</button>
-            <a class="btn btn--ghost" href="{% url 'game:logout' %}">Выйти</a>
+            <button class="btn btn--danger" id="btn-reset">Сбросить прогресс</button>
+            <form method="post" action="{% url 'game:logout' %}" class="hud__logout">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--ghost">Выйти</button>
+            </form>
         </div>
     </header>
 

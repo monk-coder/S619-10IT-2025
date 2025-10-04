@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -13,7 +14,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from django.utils import timezone
 
 from . import config
-from .forms import RegistrationForm
+from .forms import EmailLoginForm, RegistrationForm
 from .models import (
     CitySearchHistory,
     PlayerState,
@@ -60,6 +61,27 @@ def _clean_task_fields(title: str | None, notes: str | None) -> tuple[str, str]:
     if normalized_notes and len(normalized_notes) > TASK_NOTES_MAX_LENGTH:
         normalized_notes = normalized_notes[:TASK_NOTES_MAX_LENGTH]
     return normalized_title, normalized_notes
+
+
+@require_http_methods(["GET", "POST"])
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("game:index")
+
+    if request.method == "POST":
+        form = EmailLoginForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if not hasattr(user, "backend"):
+                backends = getattr(settings, "AUTHENTICATION_BACKENDS", [])
+                backend = backends[0] if backends else "django.contrib.auth.backends.ModelBackend"
+                user.backend = backend
+            login(request, user)
+            return redirect("game:index")
+    else:
+        form = EmailLoginForm()
+
+    return render(request, "registration/login.html", {"form": form})
 
 
 def register(request):
@@ -288,6 +310,32 @@ def api_weather_lookup(request):
                 "weather": public_weather_payload(city, weather_payload, fetched_at),
                 "weatherPrice": price,
                 "effects": response_effects,
+            }
+        }
+    )
+
+
+@login_required
+@require_POST
+def api_game_reset(request):
+    with transaction.atomic():
+        PlayerUpgrade.objects.filter(user=request.user).delete()
+        WeatherTask.objects.filter(user=request.user).delete()
+        CitySearchHistory.objects.filter(user=request.user).delete()
+        PlayerState.objects.filter(user=request.user).delete()
+        state = PlayerState.objects.create(user=request.user)
+
+    levels: dict[str, int] = {}
+    return _json_success(
+        {
+            "data": {
+                "currentFloor": state.current_floor,
+                "coins": state.coins,
+                "totalFloorsTravelled": state.total_floors_travelled,
+                "weatherPrice": _weather_price(levels),
+                "upgrades": _serialize_upgrades(levels),
+                "effects": _effects_payload(levels),
+                "taskLimit": _task_limit(levels),
             }
         }
     )

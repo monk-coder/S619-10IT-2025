@@ -6,5 +6,9 @@ urlpatterns = [
     path("api/weather/", views.get_weather, name="get_weather"),
     path("api/flight/", views.get_flight, name="get_flight"),
     path("api/time/", views.get_time, name="get_time"),   # <-- новый эндпоинт
+    path("api/auth/register/", views.register_user, name="register_user"),
+    path("api/auth/login/", views.login_user, name="login_user"),
+    path("api/auth/status/", views.auth_status, name="auth_status"),
+    path("api/history/", views.get_history, name="get_history"),
 
 ]

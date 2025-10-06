@@ -1,0 +1,18 @@
+<!doctype html>
+<title>Случайные пользователи</title>
+<h2>Случайные пользователи</h2>
+<a href="{{ url_for('contacts') }}">Мои контакты</a> |
+<a href="{{ url_for('logout') }}">Выйти</a> |
+<a href="{{ url_for('export') }}">Экспортировать контакты</a>
+<ul>
+{% for user in users %}
+    {{ user.name.first }} {{ user.name.last }} - {{ user.email }}
+    <div style="border:1px solid #ccc; margin:10px; padding:10px;">
+            <img src="{{ user.picture }}" width="100">
+            <h3>{{ user.name }}</h3>
+            <p>Email: {{ user.email }}</p>
+            <p>Phone: {{ user.phone }}</p>
+             <button type="submit">Добавить в контакты</button>
+        </div>
+{% endfor %}
+</ul>

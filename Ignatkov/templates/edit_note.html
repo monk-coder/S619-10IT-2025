@@ -1,0 +1,8 @@
+<!doctype html>
+<title>Редактировать заметку</title>
+<h2>Редактировать заметку для {{ contact.name }}</h2>
+<form method="post">
+  <textarea name="content" rows="5" cols="40">{{ note_content }}</textarea><br>
+  <button type="submit">Сохранить</button>
+</form>
+<a href="{{ url_for('contacts') }}">Назад к контактам</a>

@@ -1,0 +1,9 @@
+<!doctype html>
+<title>Регистрация</title>
+<h2>Регистрация</h2>
+<form method="post">
+  <input name="username" placeholder="Имя пользователя" required>
+  <input name="password" placeholder="Пароль" type="password" required>
+  <button type="submit">Зарегистрироваться</button>
+</form>
+<a href="{{ url_for('login') }}">Войти</a>

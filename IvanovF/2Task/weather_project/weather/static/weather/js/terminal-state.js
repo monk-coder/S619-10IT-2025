@@ -15,6 +15,7 @@
 
   const state = {
     notes: [],
+    tasks: [],
     timezoneOffset: 0,
     timerInterval: null,
     currentUser: 'guest',
@@ -31,7 +32,41 @@
     } catch (err) {
       state.notes = [];
     }
-    state.timezoneOffset = parseFloat(localStorage.getItem('terminal_tz') || '0') || 0;
+
+    const storedTz = localStorage.getItem('terminal_tz');
+    if (storedTz === null) {
+      const deviceOffset = -new Date().getTimezoneOffset() / 60;
+      state.timezoneOffset = deviceOffset;
+      localStorage.setItem('terminal_tz', String(deviceOffset));
+    } else {
+      state.timezoneOffset = parseFloat(storedTz) || 0;
+    }
+  };
+
+  TerminalApp.setTasks = (tasks) => {
+    state.tasks = Array.isArray(tasks) ? tasks.slice() : [];
+  };
+
+  TerminalApp.getTasks = () => state.tasks.slice();
+
+  TerminalApp.upsertTask = (task) => {
+    if (!task || typeof task.id !== 'number') return;
+    const index = state.tasks.findIndex((item) => item.id === task.id);
+    if (index === -1) {
+      state.tasks.unshift(task);
+    } else {
+      state.tasks[index] = task;
+    }
+  };
+
+  TerminalApp.removeTask = (taskId) => {
+    state.tasks = state.tasks.filter((item) => item.id !== taskId);
+  };
+
+  TerminalApp.describeTask = (task) => {
+    if (!task) return '';
+    const created = task.created_at ? ` @ ${TerminalApp.formatHistoryTime(task.created_at)}` : '';
+    return `[${task.id}] ${task.city}: ${task.text}${created}`;
   };
 
   TerminalApp.saveNotes = () => {

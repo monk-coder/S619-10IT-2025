@@ -7,15 +7,20 @@
     'signup <логин> <пароль>',
     'weather <city>',
     'flight <IATA>',
+    'taskadd <город>|<текст>',
+    'tasks',
+    'taskupdate <id>|[город]|[текст]',
+    'taskdelete <id>',
     'note <text>',
     'notes',
     'timer <seconds>',
     'timezone <offset>',
+    'logout',
     'clear',
   ];
 
   const commandsList = Array.from(new Set(helpItems.map((item) => item.split(' ')[0])));
-  const commandsWithArgs = new Set(['login', 'signup', 'weather', 'flight', 'note', 'timer', 'timezone']);
+  const commandsWithArgs = new Set(['login', 'signup', 'weather', 'flight', 'note', 'taskadd', 'taskupdate', 'taskdelete', 'timer', 'timezone']);
 
   const asciiIcons = {
     sun: '  \\   /  \n   .-.   \n- (   ) -\n   `-’   \n  /   \\  ',
@@ -100,6 +105,11 @@
         TerminalApp.updatePrompt();
         TerminalApp.print(data.message || 'Регистрация завершена');
         await TerminalApp.fetchHistory();
+        try {
+          await TerminalApp.fetchTasks();
+        } catch (err) {
+          // ignore fetch errors here
+        }
       } catch (err) {
         TerminalApp.print(`Error: ${err.message}`, 'error');
       }
@@ -129,6 +139,11 @@
         TerminalApp.updatePrompt();
         TerminalApp.print(data.message || 'Авторизация успешна');
         await TerminalApp.fetchHistory();
+        try {
+          await TerminalApp.fetchTasks();
+        } catch (err) {
+          // ignore fetch errors here
+        }
       } catch (err) {
         TerminalApp.print(`Error: ${err.message}`, 'error');
       }
@@ -174,6 +189,154 @@
       return;
     }
 
+    if (cmd === 'tasks') {
+      if (TerminalApp.getCurrentUser() === 'guest') {
+        TerminalApp.print('Error: требуется авторизация.', 'error');
+        return;
+      }
+      try {
+        const tasks = await TerminalApp.fetchTasks();
+        if (!tasks.length) {
+          TerminalApp.print('Пока задач нет.');
+          return;
+        }
+        TerminalApp.print('Ваши напоминания:');
+        tasks.forEach((task) => {
+          TerminalApp.print(TerminalApp.describeTask(task));
+        });
+      } catch (err) {
+        TerminalApp.print(`Error: ${err.message}`, 'error');
+      }
+      return;
+    }
+
+    if (cmd === 'taskadd') {
+      if (TerminalApp.getCurrentUser() === 'guest') {
+        TerminalApp.print('Error: требуется авторизация.', 'error');
+        return;
+      }
+      const rawArg = arg || '';
+      const separatorIndex = rawArg.indexOf('|');
+      if (separatorIndex === -1) {
+        TerminalApp.print('Error: используйте taskadd <город>|<текст>', 'error');
+        return;
+      }
+      const city = rawArg.slice(0, separatorIndex).trim();
+      const text = rawArg.slice(separatorIndex + 1).trim();
+      if (!city || !text) {
+        TerminalApp.print('Error: укажите город и текст напоминания', 'error');
+        return;
+      }
+      TerminalApp.print(`Сохранение задачи для ${city}...`);
+      try {
+        const resp = await fetch('/api/tasks/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ city, text }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.error) {
+          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
+          return;
+        }
+        if (data.task) {
+          TerminalApp.upsertTask(data.task);
+          TerminalApp.print(`Задача #${data.task.id} сохранена.`);
+          TerminalApp.print(TerminalApp.describeTask(data.task));
+        } else {
+          TerminalApp.print('Задача сохранена.');
+        }
+      } catch (err) {
+        TerminalApp.print(`Error: ${err.message}`, 'error');
+      }
+      return;
+    }
+
+    if (cmd === 'taskupdate') {
+      if (TerminalApp.getCurrentUser() === 'guest') {
+        TerminalApp.print('Error: требуется авторизация.', 'error');
+        return;
+      }
+      const rawArg = arg || '';
+      const firstSep = rawArg.indexOf('|');
+      if (firstSep === -1) {
+        TerminalApp.print('Error: используйте taskupdate <id>|<город>|<текст>', 'error');
+        return;
+      }
+      const secondPart = rawArg.slice(firstSep + 1);
+      const secondSep = secondPart.indexOf('|');
+      if (secondSep === -1) {
+        TerminalApp.print('Error: используйте taskupdate <id>|<город>|<текст>', 'error');
+        return;
+      }
+      const idPart = rawArg.slice(0, firstSep).trim();
+      const city = secondPart.slice(0, secondSep).trim();
+      const text = secondPart.slice(secondSep + 1).trim();
+      const id = Number(idPart);
+      if (!Number.isInteger(id) || id <= 0) {
+        TerminalApp.print('Error: некорректный идентификатор задачи', 'error');
+        return;
+      }
+      if (!city || !text) {
+        TerminalApp.print('Error: укажите город и текст для обновления', 'error');
+        return;
+      }
+      TerminalApp.print(`Обновление задачи #${id}...`);
+      try {
+        const resp = await fetch(`/api/tasks/${id}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ city, text }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.error) {
+          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
+          return;
+        }
+        if (data.task) {
+          TerminalApp.upsertTask(data.task);
+          TerminalApp.print(`Задача #${data.task.id} обновлена.`);
+          TerminalApp.print(TerminalApp.describeTask(data.task));
+        } else {
+          TerminalApp.print('Задача обновлена.');
+        }
+      } catch (err) {
+        TerminalApp.print(`Error: ${err.message}`, 'error');
+      }
+      return;
+    }
+
+    if (cmd === 'taskdelete') {
+      if (TerminalApp.getCurrentUser() === 'guest') {
+        TerminalApp.print('Error: требуется авторизация.', 'error');
+        return;
+      }
+      const id = Number((arg || '').trim());
+      if (!Number.isInteger(id) || id <= 0) {
+        TerminalApp.print('Error: используйте taskdelete <id>', 'error');
+        return;
+      }
+      TerminalApp.print(`Удаление задачи #${id}...`);
+      try {
+        const resp = await fetch(`/api/tasks/${id}/`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}));
+          TerminalApp.print(`Error: ${(data && data.error) || resp.statusText}`, 'error');
+          return;
+        }
+        TerminalApp.removeTask(id);
+        TerminalApp.print('Задача удалена.');
+      } catch (err) {
+        TerminalApp.print(`Error: ${err.message}`, 'error');
+      }
+      return;
+    }
+
     if (cmd === 'timer') {
       if (!arg || Number.isNaN(Number(arg))) {
         TerminalApp.print('Error: seconds required', 'error');
@@ -215,6 +378,7 @@
         }
         TerminalApp.setCurrentUser('guest');
         TerminalApp.updatePrompt();
+        TerminalApp.setTasks([]);
         TerminalApp.print(data.message || 'Вы вышли из системы.');
         await TerminalApp.fetchHistory();
       } catch (err) {

@@ -2,25 +2,26 @@
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
   const helpItems = [
-    'help',
-    'login <логин> <пароль>',
-    'signup <логин> <пароль>',
-    'weather <city>',
-    'flight <IATA>',
-    'taskadd <город>|<текст>',
-    'tasks',
-    'taskupdate <id>|[город]|[текст]',
-    'taskdelete <id>',
-    'note <text>',
-    'notes',
-    'timer <seconds>',
-    'timezone <offset>',
-    'logout',
-    'clear',
+    'help — показать список команд',
+    'login <логин> <пароль> — войти в аккаунт',
+    'signup <логин> <пароль> — зарегистрироваться',
+    'logout — выйти из аккаунта',
+    'weather <город> — узнать погоду',
+    'flight <IATA> — статус рейса',
+    'currency <из> [в] [сумма] — конвертация валют из списка (например: currency usd rub 100)',
+    'taskadd <город>|<текст> — сохранить напоминание по погоде',
+    'tasks — показать сохранённые напоминания',
+    'taskupdate <id>|[город]|[текст] — изменить напоминание',
+    'taskdelete <id> — удалить напоминание',
+    'note <текст> — добавить локальную заметку',
+    'notes — показать локальные заметки',
+    'timer <секунды> — запустить таймер',
+    'timezone <смещение> — сменить пояс, например timezone +3',
+    'clear — очистить экран',
   ];
 
   const commandsList = Array.from(new Set(helpItems.map((item) => item.split(' ')[0])));
-  const commandsWithArgs = new Set(['login', 'signup', 'weather', 'flight', 'note', 'taskadd', 'taskupdate', 'taskdelete', 'timer', 'timezone']);
+  const commandsWithArgs = new Set(['login', 'signup', 'weather', 'flight', 'currency', 'note', 'taskadd', 'taskupdate', 'taskdelete', 'timer', 'timezone']);
 
   const asciiIcons = {
     sun: '  \\   /  \n   .-.   \n- (   ) -\n   `-’   \n  /   \\  ',
@@ -33,12 +34,49 @@
   TerminalApp.helpItems = helpItems;
   TerminalApp.asciiIcons = asciiIcons;
 
+  TerminalApp.CURRENCY_LIST = [
+    ['EUR', 'Euro'],
+    ['USD', 'US Dollar'],
+    ['JPY', 'Japanese Yen'],
+    ['BGN', 'Bulgarian Lev'],
+    ['CZK', 'Czech Republic Koruna'],
+    ['DKK', 'Danish Krone'],
+    ['GBP', 'British Pound Sterling'],
+    ['HUF', 'Hungarian Forint'],
+    ['PLN', 'Polish Zloty'],
+    ['RON', 'Romanian Leu'],
+    ['SEK', 'Swedish Krona'],
+    ['CHF', 'Swiss Franc'],
+    ['ISK', 'Icelandic Króna'],
+    ['NOK', 'Norwegian Krone'],
+    ['HRK', 'Croatian Kuna'],
+    ['RUB', 'Russian Ruble'],
+    ['TRY', 'Turkish Lira'],
+    ['AUD', 'Australian Dollar'],
+    ['BRL', 'Brazilian Real'],
+    ['CAD', 'Canadian Dollar'],
+    ['CNY', 'Chinese Yuan'],
+    ['HKD', 'Hong Kong Dollar'],
+    ['IDR', 'Indonesian Rupiah'],
+    ['ILS', 'Israeli New Sheqel'],
+    ['INR', 'Indian Rupee'],
+    ['KRW', 'South Korean Won'],
+    ['MXN', 'Mexican Peso'],
+    ['MYR', 'Malaysian Ringgit'],
+    ['NZD', 'New Zealand Dollar'],
+    ['PHP', 'Philippine Peso'],
+    ['SGD', 'Singapore Dollar'],
+    ['THB', 'Thai Baht'],
+    ['ZAR', 'South African Rand'],
+  ];
+  TerminalApp.CURRENCY_MAP = Object.fromEntries(TerminalApp.CURRENCY_LIST);
+
   TerminalApp.showHelp = () => {
-    TerminalApp.print('Welcome to Terminal Dashboard');
-    TerminalApp.printHtml('<span class="big">Terminal Dashboard</span>');
-    TerminalApp.print('Available commands:');
+    TerminalApp.print('Добро пожаловать в терминал погоды и рейсов');
+    TerminalApp.printHtml('<span class="big">Терминальный дашборд</span>');
+    TerminalApp.print('Доступные команды:');
     helpItems.forEach((entry) => TerminalApp.print(`- ${entry}`));
-    TerminalApp.print('(Часы синхронизируются с реальным UTC временем через backend API.)');
+    TerminalApp.print('Подсказка: команда timezone принимает значения вроде +3 или -5.5');
   };
 
   TerminalApp.autocompleteCommand = () => {
@@ -79,6 +117,7 @@
 
     if (cmd === 'clear') {
       if (TerminalApp.elements.output) TerminalApp.elements.output.innerHTML = '';
+      TerminalApp.print('Подсказка: введите "help" для списка команд.');
       return;
     }
 
@@ -440,6 +479,111 @@
         TerminalApp.print(`Прилет: ${data.arrival_airport} @ ${data.arrival_time || 'N/A'}`);
       } catch (err) {
         TerminalApp.print(`Error: ${err.message}`, 'error');
+      }
+      return;
+    }
+
+    if (cmd === 'currency') {
+      const params = parts.slice(1);
+      if (!params.length) {
+        TerminalApp.print('Ошибка: используйте currency <из> [в] [сумма]');
+        TerminalApp.print('Доступные коды:');
+        TerminalApp.CURRENCY_LIST.forEach(([code, name]) => TerminalApp.print(`${code} — ${name}`));
+        return;
+      }
+
+      const baseUpper = params[0].toUpperCase();
+      if (!TerminalApp.CURRENCY_MAP[baseUpper]) {
+        TerminalApp.print('Эта валюта не поддерживается. Допустимые коды:');
+        TerminalApp.CURRENCY_LIST.forEach(([code, name]) => TerminalApp.print(`${code} — ${name}`));
+        return;
+      }
+
+      let targetUpper = null;
+      let amount = 1;
+
+      if (params.length >= 2) {
+        const maybeCode = params[1].toUpperCase();
+        if (TerminalApp.CURRENCY_MAP[maybeCode]) {
+          if (maybeCode === baseUpper) {
+            TerminalApp.print('Выберите валюту, отличную от базовой.');
+            return;
+          }
+          targetUpper = maybeCode;
+          if (params.length >= 3) {
+            const maybeAmount = Number.parseFloat(params[2].replace(',', '.'));
+            if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
+          }
+        } else {
+          const maybeAmount = Number.parseFloat(params[1].replace(',', '.'));
+          if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
+        }
+      }
+
+      if (params.length >= 3 && !targetUpper) {
+        const maybeAmount = Number.parseFloat(params[2].replace(',', '.'));
+        if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
+      }
+
+      const availableCodes = TerminalApp.CURRENCY_LIST.map(([code]) => code).filter((code) => code !== baseUpper);
+      const requestCodes = targetUpper ? [targetUpper] : availableCodes;
+
+      if (!requestCodes.length) {
+        TerminalApp.print('Нет валют для конвертации.');
+        return;
+      }
+
+      if (TerminalApp.elements.output) TerminalApp.elements.output.innerHTML = '';
+
+      try {
+        const search = new URLSearchParams({ base: baseUpper, symbols: requestCodes.join(',') });
+        const resp = await fetch(`/api/currency/?${search.toString()}`);
+        const data = await resp.json();
+        if (!resp.ok || data.error) {
+          TerminalApp.print(`Ошибка: ${data.error || resp.statusText}`, 'error');
+          return;
+        }
+
+        const rates = data.rates || {};
+        const entries = requestCodes.map((code) => [code, TerminalApp.CURRENCY_MAP[code], rates[code]]);
+
+        const width = 74;
+        const border = `+${'-'.repeat(width - 2)}+`;
+        const padLine = (text = '') => {
+          const truncated = text.length > width - 4 ? `${text.slice(0, width - 7)}...` : text;
+          return `| ${truncated.padEnd(width - 4, ' ')} |`;
+        };
+
+        const boxLines = [
+          border,
+          padLine('КУРСЫ ВАЛЮТ'),
+          padLine(`Базовая валюта: ${data.base}`),
+          padLine(`Сумма: ${amount}`),
+        ];
+
+        if (data.fetched_at) {
+          const formatted = TerminalApp.formatHistoryTime(data.fetched_at);
+          if (formatted) boxLines.push(padLine(`Обновлено: ${formatted}`));
+        }
+
+        boxLines.push(border);
+        entries.forEach(([code, name, rate]) => {
+          if (typeof rate === 'number') {
+            const converted = amount * rate;
+            boxLines.push(padLine(`${code} — ${name}; курс: ${rate}; ${amount} ${data.base} = ${converted.toFixed(2)} ${code}`));
+          } else {
+            boxLines.push(padLine(`${code} — ${name}; курс недоступен`));
+          }
+        });
+        boxLines.push(border);
+
+        TerminalApp.printHtml(`<pre>${boxLines.join('\n')}</pre>`);
+
+        if (!targetUpper) {
+          TerminalApp.print(`Подсказка: для конкретной валюты используйте команду вида currency ${baseUpper.toLowerCase()} <код> [сумма]`);
+        }
+      } catch (err) {
+        TerminalApp.print(`Ошибка: ${err.message}`, 'error');
       }
       return;
     }

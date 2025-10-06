@@ -16,6 +16,8 @@ from .models import SearchHistory, WeatherTask, WeatherSnapshot
 
 API_KEY_WEATHER = os.getenv("WEATHERBIT_API_KEY")
 API_KEY_AVIA = os.getenv("AVIATIONSTACK_API_KEY")
+API_KEY_CURRENCY = os.getenv("FREECURRENCY_API_KEY")
+API_URL_CURRENCY = os.getenv("FREECURRENCY_API_URL", "https://api.freecurrencyapi.com/v1/latest")
 
 
 def index(request):
@@ -143,6 +145,52 @@ def get_flight(request):
         return JsonResponse({"error": f"Ошибка API авиации ({response.status_code})"}, status=500)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def get_currency(request):
+    if not API_KEY_CURRENCY:
+        return JsonResponse({"error": "API ключ валюты не настроен"}, status=500)
+
+    base = (request.GET.get("base") or "").strip().upper()
+    symbols_raw = (request.GET.get("symbols") or "").strip().upper()
+
+    if not base:
+        return JsonResponse({"error": "Укажите базовую валюту"}, status=400)
+
+    symbols = [s for s in symbols_raw.replace(";", ",").split(",") if s]
+    if not symbols:
+        return JsonResponse({"error": "Укажите валюты для конвертации"}, status=400)
+
+    params = {
+        "base_currency": base,
+        "currencies": ",".join(symbols),
+    }
+
+    headers = {"apikey": API_KEY_CURRENCY}
+
+    try:
+        response = requests.get(API_URL_CURRENCY, params=params, headers=headers, timeout=10)
+        if response.status_code != 200:
+            try:
+                error_payload = response.json()
+            except ValueError:
+                error_payload = {}
+            message = error_payload.get("message") or error_payload.get("error") or response.text
+            return JsonResponse({"error": f"Ошибка API валют ({response.status_code}): {message}"}, status=500)
+        data = response.json()
+    except Exception as exc:  # pragma: no cover - сеть
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    rates = data.get("data") or {}
+    result = {code: rates.get(code) for code in symbols if code in rates}
+    if not result:
+        return JsonResponse({"error": "Не удалось получить курсы"}, status=404)
+
+    return JsonResponse({
+        "base": base,
+        "rates": result,
+        "fetched_at": timezone.now().isoformat(),
+    })
 
 
 @csrf_exempt

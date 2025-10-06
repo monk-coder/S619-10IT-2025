@@ -174,3 +174,39 @@ class TestWeatherCaching(TestCase):
         self.assertFalse(data["cached"])
         self.assertLess(stale_time, WeatherSnapshot.objects.get(id=snapshot.id).fetched_at)
         mock_get.assert_called_once()
+
+
+class TestCurrencyEndpoint(TestCase):
+    def setUp(self):
+        self.url = reverse("get_currency")
+
+    def test_requires_key(self):
+        with patch("weather.views.API_KEY_CURRENCY", new=None):
+            response = self.client.get(f"{self.url}?base=USD&symbols=EUR")
+        self.assertEqual(response.status_code, 500)
+
+    def test_validation(self):
+        with patch("weather.views.API_KEY_CURRENCY", new="key"):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 400)
+        with patch("weather.views.API_KEY_CURRENCY", new="key"):
+            response = self.client.get(f"{self.url}?base=usd")
+        self.assertEqual(response.status_code, 400)
+
+    @patch("weather.views.requests.get")
+    def test_fetch_currency_rates(self, mock_get):
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=MagicMock(return_value={"data": {"EUR": 0.9, "RUB": 92.0}}),
+        )
+        with patch("weather.views.API_KEY_CURRENCY", new="key"), patch("weather.views.API_URL_CURRENCY", new="https://curr.test/latest"):
+            response = self.client.get(f"{self.url}?base=USD&symbols=EUR,RUB")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["base"], "USD")
+        self.assertIn("EUR", data["rates"])
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        self.assertEqual(args[0], "https://curr.test/latest")
+        self.assertEqual(kwargs["params"], {"base_currency": "USD", "currencies": "EUR,RUB"})
+        self.assertEqual(kwargs["headers"], {"apikey": "key"})

@@ -16,6 +16,7 @@
   const state = {
     notes: [],
     tasks: [],
+    currencySession: null,
     timezoneOffset: 0,
     timerInterval: null,
     currentUser: 'guest',
@@ -67,6 +68,16 @@
     if (!task) return '';
     const created = task.created_at ? ` @ ${TerminalApp.formatHistoryTime(task.created_at)}` : '';
     return `[${task.id}] ${task.city}: ${task.text}${created}`;
+  };
+
+  TerminalApp.setCurrencySession = (session) => {
+    state.currencySession = session;
+  };
+
+  TerminalApp.getCurrencySession = () => state.currencySession;
+
+  TerminalApp.clearCurrencySession = () => {
+    state.currencySession = null;
   };
 
   TerminalApp.saveNotes = () => {

@@ -3,6 +3,7 @@
 
   const helpItems = [
     'help — показать список команд',
+    'fetch — вывести информацию о системе',
     'login <логин> <пароль> — войти в аккаунт',
     'signup <логин> <пароль> — зарегистрироваться',
     'logout — выйти из аккаунта',
@@ -29,10 +30,119 @@
     rain: "    .--.   \n .-(    ). \n(___.__)__)\n ' ' ' ' ' ",
     snow: '    .--.   \n .-(    ). \n(___.__)__)\n  *  *  *  ',
     plane: '     __|__\n--@--@--(_)--@--@--',
+    arch: [
+      '                 /#\\',
+      '                /###\\',
+      '               /#####\\',
+      '              /#######\\',
+      '             _ "=######\\',
+      '            /##=,_\\#####\\',
+      '           /#############\\',
+      '          /###############\\',
+      '         /#################\\',
+      '        /###################\\',
+      '       /########*"""*########\\',
+      '      /#######/       \\#######\\',
+      '     /########         ########\\',
+      '    /#########         ######m=,_',
+      '   /##########         ##########\\',
+      '  /######***             ***######\\',
+      ' /###**                       **###\\',
+      '/**                               **\\',
+    ].join('\n'),
   };
 
   TerminalApp.helpItems = helpItems;
   TerminalApp.asciiIcons = asciiIcons;
+
+  const escapeHtml = (text) => text.replace(/[&<>"']/g, (ch) => {
+    switch (ch) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return ch;
+    }
+  });
+
+  const getCommonPrefix = (items) => {
+    if (!items.length) return '';
+    return items.reduce((prefix, item) => {
+      let i = 0;
+      const limit = Math.min(prefix.length, item.length);
+      while (i < limit && prefix[i] === item[i]) i += 1;
+      return prefix.slice(0, i);
+    });
+  };
+
+  const computeAutocompleteSuggestion = () => {
+    const { input } = TerminalApp.elements;
+    if (!input) return null;
+
+    const value = input.value;
+    const caretIndex = input.selectionStart ?? value.length;
+    if (caretIndex !== value.length) return null;
+
+    const beforeCaret = value.slice(0, caretIndex);
+    if (!beforeCaret || beforeCaret.trim().length === 0) return null;
+    if (beforeCaret.includes(' ')) return null;
+
+    const partial = beforeCaret.trim();
+    const partialLower = partial.toLowerCase();
+    if (!partialLower) return null;
+
+    const matches = commandsList.filter((cmd) => cmd.startsWith(partialLower));
+    if (!matches.length) return null;
+
+    const unique = matches.length === 1;
+    let target = null;
+
+    if (unique) {
+      target = matches[0];
+      if (commandsWithArgs.has(target) && !value.endsWith(' ')) {
+        target += ' ';
+      }
+    } else {
+      const prefix = getCommonPrefix(matches);
+      if (prefix.length > partialLower.length) {
+        target = prefix;
+      }
+    }
+
+    if (!target) {
+      return { beforeCaret, matches, unique, completion: '', target: null };
+    }
+
+    const completion = target.slice(partialLower.length);
+    if (!completion) {
+      return { beforeCaret, matches, unique, completion: '', target: null };
+    }
+
+    return { beforeCaret, matches, unique, completion, target };
+  };
+
+  TerminalApp.refreshAutocompleteHint = () => {
+    const { hint, input } = TerminalApp.elements;
+    if (!hint) return;
+
+    const suggestion = computeAutocompleteSuggestion();
+    if (!suggestion || !suggestion.completion || !suggestion.completion.trim()) {
+      hint.textContent = '';
+      if (hint.style) hint.style.transform = 'translateY(-50%)';
+      return;
+    }
+
+    const scrollLeft = input ? input.scrollLeft : 0;
+    hint.style.transform = `translate(${-scrollLeft}px, -50%)`;
+    hint.innerHTML = `<span class="ghost-hidden">${escapeHtml(suggestion.beforeCaret)}</span>${escapeHtml(suggestion.completion)}`;
+  };
 
   TerminalApp.CURRENCY_LIST = [
     ['EUR', 'Euro'],
@@ -80,28 +190,33 @@
   };
 
   TerminalApp.autocompleteCommand = () => {
-    const input = TerminalApp.elements.input;
+    const { input } = TerminalApp.elements;
     if (!input) return;
-    const value = input.value;
-    const caretIndex = input.selectionStart ?? value.length;
-    const beforeCaret = value.slice(0, caretIndex);
-    if (beforeCaret.includes(' ')) return;
-    const partial = beforeCaret.trim();
-    if (!partial) return;
-    const matches = commandsList.filter((cmd) => cmd.startsWith(partial));
-    if (matches.length === 0) return;
-    if (matches.length === 1) {
-      const base = matches[0];
-      const suffix = commandsWithArgs.has(base) ? ' ' : '';
-      const completed = base + suffix;
-      const rest = value.slice(caretIndex);
-      input.value = completed + rest;
-      const pos = completed.length;
+
+    const suggestion = computeAutocompleteSuggestion();
+    if (!suggestion) return;
+
+    const { target, matches, unique } = suggestion;
+    if (target) {
+      const caretIndex = input.selectionStart ?? input.value.length;
+      const rest = input.value.slice(caretIndex);
+      input.value = target + rest;
+      const pos = target.length;
       input.setSelectionRange(pos, pos);
-      requestAnimationFrame(TerminalApp.updateCursorPosition);
-    } else {
+      requestAnimationFrame(() => {
+        TerminalApp.updateCursorPosition();
+        TerminalApp.refreshAutocompleteHint();
+      });
+      if (!unique && matches && matches.length > 1) {
+        TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
+      }
+      return;
+    }
+
+    if (matches && matches.length > 1) {
       TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
     }
+    TerminalApp.refreshAutocompleteHint();
   };
 
   TerminalApp.executeCommand = async (raw) => {
@@ -112,6 +227,26 @@
 
     if (cmd === 'help') {
       TerminalApp.showHelp();
+      return;
+    }
+
+    if (cmd === 'fetch') {
+      TerminalApp.printHtml(`<pre class="ascii">${TerminalApp.asciiIcons.arch}</pre>`);
+      const info = [
+        'User: guest',
+        'Host: nebula-hub',
+        'OS: Arch Linux x86_64 (mock)',
+        'Kernel: 6.8.0-arch1-1',
+        'Uptime: 3h 21m',
+        'Shell: web-terminal 1.0',
+        'Packages: 420 (pacman)',
+        'Resolution: 1920x1080',
+        'WM: Tiling (mock)',
+        'CPU: Virtual Quad-Core @ 3.20GHz',
+        'GPU: Integrated WebGL',
+        'Memory: 4096MiB / 8192MiB',
+      ];
+      info.forEach((line) => TerminalApp.print(line));
       return;
     }
 

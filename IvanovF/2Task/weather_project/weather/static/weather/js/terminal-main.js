@@ -5,17 +5,22 @@
     const { input } = TerminalApp.elements;
     if (!input) return;
 
-    ['input', 'keyup', 'click', 'focus', 'mouseup'].forEach((evt) => {
-      input.addEventListener(evt, () => requestAnimationFrame(TerminalApp.updateCursorPosition));
+    const scheduleInputStateUpdate = () => requestAnimationFrame(() => {
+      TerminalApp.updateCursorPosition();
+      TerminalApp.refreshAutocompleteHint();
     });
 
-    window.addEventListener('resize', () => requestAnimationFrame(TerminalApp.updateCursorPosition));
+    ['input', 'keyup', 'click', 'focus', 'mouseup'].forEach((evt) => {
+      input.addEventListener(evt, scheduleInputStateUpdate);
+    });
+
+    window.addEventListener('resize', scheduleInputStateUpdate);
 
     input.addEventListener('keydown', async (e) => {
       if (e.key === 'Tab') {
         e.preventDefault();
         TerminalApp.autocompleteCommand();
-        requestAnimationFrame(TerminalApp.updateCursorPosition);
+        scheduleInputStateUpdate();
         return;
       }
 
@@ -23,7 +28,7 @@
         e.preventDefault();
         const raw = input.value.trim();
         input.value = '';
-        requestAnimationFrame(TerminalApp.updateCursorPosition);
+        scheduleInputStateUpdate();
         if (!raw) return;
         const user = TerminalApp.getCurrentUser() || 'guest';
         TerminalApp.print(`${user}@dash:~$ ${raw}`);
@@ -35,16 +40,20 @@
         return;
       }
 
-      requestAnimationFrame(TerminalApp.updateCursorPosition);
+      scheduleInputStateUpdate();
     });
   };
 
   TerminalApp.init = () => {
     TerminalApp.restoreState();
     TerminalApp.updatePrompt();
+    TerminalApp.refreshAutocompleteHint();
     TerminalApp.renderHistory([]);
     TerminalApp.print("Введите 'help' для списка команд.");
-    requestAnimationFrame(TerminalApp.updateCursorPosition);
+    requestAnimationFrame(() => {
+      TerminalApp.updateCursorPosition();
+      TerminalApp.refreshAutocompleteHint();
+    });
     TerminalApp.syncAuthStatus();
     TerminalApp.syncTime();
     TerminalApp.updateClockDisplay();

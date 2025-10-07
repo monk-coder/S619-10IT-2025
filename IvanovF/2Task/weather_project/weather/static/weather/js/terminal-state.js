@@ -4,6 +4,7 @@
   const elements = {
     output: document.getElementById('output'),
     input: document.getElementById('cmdline'),
+    hint: document.getElementById('cmdline-hint'),
     clock: document.getElementById('clock'),
     cursor: document.querySelector('.cursor'),
     measure: document.getElementById('caret-measure'),

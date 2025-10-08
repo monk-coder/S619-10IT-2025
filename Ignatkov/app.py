@@ -112,16 +112,20 @@ def delete_contact(contact_id):
 @login_required
 def edit_note(contact_id):
     contact = Contact.query.get_or_404(contact_id)
+    
     if contact.user_id != current_user.id:
         flash('Доступ запрещен')
         return redirect(url_for('contacts'))
+        
     if request.method == 'POST':
         content = request.form['content']
+        
         if contact.note:
             contact.note.content = content
         else:
             note = Note(content=content, contact_id=contact.id)
             db.session.add(note)
+            
         db.session.commit()
         flash('Заметка сохранена')
         return redirect(url_for('contacts'))
@@ -150,3 +154,4 @@ if __name__ == '__main__':
         db.create_all()
 
     app.run(debug=True)
+

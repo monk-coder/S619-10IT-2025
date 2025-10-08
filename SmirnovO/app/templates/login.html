@@ -1,0 +1,19 @@
+// {% extends "base.html" %}
+{% block content %}
+<h1>Login / Register</h1>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li style="color: red;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+<form method="POST">
+    <input type="text" name="username" placeholder="Username" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+</form>
+<p>New user? Use the register link in nav (or test/test for demo).</p>
+{% endblock %}

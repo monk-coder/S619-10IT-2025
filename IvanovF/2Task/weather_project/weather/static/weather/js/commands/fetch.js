@@ -1,10 +1,11 @@
-// Renders a fake neofetch-style banner.
+// Команда fetch показывает шуточный баннер в стиле neofetch.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
   TerminalApp.registerCommand('fetch', {
     helpEntry: 'fetch — вывести информацию о системе',
     execute: () => {
+      // Сначала рисуем ASCII-логотип, затем выводим строки с характеристиками.
       TerminalApp.printHtml(`<pre class="ascii">${TerminalApp.asciiIcons.arch}</pre>`);
       const info = [
         'User: guest',

@@ -1,4 +1,4 @@
-// Converts amounts using the backend currency endpoint.
+// Команда currency конвертирует суммы по курсам с бэкенда.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -41,6 +41,7 @@
     TerminalApp.CURRENCY_MAP = Object.fromEntries(TerminalApp.CURRENCY_LIST);
   }
 
+  // Выводим коды валют, доступные для конвертации.
   const listCurrencies = () => {
     TerminalApp.print('Доступные коды:');
     TerminalApp.CURRENCY_LIST.forEach(([code, name]) => TerminalApp.print(`${code} — ${name}`));
@@ -101,6 +102,7 @@
       if (TerminalApp.elements.output) TerminalApp.elements.output.innerHTML = '';
 
       try {
+        // Запрашиваем нужные курсы и строим ASCII-таблицу результатов.
         const search = new URLSearchParams({ base: baseUpper, symbols: requestCodes.join(',') });
         const resp = await fetch(`/api/currency/?${search.toString()}`);
         const data = await resp.json();

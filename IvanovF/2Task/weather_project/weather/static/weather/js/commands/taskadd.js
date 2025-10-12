@@ -1,4 +1,4 @@
-// Creates a new task for the current user.
+// Команда taskadd создаёт новое напоминание для авторизованного пользователя.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -22,6 +22,7 @@
         TerminalApp.print('Error: укажите город и текст напоминания', 'error');
         return;
       }
+      // Складываем данные и отправляем POST на сервер задач.
       TerminalApp.print(`Сохранение задачи для ${city}...`);
       try {
         const resp = await fetch('/api/tasks/', {
@@ -35,6 +36,7 @@
           TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
           return;
         }
+        // Добавляем новую задачу в локальное состояние и печатаем её.
         if (data.task) {
           TerminalApp.upsertTask(data.task);
           TerminalApp.print(`Задача #${data.task.id} сохранена.`);

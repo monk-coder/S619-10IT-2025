@@ -1,4 +1,4 @@
-// Updates an existing reminder entry.
+// Команда taskupdate изменяет уже сохранённое напоминание.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -34,6 +34,7 @@
         TerminalApp.print('Error: укажите город и текст для обновления', 'error');
         return;
       }
+      // Формируем PATCH-запрос и отправляем обновление на сервер.
       TerminalApp.print(`Обновление задачи #${id}...`);
       try {
         const resp = await fetch(`/api/tasks/${id}/`, {
@@ -47,6 +48,7 @@
           TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
           return;
         }
+        // После успешного ответа обновляем локальную копию задачи.
         if (data.task) {
           TerminalApp.upsertTask(data.task);
           TerminalApp.print(`Задача #${data.task.id} обновлена.`);

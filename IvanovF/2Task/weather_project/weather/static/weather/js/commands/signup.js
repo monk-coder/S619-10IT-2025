@@ -1,4 +1,4 @@
-// Registers a new account and syncs history/tasks.
+// Команда signup создаёт нового пользователя и подгружает его данные.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -11,6 +11,7 @@
         TerminalApp.print('Error: используйте signup <логин> <пароль>', 'error');
         return;
       }
+      // Отправляем запрос на регистрацию и проверяем результат.
       TerminalApp.print(`Создание аккаунта ${username}...`);
       try {
         const resp = await fetch('/api/auth/register/', {
@@ -24,6 +25,7 @@
           TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
           return;
         }
+        // При удачной регистрации сразу логиним пользователя.
         TerminalApp.setCurrentUser(data.username || username);
         TerminalApp.updatePrompt();
         TerminalApp.print(data.message || 'Регистрация завершена');

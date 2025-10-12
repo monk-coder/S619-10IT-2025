@@ -1,4 +1,4 @@
-// Fetches and prints the authenticated user's reminders.
+// Команда tasks загружает и показывает задачи текущего пользователя.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -10,6 +10,7 @@
         return;
       }
       try {
+        // Берём актуальный список с сервера и выводим его.
         const tasks = await TerminalApp.fetchTasks();
         if (!tasks.length) {
           TerminalApp.print('Пока задач нет.');

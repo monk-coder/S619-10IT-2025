@@ -1,7 +1,8 @@
-// Lightweight casino with slot and roulette mini-games.
+// Команда casino реализует простые игры: слоты и мини-рулетку.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
+  // ASCII-шаблон для запроса возраста.
   const AGE_PROMPT = [
     '+-------------+',
     '|  CASINO 18+ |',
@@ -10,12 +11,14 @@
     '+-------------+',
   ].join('\n');
 
+  // Подравниваем значения в таблицах.
   const pad = (value, width) => {
     const text = String(value);
     if (text.length >= width) return text.substring(0, width);
     return text + ' '.repeat(width - text.length);
   };
 
+  // Отрисовываем главное меню с балансом и ставкой.
   const buildMenu = (state) => [
     '+----------------------+',
     '| Age    : ' + pad(state.ageValue ?? '--', 8) + '|',
@@ -28,6 +31,7 @@
     '+----------------------+',
   ].join('\n');
 
+  // Отдельная картинка для слотов.
   const SLOT_ART = (digits, balance, stake) => [
     '###############',
     '#  SLOT GAME  #',
@@ -39,6 +43,7 @@
     '###############',
   ].join('\n');
 
+  // Картинка для результатов рулетки.
   const ROULETTE_ART = (roll, color, balance, stake) => [
     '====================',
     '|   MINI ROULETTE  |',
@@ -50,8 +55,10 @@
     '====================',
   ].join('\n');
 
+  // Берём объект состояния казино из глобального стора.
   const getCasinoState = () => (TerminalApp.state && TerminalApp.state.casino ? TerminalApp.state.casino : null);
 
+  // Создаём простую сессию казино, чтобы помнить этап игры.
   const ensureSession = () => {
     if (!TerminalApp.__casinoSession) {
       TerminalApp.__casinoSession = { stage: null, mode: null, lastBet: null };
@@ -59,6 +66,7 @@
     return TerminalApp.__casinoSession;
   };
 
+  // Сбрасываем все ожидания, чтобы игра не цеплялась за прошлые этапы.
   const clearFlags = () => {
     TerminalApp.setCasinoAwaitingAge && TerminalApp.setCasinoAwaitingAge(false);
     TerminalApp.setCasinoAwaitingMode && TerminalApp.setCasinoAwaitingMode(false);
@@ -67,12 +75,14 @@
     TerminalApp.clearCasinoPendingMode && TerminalApp.clearCasinoPendingMode();
   };
 
+  // Общий выход и сообщение игроку.
   const exitCasino = (message = 'You left the casino.') => {
     clearFlags();
     TerminalApp.__casinoSession = null;
     if (message) TerminalApp.print(message);
   };
 
+  // Показываем таблицу ввода возраста.
   const showAgePrompt = () => {
     const session = ensureSession();
     clearFlags();
@@ -82,6 +92,7 @@
     TerminalApp.print('Enter your age as a number (q - exit).');
   };
 
+  // Меню выбора игры.
   const showMenu = () => {
     const session = ensureSession();
     const state = getCasinoState();
@@ -93,6 +104,7 @@
     TerminalApp.print('Choose: 1 - slots, 2 - roulette, q - exit.');
   };
 
+  // Снимаем ставку и проверяем баланс.
   const takeStake = (stake) => {
     const state = getCasinoState();
     if (!state) return false;
@@ -105,6 +117,7 @@
     return true;
   };
 
+  // Спрашиваем, повторять ли игру.
   const askAgain = (mode, bet = null) => {
     const session = ensureSession();
     session.stage = 'again';
@@ -114,6 +127,7 @@
     TerminalApp.print('Play again? (y=yes, m=menu, n/q=exit)');
   };
 
+  // Логика простых слотов: тратим ставку и считаем выигрыш.
   const playSlots = () => {
     const state = getCasinoState();
     if (!state) return;
@@ -135,6 +149,7 @@
     askAgain('slots');
   };
 
+  // Распознаём ставку рулетки (число, цвет, чётность).
   const parseRouletteBet = (input) => {
     if (/^\d+$/.test(input)) {
       const value = Number(input);
@@ -149,6 +164,7 @@
 
   const colorName = (key) => (key === 'RED' ? 'RED' : key === 'BLACK' ? 'BLACK' : 'GREEN');
 
+  // Проводим один спин рулетки и считаем выплату.
   const playRoulette = (bet) => {
     const state = getCasinoState();
     if (!state) return;
@@ -171,6 +187,7 @@
     askAgain('roulette', bet);
   };
 
+  // Обрабатываем ввод возраста.
   const handleAge = (input) => {
     const age = Number(input.replace(',', '.'));
     if (!Number.isFinite(age)) {
@@ -186,6 +203,7 @@
     showMenu();
   };
 
+  // Обрабатываем выбор режима.
   const handleMenu = (input) => {
     if (['1', 'slots', 'slot'].includes(input)) {
       playSlots();
@@ -201,6 +219,7 @@
     TerminalApp.print('Choose 1, 2 or q.');
   };
 
+  // Принимаем ставку рулетки.
   const handleRouletteBet = (input) => {
     const bet = parseRouletteBet(input);
     if (!bet) {
@@ -210,6 +229,7 @@
     playRoulette(bet);
   };
 
+  // Режим повтора игры.
   const handleAgain = (input) => {
     const session = ensureSession();
     if (['y', 'yes'].includes(input)) {
@@ -228,6 +248,7 @@
     exitCasino('Game finished.');
   };
 
+  // Перехватчик ловит все ответы, пока игрок в казино.
   TerminalApp.registerInterceptor((context) => {
     const session = TerminalApp.__casinoSession;
     if (!session || !session.stage) return false;
@@ -236,8 +257,19 @@
     const input = inputRaw.toLowerCase();
 
     if (context.command && context.command !== 'casino') {
-      exitCasino();
-      return false;
+      const isAgeInput = session.stage === 'age' && /^\d+(?:[\.,]\d+)?$/.test(inputRaw);
+      const isMenuInput = session.stage === 'menu' && ['1', '2', 'slots', 'slot', 'roulette'].includes(input);
+      const isRouletteInput = session.stage === 'rouletteBet' && (/^\d+$/.test(input) || ['red', 'black', 'green', 'odd', 'even'].includes(input));
+      const isReplayInput = session.stage === 'again' && ['y', 'yes', 'n', 'no', 'q', 'm', 'menu'].includes(input);
+
+      if (!(isAgeInput || isMenuInput || isRouletteInput || isReplayInput)) {
+        const knownCommand = TerminalApp.commands && TerminalApp.commands[context.command];
+        const aliasTarget = TerminalApp.aliases && TerminalApp.aliases[context.command];
+        if (knownCommand || aliasTarget) {
+          exitCasino();
+          return false;
+        }
+      }
     }
 
     if (!input) {
@@ -260,10 +292,17 @@
 
     const handler = handlers[session.stage];
     if (handler) handler(inputRaw);
+
+    context.raw = '';
+    context.parts = [];
+    context.command = '';
+    context.args = '';
+    context.trimmed = '';
     context.stop();
     return true;
   });
 
+  // Основная команда казино, запускает выбранный этап.
   TerminalApp.registerCommand('casino', {
     helpEntry: 'casino - simple games (q exits)',
     execute: ({ parts }) => {

@@ -1,4 +1,4 @@
-// Adjusts the clock to a custom UTC offset.
+// Команда timezone меняет смещение часового пояса интерфейса.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -15,6 +15,7 @@
         TerminalApp.print('Error: invalid offset', 'error');
         return;
       }
+      // Сохраняем новое смещение и перерисовываем часы.
       TerminalApp.setTimezoneOffset(val);
       TerminalApp.updateClockDisplay();
       const sign = val >= 0 ? '+' : '';

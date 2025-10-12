@@ -1,4 +1,4 @@
-// Stores a short local-only note.
+// Команда note добавляет локальную заметку в браузерное хранилище.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -10,6 +10,7 @@
         TerminalApp.print('Error: note text required', 'error');
         return;
       }
+      // Сохраняем запись и сообщаем её порядковый номер.
       TerminalApp.addNote(args);
       const count = TerminalApp.getNotes().length;
       TerminalApp.print(`Note saved (#${count})`);

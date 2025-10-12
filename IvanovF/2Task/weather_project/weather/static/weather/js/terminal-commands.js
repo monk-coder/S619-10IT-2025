@@ -1,373 +1,457 @@
-// Core terminal wiring that keeps registry of commands, interceptors and autocomplete hints.
-(() => {
-  const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
+// Ядро терминала: регистрируем команды, перехватчики, авто-дополнение и справку.
+(function () {
+  var TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
-  const commandRegistry = new Map();
-  const commandNames = [];
-  const aliasRegistry = new Map();
-  const interceptors = [];
-  const helpItems = [];
-  const commandsWithArgs = new Set();
+  TerminalApp.commands = TerminalApp.commands || {};
+  TerminalApp.commandNames = TerminalApp.commandNames || [];
+  TerminalApp.aliases = TerminalApp.aliases || {};
+  TerminalApp.interceptors = TerminalApp.interceptors || [];
+  TerminalApp.helpItems = TerminalApp.helpItems || [];
+  TerminalApp.commandsWithArgs = TerminalApp.commandsWithArgs || [];
 
-  const asciiIcons = {
-    sun: '  \\   /  \n   .-.   \n- (   ) -\n   `-’   \n  /   \\  ',
-    cloud: '    .--.   \n .-(    ). \n(___.__)__)',
-    rain: '    .--.   \n .-(    ). \n(___.__)__)\n \' \' \' \' \' ',
-    snow: '    .--.   \n .-(    ). \n(___.__)__)\n  *  *  *  ',
-    plane: '     __|__\n--@--@--(_)--@--@--',
+  // Примитивные псевдо-иконки на случай вывода погоды и рейсов.
+  // Команды просто берут нужную строку по ключу и вставляют в <pre>.
+  TerminalApp.asciiIcons = {
+    sun: [
+      "    \\\\   /",
+      "     .-.",
+      "  ― (   ) ―",
+      "     `-`",
+      "    /   \\\\"
+    ].join("\n"),
+    cloud: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)"
+    ].join("\n"),
+    rain: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)",
+      "   ' ' ' ' '"
+    ].join("\n"),
+    snow: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)",
+      "   *  *  *  *"
+    ].join("\n"),
+    plane: [
+      "        __|__",
+      " --@--@--(_)--@--@--"
+    ].join("\n"),
     arch: [
-      '                 /#\\',
-      '                /###\\',
-      '               /#####\\',
-      '              /#######\\',
-      '             _ "=######\\',
-      '            /##=,_\\#####\\',
-      '           /#############\\',
-      '          /###############\\',
-      '         /#################\\',
-      '        /###################\\',
-      '       /########*"""*########\\',
-      '      /#######/       \\\\#######\\',
-      '     /########         ########\\',
-      '    /#########         ######m=,_',
-      '   /##########         ##########\\',
-      '  /######***             ***######\\',
-      ' /###**                       **###\\',
-      '/**                               **\\',
-    ].join('\n'),
+      "                 /#\\\\",
+      "                /###\\\\",
+      "               /#####\\\\",
+      "              /#######\\\\",
+      "             _ \"=######\\\\",
+      "            /##=,_\\\\#####\\\\",
+      "           /#############\\\\",
+      "          /###############\\\\",
+      "         /#################\\\\",
+      "        /###################\\\\",
+      "       /########*\"\"\"*########\\\\",
+      "      /#######/       \\\\#######\\\\",
+      "     /########         ########\\\\",
+      "    /#########         ######m=,_",
+      "   /##########         ##########\\\\",
+      "  /######***             ***######\\\\",
+      " /###**                       **###\\\\",
+      "/**                               **\\\\"
+    ].join("\n")
   };
 
-  TerminalApp.asciiIcons = asciiIcons;
-  TerminalApp.helpItems = helpItems;
-
-  const registerHelpEntry = (entry) => {
-    if (!entry) return;
-    if (Array.isArray(entry)) {
-      entry.forEach(registerHelpEntry);
-      return;
+  // Делает ячейку таблицы аккуратной строкой.
+  function normalizeCellValue(value) {
+    if (value === null || value === undefined) {
+      return "";
     }
-    helpItems.push(String(entry));
-  };
+    return String(value).replace(/\s+/g, " ").trim();
+  }
 
-  const registerAlias = (alias, target) => {
-    if (!alias || !target) return;
-    const normalizedAlias = String(alias).trim().toLowerCase();
-    if (!normalizedAlias || commandRegistry.has(normalizedAlias)) return;
-    aliasRegistry.set(normalizedAlias, target);
-  };
-
-  TerminalApp.registerAlias = registerAlias;
-
-  // Entry-point used by command modules to register themselves with the shell.
-  TerminalApp.registerCommand = (name, options = {}) => {
-    const commandName = String(name || '').trim().toLowerCase();
-    if (!commandName) {
-      throw new Error('Command name is required');
+  // Строит простую ASCII-таблицу из заголовков и строк.
+  function buildAsciiTable(headers, rows) {
+    if (!headers || !headers.length) {
+      return "";
     }
-    if (commandRegistry.has(commandName)) {
-      throw new Error(`Command ${commandName} is already registered`);
-    }
-
-    const {
-      execute,
-      description = '',
-      usage = '',
-      aliases = [],
-      helpEntry = null,
-      requiresArgs = false,
-    } = options;
-
-    if (typeof execute !== 'function') {
-      throw new Error(`Command ${commandName} must provide an execute() function`);
-    }
-
-    const meta = {
-      name: commandName,
-      execute,
-      description,
-      usage,
-      aliases: Array.isArray(aliases) ? aliases.slice() : [],
-      helpEntry,
-      requiresArgs: Boolean(requiresArgs),
-    };
-
-    commandRegistry.set(commandName, meta);
-    commandNames.push(commandName);
-    if (helpEntry) registerHelpEntry(helpEntry);
-    if (meta.requiresArgs) commandsWithArgs.add(commandName);
-
-    meta.aliases.forEach((alias) => registerAlias(alias, commandName));
-    if (typeof TerminalApp.refreshAutocompleteHint === 'function') {
-      TerminalApp.refreshAutocompleteHint();
-    }
-    return meta;
-  };
-
-  TerminalApp.getCommandNames = () => commandNames.slice();
-  TerminalApp.getCommandDefinition = (name) => commandRegistry.get(name);
-  TerminalApp.registerHelpEntry = registerHelpEntry;
-
-  // Interceptors run before regular commands to support multi-step flows.
-  TerminalApp.registerInterceptor = (interceptor) => {
-    if (typeof interceptor !== 'function') {
-      throw new Error('Interceptor must be a function');
-    }
-    interceptors.push(interceptor);
-    return () => {
-      const idx = interceptors.indexOf(interceptor);
-      if (idx >= 0) interceptors.splice(idx, 1);
-    };
-  };
-
-  const normalizeCellValue = (value) => {
-    if (value === null || value === undefined) return '';
-    return String(value).replace(/\s+/g, ' ').trim();
-  };
-
-  const buildAsciiTable = (headers, rows) => {
-    if (!headers || !headers.length) return '';
-    const processedRows = rows.map((row) => headers.map((_, idx) => normalizeCellValue(row[idx])));
-    const widths = headers.map((header, idx) => {
-      const cellLengths = processedRows.map((row) => (row[idx] ? row[idx].length : 0));
-      return Math.max(header.length, 3, ...cellLengths);
+    // Проходим по строкам и нормализуем каждую ячейку, чтобы избавиться от лишних пробелов.
+    var processedRows = rows.map(function (row) {
+      return headers.map(function (_, idx) {
+        return normalizeCellValue(row[idx]);
+      });
     });
 
-    const border = `+${widths.map((w) => '-'.repeat(w + 2)).join('+')}+`;
-    const formatLine = (cells) => `|${cells.map((cell, idx) => ` ${cell.padEnd(widths[idx], ' ')} `).join('|')}|`;
-    const headerLine = formatLine(headers);
+    // Для каждой колонки вычисляем максимально возможную ширину.
+    var widths = headers.map(function (header, idx) {
+      var length = header.length;
+      processedRows.forEach(function (row) {
+        if (row[idx] && row[idx].length > length) {
+          length = row[idx].length;
+        }
+      });
+      return Math.max(length, 3);
+    });
 
-    const lines = [border, headerLine, border];
-    if (processedRows.length === 0) {
-      const emptyCells = headers.map(() => '—');
-      lines.push(formatLine(emptyCells));
+    // Горизонтальная рамка вокруг таблицы.
+    var border = "+" + widths.map(function (w) {
+      return Array(w + 3).join("-");
+    }).join("+") + "+";
+
+    function formatLine(cells) {
+      return "|" + cells.map(function (cell, idx) {
+        return " " + (cell || "").padEnd(widths[idx], " ") + " ";
+      }).join("|") + "|";
+    }
+
+    var lines = [border, formatLine(headers), border];
+    if (!processedRows.length) {
+      lines.push(formatLine(headers.map(function () {
+        return "\u2014";
+      })));
     } else {
-      processedRows.forEach((row) => {
+      processedRows.forEach(function (row) {
         lines.push(formatLine(row));
       });
     }
     lines.push(border);
-    return lines.join('\n');
-  };
+    return lines.join("\n");
+  }
 
-  const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (ch) => {
-    switch (ch) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      case '\'':
-        return '&#39;';
-      default:
-        return ch;
+  // Экранирует HTML, чтобы подсказки не ломали разметку.
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, function (ch) {
+      switch (ch) {
+        case "&": return "&amp;";
+        case "<": return "&lt;";
+        case ">": return "&gt;";
+        case "\"": return "&quot;";
+        case "'": return "&#39;";
+        default: return ch;
+      }
+    });
+  }
+
+  // Простая задержка с использованием Promise.
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  // Проверяем, что ответ похож на "да".
+  function isYesResponse(value) {
+    var entry = (value || "").trim().toLowerCase();
+    return ["y", "yes", "yeah", "да", "д", "угу", "ага"].indexOf(entry) >= 0;
+  }
+
+  // Проверяем, что ответ похож на "нет".
+  function isNoResponse(value) {
+    var entry = (value || "").trim().toLowerCase();
+    return ["n", "no", "нет", "н", "неа"].indexOf(entry) >= 0;
+  }
+
+  // Экспортируем утилиты, чтобы ими могли пользоваться команды (например, admin).
+  TerminalApp.utils = TerminalApp.utils || {};
+  TerminalApp.utils.normalizeCellValue = normalizeCellValue;
+  TerminalApp.utils.buildAsciiTable = buildAsciiTable;
+  TerminalApp.utils.escapeHtml = escapeHtml;
+  TerminalApp.utils.sleep = sleep;
+  TerminalApp.utils.isYesResponse = isYesResponse;
+  TerminalApp.utils.isNoResponse = isNoResponse;
+
+  // Добавляем пункты в раздел помощи.
+  function addHelpEntry(entry) {
+    if (!entry) {
+      return;
     }
-  });
+    if (Array.isArray(entry)) {
+      entry.forEach(addHelpEntry);
+    } else {
+      TerminalApp.helpItems.push(String(entry));
+    }
+  }
 
-  const getCommonPrefix = (items) => {
-    if (!items.length) return '';
-    return items.reduce((prefix, item) => {
-      let i = 0;
-      const limit = Math.min(prefix.length, item.length);
-      while (i < limit && prefix[i] === item[i]) i += 1;
-      return prefix.slice(0, i);
+  // Регистрируем короткое имя команды.
+  function addAlias(alias, target) {
+    if (!alias || !target) {
+      return;
+    }
+    var name = String(alias).trim().toLowerCase();
+    if (!name || TerminalApp.commands[name]) {
+      return;
+    }
+    TerminalApp.aliases[name] = target;
+  }
+
+  TerminalApp.registerAlias = addAlias;
+
+  // Основной реестр команд терминала.
+  TerminalApp.registerCommand = function (name, options) {
+    options = options || {};
+    var commandName = String(name || "").trim().toLowerCase();
+    if (!commandName) {
+      throw new Error("Command name is required");
+    }
+    if (TerminalApp.commands[commandName]) {
+      throw new Error("Command " + commandName + " already exists");
+    }
+    if (typeof options.execute !== "function") {
+      throw new Error("Command " + commandName + " must have execute function");
+    }
+
+    // Сохраняем основную структуру с обработчиком и метаданными.
+    TerminalApp.commands[commandName] = {
+      name: commandName,
+      execute: options.execute,
+      helpEntry: options.helpEntry || null,
+      requiresArgs: !!options.requiresArgs,
+      aliases: Array.isArray(options.aliases) ? options.aliases.slice() : []
+    };
+
+    // Массива команд используется для автодополнения.
+    TerminalApp.commandNames.push(commandName);
+
+    if (options.helpEntry) {
+      addHelpEntry(options.helpEntry);
+    }
+    if (TerminalApp.commands[commandName].requiresArgs) {
+      TerminalApp.commandsWithArgs.push(commandName);
+    }
+    // Регистрируем синонимы, чтобы их можно было найти до выполнения.
+    TerminalApp.commands[commandName].aliases.forEach(function (alias) {
+      addAlias(alias, commandName);
     });
   };
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  TerminalApp.registerHelpEntry = addHelpEntry;
 
-  const isYesResponse = (value) => {
-    const entry = (value || '').trim().toLowerCase();
-    return ['y', 'yes', 'yeah', 'да', 'д', 'угу', 'ага'].includes(entry);
-  };
-
-  const isNoResponse = (value) => {
-    const entry = (value || '').trim().toLowerCase();
-    return ['n', 'no', 'нет', 'н', 'неа'].includes(entry);
-  };
-
-  TerminalApp.utils = Object.assign(TerminalApp.utils || {}, {
-    normalizeCellValue,
-    buildAsciiTable,
-    escapeHtml,
-    getCommonPrefix,
-    sleep,
-    isYesResponse,
-    isNoResponse,
-  });
-
-  const createContext = (rawValue) => {
-    const raw = typeof rawValue === 'string' ? rawValue : '';
-    const trimmed = raw.trim();
-    const parts = trimmed.length ? trimmed.split(/\s+/) : [];
-    return {
-      raw,
-      trimmed,
-      parts,
-      command: parts[0] ? parts[0].toLowerCase() : '',
-      args: parts.slice(1).join(' '),
-      handled: false,
-      stop() {
-        this.handled = true;
-      },
-      replaceParts(newParts) {
-        this.parts = Array.isArray(newParts) ? newParts : [];
-        this.command = this.parts[0] ? this.parts[0].toLowerCase() : '';
-        this.args = this.parts.slice(1).join(' ');
-      },
-      setCommand(name) {
-        this.command = (name || '').toLowerCase();
-      },
-      setArgs(args) {
-        this.args = typeof args === 'string' ? args : '';
-      },
+  // Многошаговые команды могут ставить перехватчики ввода.
+  TerminalApp.registerInterceptor = function (fn) {
+    if (typeof fn !== "function") {
+      throw new Error("Interceptor must be a function");
+    }
+    TerminalApp.interceptors.push(fn);
+    return function () {
+      var index = TerminalApp.interceptors.indexOf(fn);
+      if (index >= 0) {
+        TerminalApp.interceptors.splice(index, 1);
+      }
     };
   };
 
-  // Dispatcher that runs interceptors first and falls back to registered commands.
-  TerminalApp.executeCommand = async (rawValue) => {
-    const context = createContext(rawValue);
-    if (!context.parts.length) return;
+  // Подбираем общую часть строк для автодополнения.
+  function getCommonPrefix(items) {
+    if (!items.length) {
+      return "";
+    }
+    var first = items[0];
+    for (var i = 0; i < first.length; i += 1) {
+      var ch = first[i];
+      for (var j = 1; j < items.length; j += 1) {
+        if (items[j][i] !== ch) {
+          return first.slice(0, i);
+        }
+      }
+    }
+    return first;
+  }
 
-    for (const interceptor of interceptors) {
-      const result = await interceptor(context);
+  // Разбираем введённую строку на команду и аргументы.
+  function createContext(rawValue) {
+    var raw = typeof rawValue === "string" ? rawValue : "";
+    var trimmed = raw.trim();
+    var parts = trimmed ? trimmed.split(/\s+/) : [];
+    return {
+      raw: raw,
+      trimmed: trimmed,
+      parts: parts,
+      command: parts[0] ? parts[0].toLowerCase() : "",
+      args: parts.slice(1).join(" "),
+      handled: false,
+      stop: function () {
+        this.handled = true;
+      }
+    };
+  }
+
+  // Выполняем команду с учётом всех перехватчиков.
+  TerminalApp.executeCommand = async function (rawValue) {
+    var context = createContext(rawValue);
+    if (!context.parts.length) {
+      return;
+    }
+
+    // Сначала даём шанс перехватчикам (например, казино) обработать ввод.
+    for (var i = 0; i < TerminalApp.interceptors.length; i += 1) {
+      var interceptor = TerminalApp.interceptors[i];
+      /* eslint-disable no-await-in-loop */
+      var result = await interceptor(context);
+      /* eslint-enable no-await-in-loop */
       if (context.handled || result === true) {
         return;
       }
     }
 
-    if (!context.parts.length) return;
-
-    let { command } = context;
-    const { args, raw, trimmed, parts } = context;
-
-    if (!command) {
+    if (!context.parts.length) {
       return;
     }
 
-    if (!commandRegistry.has(command) && aliasRegistry.has(command)) {
-      command = aliasRegistry.get(command);
+    // Если команда зарегистрирована как алиас, подменяем имя.
+    var name = context.command;
+    if (!TerminalApp.commands[name] && TerminalApp.aliases[name]) {
+      name = TerminalApp.aliases[name];
+      context.command = name;
     }
 
-    const handler = commandRegistry.get(command);
+    var handler = TerminalApp.commands[name];
     if (!handler) {
-      TerminalApp.print(`Unknown command: ${context.command || command}`, 'error');
+      TerminalApp.print("Unknown command: " + (context.command || name), "error");
       return;
     }
 
+    // Передаём обработчику полные сведения о вводе.
     await handler.execute({
-      raw,
-      trimmed,
-      parts: parts.slice(),
-      args,
-      command,
-      originalCommand: context.command,
+      raw: context.raw,
+      trimmed: context.trimmed,
+      parts: context.parts.slice(),
+      args: context.args,
+      command: name,
+      originalCommand: context.parts[0]
     });
   };
 
-  const computeAutocompleteSuggestion = () => {
-    const { input } = TerminalApp.elements;
-    if (!input) return null;
+  // Подсказываем, чем можно дополнить набранную команду.
+  function computeAutocompleteSuggestion() {
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!input) {
+      return null;
+    }
 
-    const value = input.value;
-    const caretIndex = input.selectionStart ?? value.length;
-    if (caretIndex !== value.length) return null;
+    var value = input.value || "";
+    var caret = input.selectionStart == null ? value.length : input.selectionStart;
+    if (caret !== value.length) {
+      return null;
+    }
 
-    const beforeCaret = value.slice(0, caretIndex);
-    if (!beforeCaret || beforeCaret.trim().length === 0) return null;
-    if (beforeCaret.includes(' ')) return null;
+    var beforeCaret = value.slice(0, caret);
+    if (!beforeCaret.trim() || beforeCaret.indexOf(" ") >= 0) {
+      return null;
+    }
 
-    const partial = beforeCaret.trim();
-    const partialLower = partial.toLowerCase();
-    if (!partialLower) return null;
+    var partial = beforeCaret.trim().toLowerCase();
+    // Получаем список команд, которые начинаются с введённого префикса.
+    var matches = TerminalApp.commandNames.filter(function (name) {
+      return name.indexOf(partial) === 0;
+    });
 
-    const matches = commandNames.filter((cmd) => cmd.startsWith(partialLower));
-    if (!matches.length) return null;
+    if (!matches.length) {
+      return null;
+    }
 
-    const unique = matches.length === 1;
-    let target = null;
-
+    var unique = matches.length === 1;
+    var target = null;
     if (unique) {
       target = matches[0];
-      if (commandsWithArgs.has(target) && !value.endsWith(' ')) {
-        target += ' ';
+      if (TerminalApp.commandsWithArgs.indexOf(target) >= 0 && !value.endsWith(" ")) {
+        target += " ";
       }
     } else {
-      const prefix = getCommonPrefix(matches);
-      if (prefix.length > partialLower.length) {
-        target = prefix;
+      var common = getCommonPrefix(matches);
+      if (common.length > partial.length) {
+        target = common;
       }
     }
 
     if (!target) {
-      return { beforeCaret, matches, unique, completion: '', target: null };
+      return {
+        beforeCaret: beforeCaret,
+        matches: matches,
+        unique: unique,
+        completion: "",
+        target: null
+      };
     }
 
-    const completion = target.slice(partialLower.length);
-    if (!completion) {
-      return { beforeCaret, matches, unique, completion: '', target: null };
-    }
-
-    return { beforeCaret, matches, unique, completion, target };
-  };
+    return {
+      beforeCaret: beforeCaret,
+      matches: matches,
+      unique: unique,
+      completion: target.slice(partial.length),
+      target: target
+    };
+  }
 
   TerminalApp.computeAutocompleteSuggestion = computeAutocompleteSuggestion;
 
-  TerminalApp.refreshAutocompleteHint = () => {
-    const { hint, input } = TerminalApp.elements;
-    if (!hint) return;
-
-    const suggestion = computeAutocompleteSuggestion();
-    if (!suggestion || !suggestion.completion || !suggestion.completion.trim()) {
-      hint.textContent = '';
-      if (hint.style) hint.style.transform = 'translateY(-50%)';
+  // Перерисовываем прозрачную подсказку справа от курсора.
+  TerminalApp.refreshAutocompleteHint = function () {
+    var hint = TerminalApp.elements && TerminalApp.elements.hint;
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!hint || !input) {
       return;
     }
 
-    const scrollLeft = input ? input.scrollLeft : 0;
-    hint.style.transform = `translate(${-scrollLeft}px, -50%)`;
-    hint.innerHTML = `<span class='ghost-hidden'>${escapeHtml(suggestion.beforeCaret)}</span>${escapeHtml(suggestion.completion)}`;
-  };
-
-  // Replaces current input with the best-matching command suggestion.
-  TerminalApp.autocompleteCommand = () => {
-    const { input } = TerminalApp.elements;
-    if (!input) return;
-
-    const suggestion = computeAutocompleteSuggestion();
-    if (!suggestion) return;
-
-    const { target, matches, unique } = suggestion;
-    if (target) {
-      const caretIndex = input.selectionStart ?? input.value.length;
-      const rest = input.value.slice(caretIndex);
-      input.value = target + rest;
-      const pos = target.length;
-      input.setSelectionRange(pos, pos);
-      requestAnimationFrame(() => {
-        TerminalApp.updateCursorPosition();
-        TerminalApp.refreshAutocompleteHint();
-      });
-      if (!unique && matches && matches.length > 1) {
-        TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
+    var suggestion = computeAutocompleteSuggestion();
+    if (!suggestion || !suggestion.completion || !suggestion.completion.trim()) {
+      hint.textContent = "";
+      if (hint.style) {
+        hint.style.transform = "translateY(-50%)";
       }
       return;
     }
 
-    if (matches && matches.length > 1) {
-      TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
+    var scrollLeft = input.scrollLeft || 0;
+    hint.style.transform = "translate(" + (-scrollLeft) + "px, -50%)";
+    // Внутри ghost-hidden отображаем уже введённую часть для правильного выравнивания.
+    hint.innerHTML = "<span class=\"ghost-hidden\">" + escapeHtml(suggestion.beforeCaret) + "</span>" + escapeHtml(suggestion.completion);
+  };
+
+  // Вставляем подсказку в поле ввода.
+  TerminalApp.autocompleteCommand = function () {
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!input) {
+      return;
+    }
+
+    var suggestion = computeAutocompleteSuggestion();
+    if (!suggestion) {
+      return;
+    }
+
+    if (suggestion.target) {
+      var caret = input.selectionStart == null ? input.value.length : input.selectionStart;
+      var rest = input.value.slice(caret);
+      input.value = suggestion.target + rest;
+      var pos = suggestion.target.length;
+      input.setSelectionRange(pos, pos);
+      setTimeout(function () {
+        if (TerminalApp.updateCursorPosition) {
+          TerminalApp.updateCursorPosition();
+        }
+        TerminalApp.refreshAutocompleteHint();
+      });
+      if (!suggestion.unique && suggestion.matches && suggestion.matches.length > 1) {
+        // Если вариантов несколько, выводим подсказку в консоль терминала.
+        TerminalApp.print("Suggestions: " + suggestion.matches.join("  "));
+      }
+      return;
+    }
+
+    if (suggestion.matches && suggestion.matches.length > 1) {
+      TerminalApp.print("Suggestions: " + suggestion.matches.join("  "));
     }
     TerminalApp.refreshAutocompleteHint();
   };
 
-  // Default help output that collects descriptions contributed by modules.
-  TerminalApp.showHelp = () => {
-    TerminalApp.print('Добро пожаловать в терминал погоды и рейсов');
-    TerminalApp.printHtml('<span class=\'big\'>Терминальный дашборд</span>');
-    TerminalApp.print('Доступные команды:');
-    helpItems.forEach((entry) => TerminalApp.print(`- ${entry}`));
-    TerminalApp.print('Подсказка: команда timezone принимает значения вроде +3 или -5.5');
+  // Показываем краткую справку по всем командам.
+  TerminalApp.showHelp = function () {
+    TerminalApp.print("Добро пожаловать в терминал погоды и рейсов");
+    TerminalApp.printHtml("<span class=\"big\">Терминальный дашборд</span>");
+    TerminalApp.print("Доступные команды:");
+    TerminalApp.helpItems.forEach(function (entry) {
+      TerminalApp.print("- " + entry);
+    });
+    TerminalApp.print("Подсказка: команда timezone принимает значения вроде +3 или -5.5");
   };
 })();

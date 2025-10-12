@@ -1,4 +1,4 @@
-// Performs server-side logout and clears local state.
+// Команда logout разлогинивает пользователя и очищает локальные данные.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -12,6 +12,7 @@
       const username = TerminalApp.getCurrentUser();
       TerminalApp.print(`Выход из аккаунта ${username}...`);
       try {
+        // Вызываем серверный logout и проверяем ответ.
         const resp = await fetch('/api/auth/logout/', {
           method: 'POST',
           credentials: 'same-origin',
@@ -21,6 +22,7 @@
           TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
           return;
         }
+        // Возвращаем терминал в гостьевой режим.
         TerminalApp.setCurrentUser('guest');
         TerminalApp.updatePrompt();
         TerminalApp.setTasks([]);

@@ -1,4 +1,4 @@
-// Removes a reminder by id.
+// Команда taskdelete удаляет задачу по идентификатору.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -15,6 +15,7 @@
         TerminalApp.print('Error: используйте taskdelete <id>', 'error');
         return;
       }
+      // Выполняем DELETE-запрос и синхронизируем локальный список.
       TerminalApp.print(`Удаление задачи #${id}...`);
       try {
         const resp = await fetch(`/api/tasks/${id}/`, {

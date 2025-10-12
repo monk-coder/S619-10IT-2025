@@ -1,4 +1,4 @@
-// Shows sample flight status data for an airport code.
+// Команда flight отображает статус рейса по коду аэропорта (IATA).
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -10,6 +10,7 @@
         TerminalApp.print('Error: airport IATA required', 'error');
         return;
       }
+      // Берём данные рейса с сервера и показываем их пользователю.
       TerminalApp.print(`Fetching flight for ${args.toUpperCase()}...`);
       try {
         const resp = await fetch(`/api/flight/?airport=${encodeURIComponent(args)}`);

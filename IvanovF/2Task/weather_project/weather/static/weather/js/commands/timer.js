@@ -1,4 +1,4 @@
-// Runs a simple countdown inside the terminal output.
+// Команда timer запускает простой обратный отсчёт в терминале.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -18,6 +18,7 @@
         return;
       }
 
+      // Создаём или переиспользуем строку таймера в выводе.
       let line = TerminalApp.__activeTimerLine;
       if (!line || !line.isConnected) {
         line = document.createElement('div');
@@ -41,6 +42,7 @@
         return;
       }
 
+      // Каждую секунду обновляем значение и завершение.
       const interval = setInterval(() => {
         sec -= 1;
         if (sec <= 0) {

@@ -1,4 +1,4 @@
-// Handles user login with username/password.
+// Команда login авторизует пользователя по логину и паролю.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -11,6 +11,7 @@
         TerminalApp.print('Error: используйте login <логин> <пароль>', 'error');
         return;
       }
+      // Отправляем POST-запрос на сервер авторизации.
       TerminalApp.print(`Авторизация ${username}...`);
       try {
         const resp = await fetch('/api/auth/login/', {
@@ -24,6 +25,7 @@
           TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
           return;
         }
+        // Сохраняем нового пользователя и подтягиваем его данные.
         TerminalApp.setCurrentUser(data.username || username);
         TerminalApp.updatePrompt();
         TerminalApp.print(data.message || 'Авторизация успешна');

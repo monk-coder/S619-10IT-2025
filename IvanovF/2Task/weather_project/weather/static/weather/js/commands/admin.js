@@ -1,4 +1,4 @@
-// Pulls admin dashboard statistics for staff users.
+// Команда admin вытягивает админскую сводку (доступна только персоналу).
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
   const { buildAsciiTable, normalizeCellValue } = TerminalApp.utils || {};
@@ -17,6 +17,7 @@
   TerminalApp.registerCommand('admin', {
     helpEntry: 'admin — сводка по пользователям и задачам (требуются права)',
     execute: async () => {
+      // Грузим JSON со статистикой и отображаем его несколькими таблицами.
       TerminalApp.print('Загрузка админской сводки...');
       try {
         const resp = await fetch('/api/admin/overview/', { credentials: 'same-origin' });
@@ -28,6 +29,7 @@
         }
 
         if (buildAsciiTable) {
+          // Таблица с суммарными цифрами.
           const totals = data.totals || {};
           const metricLabels = {
             users_total: 'Пользователи',
@@ -39,6 +41,7 @@
             TerminalApp.printHtml(`<pre>${buildAsciiTable(['Метрика', 'Значение'], totalsRows)}</pre>`);
           }
 
+          // Список пользователей с метриками активности.
           const usersRows = (data.users || []).map((user) => [
             normalizeCellValue ? normalizeCellValue(user.username || '-') : (user.username || '-'),
             user.is_staff ? 'staff' : '-',
@@ -53,6 +56,7 @@
             TerminalApp.print('Данные по пользователям отсутствуют.');
           }
 
+          // Последние задачи и поисковые запросы.
           const tasksRows = (data.recent_tasks || []).map((task) => [
             String(task.id),
             normalizeCellValue ? normalizeCellValue(task.user || '-') : (task.user || '-'),

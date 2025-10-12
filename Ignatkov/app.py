@@ -21,7 +21,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Регистрация
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -37,7 +37,7 @@ def register():
     return render_template('register.html')
 
 # Вход
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -80,10 +80,8 @@ def index():
 @app.route('/add_contact', methods=['POST'])
 @login_required
 def add_contact():
-    name = request.form['name']
-    email = request.form['email']
-    phone = request.form['phone']
-    contact = Contact(name=name, email=email, phone=phone, user_id=current_user.id)
+
+    contact = Contact(user_id=current_user.id, **request.word)
     db.session.add(contact)
     db.session.commit()
     flash('Контакт добавлен')
@@ -110,20 +108,24 @@ def delete_contact(contact_id):
     return redirect(url_for('contacts'))
 
 # Редактирование заметки
-@app.route('/edit_note/<int:contact_id>', methods=['GET', 'POST'])
+@app.route('/edit_note/<int:contact_id>', methods=['POST'])
 @login_required
 def edit_note(contact_id):
     contact = Contact.query.get_or_404(contact_id)
+    
     if contact.user_id != current_user.id:
         flash('Доступ запрещен')
         return redirect(url_for('contacts'))
+        
     if request.method == 'POST':
         content = request.form['content']
+        
         if contact.note:
             contact.note.content = content
         else:
             note = Note(content=content, contact_id=contact.id)
             db.session.add(note)
+            
         db.session.commit()
         flash('Заметка сохранена')
         return redirect(url_for('contacts'))
@@ -150,4 +152,6 @@ def export():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+
     app.run(debug=True)
+

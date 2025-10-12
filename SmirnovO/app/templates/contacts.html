@@ -1,0 +1,30 @@
+// {% extends "base.html" %}
+{% block content %}
+<h1>Your Contacts</h1>
+<div id="contacts-container">
+    {% for contact in contacts %}
+    <div class="contact-card" data-contact-id="{{ contact.id }}">
+        <img src="{{ contact.picture }}" alt="Profile" style="width: 100px; height: 100px;">
+        <h3>{{ contact.name }}</h3>
+        <p>Email: {{ contact.email }}</p>
+        <p>Phone: {{ contact.phone }}</p>
+        <p>Location: {{ contact.location }}</p>
+        <div class="notes-section">
+            <h4>Notes:</h4>
+            <ul>
+                {% for note in contact.notes %}
+                <li data-note-id="{{ note.id }}">
+                    {{ note.content }} ({{ note.created_at.strftime('%Y-%m-%d %H:%M') }})
+                    <button onclick="updateNote({{ note.id }})" class="edit-btn">Edit</button>
+                    <button onclick="deleteNote({{ note.id }})" class="delete-btn">Delete</button>
+                </li>
+                {% endfor %}
+            </ul>
+            <input type="text" id="note-{{ contact.id }}" placeholder="Add a note...">
+            <button onclick="addNote({{ contact.id }})">Add Note</button>
+        </div>
+        <button onclick="deleteContact({{ contact.id }})" class="delete-btn">Delete</button>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

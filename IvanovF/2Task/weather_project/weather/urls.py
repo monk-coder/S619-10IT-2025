@@ -14,5 +14,6 @@ urlpatterns = [
     path("api/history/", views.get_history, name="get_history"),
     path("api/tasks/", views.tasks_collection, name="tasks_collection"),
     path("api/tasks/<int:task_id>/", views.task_detail, name="task_detail"),
+    path("api/admin/overview/", views.admin_overview, name="admin_overview"),
 
 ]

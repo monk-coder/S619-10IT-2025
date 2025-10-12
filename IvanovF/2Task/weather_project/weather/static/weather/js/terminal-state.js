@@ -14,6 +14,10 @@
 
   TerminalApp.elements = elements;
 
+  const CASINO_STORAGE_KEY = 'terminal_casino_state';
+  const CASINO_DEFAULT_BALANCE = 100;
+  const CASINO_DEFAULT_STAKE = 10;
+
   const state = {
     notes: [],
     tasks: [],
@@ -23,6 +27,20 @@
     currentUser: 'guest',
     serverUtcMillis: null,
     syncPerfNow: null,
+    casino: {
+      balance: CASINO_DEFAULT_BALANCE,
+      initialBalance: CASINO_DEFAULT_BALANCE,
+      ageConfirmed: false,
+      ageValue: null,
+      awaitingAge: false,
+      awaitingReplay: false,
+      awaitingSpin: false,
+      awaitingMode: false,
+      pendingMode: null,
+      lastMode: 'roulette',
+      stake: CASINO_DEFAULT_STAKE,
+      bet: { type: null, value: null, stake: CASINO_DEFAULT_STAKE },
+    },
   };
 
   TerminalApp.state = state;
@@ -33,6 +51,79 @@
       if (!Array.isArray(state.notes)) state.notes = [];
     } catch (err) {
       state.notes = [];
+    }
+
+    try {
+      const storedCasino = JSON.parse(localStorage.getItem(CASINO_STORAGE_KEY) || '{}');
+      if (storedCasino && typeof storedCasino === 'object') {
+        const initial = Number(storedCasino.initialBalance);
+        const balance = Number(storedCasino.balance);
+        const stake = Number(storedCasino.stake);
+        state.casino.initialBalance = Number.isFinite(initial) && initial > 0 ? Math.floor(initial) : CASINO_DEFAULT_BALANCE;
+        state.casino.balance = Number.isFinite(balance) && balance >= 0 ? Math.floor(balance) : state.casino.initialBalance;
+        state.casino.ageConfirmed = Boolean(storedCasino.ageConfirmed);
+        const storedAgeValue = Number(storedCasino.ageValue);
+        state.casino.ageValue = Number.isFinite(storedAgeValue) && storedAgeValue > 0 ? Math.floor(storedAgeValue) : null;
+        state.casino.awaitingAge = Boolean(storedCasino.awaitingAge);
+        state.casino.awaitingReplay = Boolean(storedCasino.awaitingReplay);
+        state.casino.awaitingSpin = Boolean(storedCasino.awaitingSpin);
+        state.casino.awaitingMode = Boolean(storedCasino.awaitingMode);
+        state.casino.pendingMode = storedCasino.pendingMode || null;
+        state.casino.lastMode = storedCasino.lastMode || 'roulette';
+        state.casino.stake = Number.isFinite(stake) && stake > 0 ? Math.floor(stake) : CASINO_DEFAULT_STAKE;
+        if (storedCasino.bet && typeof storedCasino.bet === 'object') {
+          const betStake = Number(storedCasino.bet.stake);
+          state.casino.bet = {
+            type: storedCasino.bet.type || null,
+            value: storedCasino.bet.value ?? null,
+            stake: Number.isFinite(betStake) && betStake > 0 ? Math.floor(betStake) : state.casino.stake,
+          };
+        }
+      }
+    } catch (err) {
+      state.casino.initialBalance = CASINO_DEFAULT_BALANCE;
+      state.casino.balance = CASINO_DEFAULT_BALANCE;
+      state.casino.ageConfirmed = false;
+      state.casino.ageValue = null;
+      state.casino.awaitingAge = false;
+      state.casino.awaitingReplay = false;
+      state.casino.awaitingSpin = false;
+      state.casino.awaitingMode = false;
+      state.casino.pendingMode = null;
+      state.casino.lastMode = 'roulette';
+      state.casino.stake = CASINO_DEFAULT_STAKE;
+      state.casino.bet = { type: null, value: null, stake: CASINO_DEFAULT_STAKE };
+    }
+
+    if (!Number.isFinite(state.casino.initialBalance) || state.casino.initialBalance <= 0) {
+      state.casino.initialBalance = CASINO_DEFAULT_BALANCE;
+    }
+    if (!Number.isFinite(state.casino.balance) || state.casino.balance < 0) {
+      state.casino.balance = state.casino.initialBalance;
+    }
+    if (typeof state.casino.ageConfirmed !== 'boolean') {
+      state.casino.ageConfirmed = false;
+    }
+    if (!Number.isFinite(state.casino.ageValue) || state.casino.ageValue <= 0) {
+      state.casino.ageValue = null;
+    }
+    if (typeof state.casino.awaitingAge !== 'boolean') {
+      state.casino.awaitingAge = false;
+    }
+    if (typeof state.casino.awaitingReplay !== 'boolean') {
+      state.casino.awaitingReplay = false;
+    }
+    if (typeof state.casino.awaitingSpin !== 'boolean') {
+      state.casino.awaitingSpin = false;
+    }
+    if (typeof state.casino.awaitingMode !== 'boolean') {
+      state.casino.awaitingMode = false;
+    }
+    if (typeof state.casino.pendingMode !== 'string') {
+      state.casino.pendingMode = null;
+    }
+    if (typeof state.casino.lastMode !== 'string' || !state.casino.lastMode) {
+      state.casino.lastMode = 'roulette';
     }
 
     const storedTz = localStorage.getItem('terminal_tz');
@@ -128,6 +219,159 @@
   });
 
   TerminalApp.pad2 = (n) => String(n).padStart(2, '0');
+
+  const saveCasinoState = () => {
+    try {
+      localStorage.setItem(CASINO_STORAGE_KEY, JSON.stringify(state.casino));
+    } catch (err) {
+      // ignore storage errors
+    }
+  };
+
+  TerminalApp.getCasinoState = () => ({ ...state.casino });
+
+  TerminalApp.adjustCasinoBalance = (delta) => {
+    const next = Math.max(0, Math.floor(state.casino.balance + delta));
+    state.casino.balance = next;
+    saveCasinoState();
+    return next;
+  };
+
+  TerminalApp.resetCasinoBalance = () => {
+    state.casino.balance = state.casino.initialBalance;
+    saveCasinoState();
+    return state.casino.balance;
+  };
+
+  TerminalApp.setCasinoInitialBalance = (value) => {
+    if (Number.isFinite(value) && value > 0) {
+      state.casino.initialBalance = Math.floor(value);
+      if (state.casino.balance > state.casino.initialBalance) {
+        state.casino.balance = state.casino.initialBalance;
+      }
+      saveCasinoState();
+    }
+  };
+
+  TerminalApp.getCasinoStake = () => state.casino.stake;
+
+  TerminalApp.setCasinoStake = (value) => {
+    if (Number.isFinite(value) && value > 0) {
+      state.casino.stake = Math.floor(value);
+      if (!state.casino.bet) {
+        state.casino.bet = { type: null, value: null, stake: state.casino.stake };
+      } else {
+        state.casino.bet.stake = state.casino.stake;
+      }
+      saveCasinoState();
+    }
+  };
+
+  const clampCasinoAge = (value) => {
+    if (!Number.isFinite(value)) return null;
+    const normalized = Math.floor(value);
+    if (normalized <= 0) return null;
+    return Math.min(normalized, 120);
+  };
+
+  TerminalApp.confirmCasinoAge = (ageValue = null) => {
+    const normalizedAge = clampCasinoAge(ageValue);
+    state.casino.ageConfirmed = true;
+    state.casino.ageValue = normalizedAge;
+    saveCasinoState();
+  };
+
+  TerminalApp.revokeCasinoAge = () => {
+    state.casino.ageConfirmed = false;
+    state.casino.ageValue = null;
+    saveCasinoState();
+  };
+
+  TerminalApp.getCasinoAgeValue = () => (Number.isFinite(state.casino.ageValue) ? state.casino.ageValue : null);
+
+  TerminalApp.isCasinoAgeConfirmed = () => state.casino.ageConfirmed;
+
+  TerminalApp.setCasinoPendingMode = (mode) => {
+    state.casino.pendingMode = mode || null;
+    saveCasinoState();
+  };
+
+  TerminalApp.getCasinoPendingMode = () => state.casino.pendingMode;
+
+  TerminalApp.setCasinoLastMode = (mode) => {
+    if (mode) {
+      state.casino.lastMode = mode;
+    }
+  };
+
+  TerminalApp.getCasinoLastMode = () => state.casino.lastMode || 'roulette';
+
+  TerminalApp.setCasinoBet = (bet) => {
+    if (!bet || typeof bet !== 'object') {
+      state.casino.bet = { type: null, value: null, stake: state.casino.stake };
+    } else {
+      const stake = Number.isFinite(bet.stake) && bet.stake > 0 ? Math.floor(bet.stake) : state.casino.stake;
+      state.casino.bet = {
+        type: bet.type || null,
+        value: bet.value ?? null,
+        stake,
+      };
+    }
+    saveCasinoState();
+  };
+
+  TerminalApp.getCasinoBet = () => (state.casino.bet ? { ...state.casino.bet } : null);
+
+  TerminalApp.clearCasinoBet = () => {
+    state.casino.bet = { type: null, value: null, stake: state.casino.stake };
+    saveCasinoState();
+  };
+
+  TerminalApp.setCasinoAwaitingAge = (flag, mode = null) => {
+    state.casino.awaitingAge = Boolean(flag);
+    if (flag && mode) {
+      state.casino.pendingMode = mode;
+    } else if (!state.casino.awaitingReplay && !flag) {
+      state.casino.pendingMode = mode ? mode : state.casino.pendingMode;
+    }
+    saveCasinoState();
+  };
+
+  TerminalApp.isCasinoAwaitingAge = () => state.casino.awaitingAge;
+
+  TerminalApp.setCasinoAwaitingReplay = (flag, mode = null) => {
+    state.casino.awaitingReplay = Boolean(flag);
+    if (flag && mode) {
+      state.casino.pendingMode = mode;
+    } else if (!state.casino.awaitingAge && !flag) {
+      state.casino.pendingMode = null;
+    }
+    saveCasinoState();
+  };
+
+  TerminalApp.isCasinoAwaitingReplay = () => state.casino.awaitingReplay;
+
+  TerminalApp.setCasinoAwaitingSpin = (flag, mode = null) => {
+    state.casino.awaitingSpin = Boolean(flag);
+    if (flag && mode) {
+      state.casino.pendingMode = mode;
+    }
+    saveCasinoState();
+  };
+
+  TerminalApp.isCasinoAwaitingSpin = () => state.casino.awaitingSpin;
+
+  TerminalApp.setCasinoAwaitingMode = (flag) => {
+    state.casino.awaitingMode = Boolean(flag);
+    saveCasinoState();
+  };
+
+  TerminalApp.isCasinoAwaitingMode = () => state.casino.awaitingMode;
+
+  TerminalApp.clearCasinoPendingMode = () => {
+    state.casino.pendingMode = null;
+    saveCasinoState();
+  };
 
   TerminalApp.updateCursorPosition = () => {
     const { input, cursor, measure } = elements;

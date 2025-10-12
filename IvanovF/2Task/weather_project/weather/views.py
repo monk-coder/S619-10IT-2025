@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
+from django.db.models import Count
 from django.utils import timezone
 from django.utils.timezone import now
 
@@ -378,3 +379,65 @@ def task_detail(request, task_id: int):
         return JsonResponse({"ok": True})
 
     return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+
+
+@require_GET
+def admin_overview(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Требуется аутентификация"}, status=401)
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Недостаточно прав"}, status=403)
+
+    User = get_user_model()
+
+    users = (
+        User.objects.annotate(
+            tasks_count=Count("weather_tasks", distinct=True),
+            searches_count=Count("weather_search_history", distinct=True),
+        )
+        .order_by("-date_joined")[:5]
+    )
+
+    users_payload = []
+    for user in users:
+        users_payload.append({
+            "username": user.username,
+            "is_staff": bool(user.is_staff),
+            "date_joined": user.date_joined.isoformat() if user.date_joined else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "tasks_count": user.tasks_count,
+            "searches_count": user.searches_count,
+        })
+
+    recent_tasks = [
+        {
+            "id": task.id,
+            "user": task.user.username,
+            "city": task.city,
+            "text": task.text[:60],
+            "created_at": task.created_at.isoformat(),
+        }
+        for task in WeatherTask.objects.select_related("user").order_by("-created_at")[:5]
+    ]
+
+    recent_searches = [
+        {
+            "user": history.user.username,
+            "city": history.city,
+            "created_at": history.created_at.isoformat(),
+        }
+        for history in SearchHistory.objects.select_related("user").order_by("-created_at")[:5]
+    ]
+
+    totals = {
+        "users_total": User.objects.count(),
+        "tasks_total": WeatherTask.objects.count(),
+        "searches_total": SearchHistory.objects.count(),
+    }
+
+    return JsonResponse({
+        "users": users_payload,
+        "recent_tasks": recent_tasks,
+        "recent_searches": recent_searches,
+        "totals": totals,
+    })

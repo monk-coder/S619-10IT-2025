@@ -1,3 +1,4 @@
+// Creates a new task for the current user.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

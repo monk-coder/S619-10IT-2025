@@ -1,3 +1,4 @@
+// Displays weather information for the requested city.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

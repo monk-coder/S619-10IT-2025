@@ -1,3 +1,4 @@
+// Renders a fake neofetch-style banner.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

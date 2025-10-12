@@ -1,3 +1,4 @@
+// Converts amounts using the backend currency endpoint.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

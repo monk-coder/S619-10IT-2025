@@ -1,3 +1,4 @@
+// Shows sample flight status data for an airport code.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

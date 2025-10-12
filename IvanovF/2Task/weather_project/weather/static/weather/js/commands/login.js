@@ -1,3 +1,4 @@
+// Handles user login with username/password.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

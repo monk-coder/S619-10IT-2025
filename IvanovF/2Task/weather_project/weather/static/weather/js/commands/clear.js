@@ -1,3 +1,4 @@
+// Clears terminal history for a fresh screen.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

@@ -1,3 +1,4 @@
+// Lightweight casino with slot and roulette mini-games.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

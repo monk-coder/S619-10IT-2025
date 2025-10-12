@@ -1,3 +1,4 @@
+// Stores a short local-only note.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

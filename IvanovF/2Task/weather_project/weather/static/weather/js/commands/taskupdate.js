@@ -1,3 +1,4 @@
+// Updates an existing reminder entry.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

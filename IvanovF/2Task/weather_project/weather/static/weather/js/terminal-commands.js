@@ -1,3 +1,4 @@
+// Core terminal wiring that keeps registry of commands, interceptors and autocomplete hints.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
@@ -57,6 +58,7 @@
 
   TerminalApp.registerAlias = registerAlias;
 
+  // Entry-point used by command modules to register themselves with the shell.
   TerminalApp.registerCommand = (name, options = {}) => {
     const commandName = String(name || '').trim().toLowerCase();
     if (!commandName) {
@@ -105,6 +107,7 @@
   TerminalApp.getCommandDefinition = (name) => commandRegistry.get(name);
   TerminalApp.registerHelpEntry = registerHelpEntry;
 
+  // Interceptors run before regular commands to support multi-step flows.
   TerminalApp.registerInterceptor = (interceptor) => {
     if (typeof interceptor !== 'function') {
       throw new Error('Interceptor must be a function');
@@ -223,6 +226,7 @@
     };
   };
 
+  // Dispatcher that runs interceptors first and falls back to registered commands.
   TerminalApp.executeCommand = async (rawValue) => {
     const context = createContext(rawValue);
     if (!context.parts.length) return;
@@ -327,6 +331,7 @@
     hint.innerHTML = `<span class='ghost-hidden'>${escapeHtml(suggestion.beforeCaret)}</span>${escapeHtml(suggestion.completion)}`;
   };
 
+  // Replaces current input with the best-matching command suggestion.
   TerminalApp.autocompleteCommand = () => {
     const { input } = TerminalApp.elements;
     if (!input) return;
@@ -357,6 +362,7 @@
     TerminalApp.refreshAutocompleteHint();
   };
 
+  // Default help output that collects descriptions contributed by modules.
   TerminalApp.showHelp = () => {
     TerminalApp.print('Добро пожаловать в терминал погоды и рейсов');
     TerminalApp.printHtml('<span class=\'big\'>Терминальный дашборд</span>');

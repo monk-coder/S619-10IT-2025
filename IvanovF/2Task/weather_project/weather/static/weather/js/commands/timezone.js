@@ -1,3 +1,4 @@
+// Adjusts the clock to a custom UTC offset.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

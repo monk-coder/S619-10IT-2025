@@ -1,3 +1,4 @@
+// Performs server-side logout and clears local state.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

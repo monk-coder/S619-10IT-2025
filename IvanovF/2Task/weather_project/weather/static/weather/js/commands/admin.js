@@ -1,3 +1,4 @@
+// Pulls admin dashboard statistics for staff users.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
   const { buildAsciiTable, normalizeCellValue } = TerminalApp.utils || {};

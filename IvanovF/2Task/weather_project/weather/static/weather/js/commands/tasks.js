@@ -1,3 +1,4 @@
+// Fetches and prints the authenticated user's reminders.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

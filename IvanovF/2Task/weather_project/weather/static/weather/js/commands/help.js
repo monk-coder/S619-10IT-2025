@@ -1,3 +1,4 @@
+// Provides the basic help listing.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

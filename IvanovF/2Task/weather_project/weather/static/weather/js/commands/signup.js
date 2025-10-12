@@ -1,3 +1,4 @@
+// Registers a new account and syncs history/tasks.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

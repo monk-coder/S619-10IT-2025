@@ -1,3 +1,4 @@
+// Lists all saved local notes.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

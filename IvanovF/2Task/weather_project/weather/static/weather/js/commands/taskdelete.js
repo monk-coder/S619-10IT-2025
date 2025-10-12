@@ -1,3 +1,4 @@
+// Removes a reminder by id.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

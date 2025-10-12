@@ -1,3 +1,4 @@
+// Runs a simple countdown inside the terminal output.
 (() => {
   const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 

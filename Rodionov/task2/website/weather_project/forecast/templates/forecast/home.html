@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherFlow - Прогноз погоды</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-weather: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --shadow-hover: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--dark);
+            border: 2px solid var(--gray);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .weather-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .weather-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .card-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--dark);
+        }
+
+        .search-form {
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--light);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Weather Display */
+        .weather-display {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--gradient-weather);
+            border-radius: 15px;
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .description {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1rem;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .detail-label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        /* History Section */
+        .history-section {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .history-item {
+            background: var(--light);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            text-align: left;
+            color: var(--dark);
+        }
+
+        .history-item:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* Notes Section */
+        .notes-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .note-preview {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border-left: 4px solid var(--secondary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--dark);
+            display: block;
+            text-align: center;
+        }
+
+        .note-preview:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            color: var(--gray);
+            margin-top: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .weather-card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .weather-details {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .weather-card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .error-message {
+            background: var(--danger);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        /* Стили для истории поиска */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.history-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-clear-history {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-clear-history:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--light);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+
+.history-item:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.history-search-form {
+    flex: 1;
+    margin: 0;
+}
+
+.history-city-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.history-city-btn:hover {
+    color: var(--primary-dark);
+}
+
+.remove-city-btn {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--gray);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.remove-city-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Адаптивность для истории */
+@media (max-width: 768px) {
+    .history-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .history-actions {
+        justify-content: center;
+    }
+
+    .btn-clear-history {
+        text-align: center;
+    }
+}
+
+/* Анимации для истории */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.history-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+.history-item:nth-child(even) {
+    animation-delay: 0.1s;
+}
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
+                </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'note_list' %}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="user-section">
+                    {% if user.is_authenticated %}
+                        <span>Привет, <strong>{{ user.username }}</strong>!</span>
+                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'register' %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Регистрация
+                        </a>
+                    {% endif %}
+                </div>
+            </nav>
+        </header>
+
+        <main class="main">
+            <div class="weather-card">
+                <h1 class="card-title">
+                    <i class="fas fa-search-location"></i> Поиск погоды
+                </h1>
+
+                <form method="post" class="search-form">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <i class="fas fa-city input-icon"></i>
+                        <input type="text" name="city" class="form-input" placeholder="Введите название города..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-cloud-sun-rain"></i> Узнать погоду
+                    </button>
+                </form>
+
+                {% if forecast %}
+                <div class="weather-display">
+                    <div class="weather-icon">
+                        {% if 'ясно' in forecast or 'солнечно' in forecast %}
+                            <i class="fas fa-sun"></i>
+                        {% elif 'дождь' in forecast or 'ливень' in forecast %}
+                            <i class="fas fa-cloud-rain"></i>
+                        {% elif 'облачно' in forecast or 'облака' in forecast %}
+                            <i class="fas fa-cloud"></i>
+                        {% elif 'снег' in forecast %}
+                            <i class="fas fa-snowflake"></i>
+                        {% elif 'туман' in forecast %}
+                            <i class="fas fa-smog"></i>
+                        {% else %}
+                            <i class="fas fa-cloud-sun"></i>
+                        {% endif %}
+                    </div>
+
+                    <!-- Простое отображение прогноза -->
+                    <div class="description">
+                        {{ forecast }}
+                    </div>
+
+                    {% if humidity %}
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <div class="detail-value">{{ humidity }}%</div>
+                            <div class="detail-label">Влажность</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">
+                                {% if city %}{{ city }}{% endif %}
+                            </div>
+                            <div class="detail-label">Город</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+
+{% if search_history %}
+<div class="history-section">
+    <div class="history-header">
+        <h3 class="section-title">
+            <i class="fas fa-history"></i> История поиска
+        </h3>
+        <div class="history-actions">
+            <a href="{% url 'clear_search_history' %}" class="btn-clear-history"
+               onclick="return confirm('Вы уверены, что хотите очистить всю историю поиска?')">
+                <i class="fas fa-trash-alt"></i> Очистить всю историю
+            </a>
+        </div>
+    </div>
+    <div class="history-list">
+        {% for city in search_history %}
+        <div class="history-item">
+            <form method="post" class="history-search-form">
+                {% csrf_token %}
+                <input type="hidden" name="city" value="{{ city }}">
+                <button type="submit" class="history-city-btn">
+                    <i class="fas fa-map-marker-alt"></i> {{ city }}
+                </button>
+            </form>
+            <a href="{% url 'remove_search_item' city %}" class="remove-city-btn"
+               onclick="return confirm('Удалить \"{{ city }}\" из истории поиска?')"
+               title="Удалить из истории">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+                {% if user.is_authenticated %}
+                <div class="notes-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-sticky-note"></i> Быстрый доступ
+                    </h3>
+                    <div class="notes-grid">
+                        <a href="{% url 'note_list' %}" class="note-preview">
+                            <i class="fas fa-list"></i> Все заметки
+                        </a>
+                        <a href="{% url 'note_create' %}" class="note-preview">
+                            <i class="fas fa-plus"></i> Новая заметка
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p></p>
+            <p> </p>
+        </footer>
+    </div>
+
+    <script>
+        // Добавляем анимацию при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.weather-card, .history-item, .note-preview');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Плавное появление элементов
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.weather-card, .history-item, .note-preview').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

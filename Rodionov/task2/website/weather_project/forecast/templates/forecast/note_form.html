@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - WeatherFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --shadow-hover: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0da271;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--dark);
+            border: 2px solid var(--gray);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: var(--shadow);
+            max-width: 700px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-subtitle {
+            color: var(--gray);
+            font-size: 1rem;
+        }
+
+        .note-form {
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: var(--gray);
+            background: rgba(107, 114, 128, 0.1);
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        .textarea-container {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            z-index: 2;
+            font-size: 1.1rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1.2rem 1.2rem 1.2rem 3.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: rgba(248, 250, 252, 0.8);
+            font-family: inherit;
+            color: var(--dark);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+            background: rgba(248, 250, 252, 0.8);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 280px;
+            color: var(--dark);
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .textarea-actions {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .format-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .format-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .form-actions .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .form-help {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+        }
+
+        .form-help strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .form-help ul {
+            margin-left: 1.5rem;
+            color: var(--gray);
+        }
+
+        .form-help li {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        /* Индикатор прогресса для счетчика */
+        .counter-warning {
+            color: var(--danger) !important;
+            background: rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .counter-caution {
+            color: var(--secondary) !important;
+            background: rgba(245, 158, 11, 0.1) !important;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            color: var(--gray);
+            margin-top: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .form-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .main {
+                padding: 1rem;
+            }
+
+            .textarea-actions {
+                position: static;
+                margin-top: 1rem;
+                justify-content: center;
+            }
+
+            .form-input {
+                padding: 1rem 1rem 1rem 3rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            animation: pulse 0.3s ease-in-out;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
+                </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="{% url 'note_list' %}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                </div>
+                <div class="user-section">
+                    <span>Привет, <strong>{{ user.username }}</strong>!</span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </header>
+
+        <main class="main">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1 class="form-title">
+                        <i class="fas fa-{% if title == 'Создать заметку' %}plus{% else %}edit{% endif %}"></i>
+                        {{ title }}
+                    </h1>
+                    <p class="form-subtitle">
+                        {% if title == 'Создать заметку' %}
+                        Создайте новую заметку для сохранения ваших мыслей и идей
+                        {% else %}
+                        Отредактируйте содержание вашей заметки
+                        {% endif %}
+                    </p>
+                </div>
+
+                <form method="post" class="note-form">
+                    {% csrf_token %}
+
+                    <div class="form-help">
+                        <strong><i class="fas fa-lightbulb"></i> Советы по созданию заметок:</strong>
+                        <ul>
+                            <li>Используйте понятный заголовок для быстрого поиска</li>
+                            <li>В содержании можно писать любые мысли, идеи и планы</li>
+                            <li>Заметки автоматически сохраняют дату создания и изменения</li>
+                        </ul>
+                    </div>
+
+                    <!-- Блок заголовка -->
+                    <div class="form-group">
+                        <div class="input-header">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <i class="fas fa-heading"></i> Заголовок заметки
+                            </label>
+                            <div class="char-counter" id="title-counter-container">
+                                <span id="title-counter">0</span>/200
+                            </div>
+                        </div>
+                        <div class="input-container">
+                            <i class="fas fa-pencil-alt input-icon"></i>
+                            <input type="text"
+                                   name="title"
+                                   id="{{ form.title.id_for_label }}"
+                                   class="form-input"
+                                   placeholder="Введите заголовок заметки..."
+                                   value="{{ form.title.value|default:'' }}"
+                                   maxlength="200"
+                                   required>
+                        </div>
+                        {% if form.title.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i> {{ form.title.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Блок содержания -->
+                    <div class="form-group">
+                        <div class="input-header">
+                            <label for="{{ form.content.id_for_label }}" class="form-label">
+                                <i class="fas fa-align-left"></i> Содержание заметки
+                            </label>
+                            <div class="char-counter" id="content-counter-container">
+                                <span id="content-counter">0</span> символов
+                            </div>
+                        </div>
+                        <div class="textarea-container">
+                            <textarea name="content"
+                                      id="{{ form.content.id_for_label }}"
+                                      class="form-textarea"
+                                      placeholder="Напишите содержание вашей заметки здесь..."
+                                      rows="8">{{ form.content.value|default:'' }}</textarea>
+                            <div class="textarea-actions">
+                                <button type="button" class="format-btn" title="Жирный текст" onclick="formatText('bold')">
+                                    <i class="fas fa-bold"></i>
+                                </button>
+                                <button type="button" class="format-btn" title="Курсив" onclick="formatText('italic')">
+                                    <i class="fas fa-italic"></i>
+                                </button>
+                                <button type="button" class="format-btn" title="Список" onclick="formatText('list')">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if form.content.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i> {{ form.content.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Сохранить заметку
+                        </button>
+                        <a href="{% url 'note_list' %}" class="btn btn-outline">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 WeatherFlow. Все права защищены.</p>
+            <p>Сохраняйте свои мысли с уверенностью</p>
+        </footer>
+    </div>
+
+    <script>
+        // Счетчик символов с визуальной индикацией
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const contentInput = document.getElementById('{{ form.content.id_for_label }}');
+        const titleCounter = document.getElementById('title-counter');
+        const contentCounter = document.getElementById('content-counter');
+        const titleCounterContainer = document.getElementById('title-counter-container');
+        const contentCounterContainer = document.getElementById('content-counter-container');
+
+        function updateCounters() {
+            const titleLength = titleInput.value.length;
+            const contentLength = contentInput.value.length;
+
+            titleCounter.textContent = titleLength;
+            contentCounter.textContent = contentLength;
+
+            // Визуальная индикация для заголовка
+            if (titleLength > 180) {
+                titleCounterContainer.classList.add('counter-warning');
+                titleCounterContainer.classList.remove('counter-caution');
+            } else if (titleLength > 150) {
+                titleCounterContainer.classList.add('counter-caution');
+                titleCounterContainer.classList.remove('counter-warning');
+            } else {
+                titleCounterContainer.classList.remove('counter-warning', 'counter-caution');
+            }
+
+            // Визуальная индикация для содержания
+            if (contentLength > 1000) {
+                contentCounterContainer.classList.add('counter-warning');
+            } else {
+                contentCounterContainer.classList.remove('counter-warning');
+            }
+        }
+
+        titleInput.addEventListener('input', updateCounters);
+        contentInput.addEventListener('input', updateCounters);
+
+        // Инициализация счетчиков
+        updateCounters();
+
+        // Автофокус на заголовок при создании новой заметки
+        {% if title == 'Создать заметку' %}
+        setTimeout(() => {
+            titleInput.focus();
+            titleInput.style.animation = 'pulse 0.5s ease-in-out';
+        }, 300);
+        {% endif %}
+
+        // Функции форматирования текста
+        function formatText(type) {
+            const textarea = contentInput;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+
+            let formattedText = '';
+
+            switch(type) {
+                case 'bold':
+                    formattedText = `**${selectedText}**`;
+                    break;
+                case 'italic':
+                    formattedText = `_${selectedText}_`;
+                    break;
+                case 'list':
+                    formattedText = selectedText.split('\n').map(line => `• ${line}`).join('\n');
+                    break;
+            }
+
+            textarea.setRangeText(formattedText, start, end, 'select');
+            textarea.focus();
+            updateCounters();
+        }
+
+        // Подсказка при наведении
+        const inputs = document.querySelectorAll('.form-input, .form-textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.borderColor = 'var(--primary)';
+                this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+
+            input.addEventListener('blur', function() {
+                this.style.borderColor = '#e5e7eb';
+                this.style.boxShadow = 'none';
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Плавное появление элементов
+        document.addEventListener('DOMContentLoaded', function() {
+            const formElements = document.querySelectorAll('.form-group, .form-actions');
+            formElements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'all 0.5s ease-out';
+
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100 + 200);
+            });
+        });
+    </script>
+</body>
+</html>

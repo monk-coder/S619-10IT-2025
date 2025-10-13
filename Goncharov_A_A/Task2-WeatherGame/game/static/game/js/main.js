@@ -570,7 +570,7 @@
             return;
         }
         if (!state.upgradeDefinitionsList.length) {
-            elements.upgradesContent.innerHTML = '<p>Улучшения появятся позже. Добавьте их в <code>game/config.py</code>.</p>';
+            elements.upgradesContent.innerHTML = '<p>Улучшения появятся позже. Добавьте их в <code>game/helper/config.py</code>.</p>';
             return;
         }
 

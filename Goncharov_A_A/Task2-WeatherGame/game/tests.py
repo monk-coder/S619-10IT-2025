@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from . import config
+from .helper import config
 from .models import CitySearchHistory, PlayerState, PlayerUpgrade, WeatherTask
 
 

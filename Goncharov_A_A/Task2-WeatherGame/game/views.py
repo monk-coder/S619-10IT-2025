@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.utils import timezone
 
-from . import config
+from .helper import config
 from .forms import EmailLoginForm, RegistrationForm
 from .models import (
     CitySearchHistory,

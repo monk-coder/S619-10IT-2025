@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <nav>
+                <h1>Contact Manager</h1>
+                <div id="authSection" class="auth-section">
+                    <button id="loginBtn" class="btn btn-primary">Login</button>
+                    <button id="registerBtn" class="btn btn-success">Register</button>
+                </div>
+                <div id="userSection" class="auth-section hidden">
+                    <span>Welcome, <span id="usernameDisplay">User</span>!</span>
+                    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Модальные окна ДОЛЖНЫ быть в корне body -->
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Login</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginUsername">Username:</label>
+                        <input type="text" id="loginUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password:</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Register Modal -->
+        <div id="registerModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Register</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerUsername">Username:</label>
+                        <input type="text" id="registerUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password:</label>
+                        <input type="password" id="registerPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Register</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Note Modal -->
+        <div id="noteModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Note</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="noteForm">
+                    <div class="form-group">
+                        <label for="noteContent">Note Content:</label>
+                        <textarea id="noteContent" name="content" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Save Note</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Контент страницы -->
+        <div id="tabs" class="tabs hidden">
+            <button id="randomUsersTab" class="tab active">Random Users</button>
+            <button id="contactsTab" class="tab">My Contacts</button>
+        </div>
+
+        <div id="randomUsersContent" class="content">
+            <h2>Random Users</h2>
+            <div id="randomUsersGrid" class="card-grid"></div>
+        </div>
+
+        <div id="contactsContent" class="content hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>My Contacts</h2>
+                <button id="exportCsvBtn" class="btn btn-success">Export to CSV</button>
+            </div>
+            <div id="contactsList" class="contacts-list"></div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

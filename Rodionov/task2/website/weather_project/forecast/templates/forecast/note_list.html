@@ -3,540 +3,161 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои заметки - WeatherFlow</title>
+    <title>Вход - WeatherFlow</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #f59e0b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --dark: #1f2937;
-            --light: #f8fafc;
-            --gray: #6b7280;
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow: 0 10px 25px rgba(0,0,0,0.1);
-            --shadow-hover: 0 20px 40px rgba(0,0,0,0.15);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--gradient);
-            min-height: 100vh;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-
-        .app-container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        .nav-link {
-            color: var(--dark);
-            text-decoration: none;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #0da271;
-            transform: translateY(-2px);
-        }
-
-        .btn-warning {
-            background: var(--secondary);
-            color: black;
-        }
-
-        .btn-warning:hover {
-            background: #e69500;
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--dark);
-            border: 2px solid var(--gray);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* Main Content */
-        .main {
-            flex: 1;
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .page-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .notes-stats {
-            display: flex;
-            gap: 1rem;
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        /* Notes Grid */
-        .notes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .note-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .note-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .note-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--secondary);
-        }
-
-        .note-header {
-            display: flex;
-            justify-content: between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .note-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-            flex: 1;
-        }
-
-        .note-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .action-btn {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 6px;
-            background: transparent;
-            color: var(--gray);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            background: var(--light);
-            color: var(--dark);
-        }
-
-        .note-content {
-            color: var(--gray);
-            line-height: 1.5;
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .note-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            color: var(--gray);
-            border-top: 1px solid #e5e7eb;
-            padding-top: 1rem;
-        }
-
-        .note-date {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            color: var(--gray);
-            margin-bottom: 1rem;
-        }
-
-        .empty-title {
-            font-size: 1.5rem;
-            color: var(--dark);
-            margin-bottom: 1rem;
-        }
-
-        .empty-description {
-            color: var(--gray);
-            margin-bottom: 2rem;
-        }
-
-        /* Messages */
-        .messages {
-            margin-bottom: 2rem;
-        }
-
-        .alert {
-            padding: 1rem 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid var(--danger);
-        }
-
-        /* Footer */
-        .footer {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            text-align: center;
-            color: var(--gray);
-            margin-top: auto;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
-                gap: 1rem;
-            }
-
-            .page-header {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-
-            .notes-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .main {
-                padding: 1rem;
-            }
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .note-card {
-            animation: fadeInUp 0.6s ease-out;
-        }
-    </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'forecast/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'forecast/css/auth.css' %}">
 </head>
 <body>
-    <div class="app-container">
-        <header class="header">
-            <nav class="nav">
-                <a href="{% url 'home' %}" class="logo">
-                    <i class="fas fa-cloud-sun"></i>
-                    WeatherFlow
-                </a>
-                <div class="nav-links">
-                    <a href="{% url 'home' %}" class="nav-link">
-                        <i class="fas fa-home"></i> Главная
-                    </a>
-                    <a href="{% url 'note_list' %}" class="nav-link" style="background: var(--primary); color: white;">
-                        <i class="fas fa-sticky-note"></i> Мои заметки
-                    </a>
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Левая часть с описанием -->
+            <div class="auth-hero" style="background: linear-gradient(135deg, var(--secondary) 0%, #eab308 100%);">
+                <div class="floating-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
                 </div>
-                <div class="user-section">
-                    <span>Привет, <strong>{{ user.username }}</strong>!</span>
-                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline">
-                            <i class="fas fa-sign-out-alt"></i> Выйти
-                        </button>
-                    </form>
-                </div>
-            </nav>
-        </header>
-
-        <main class="main">
-            <!-- Сообщения -->
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                    {{ message }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Заголовок страницы -->
-            <div class="page-header">
-                <div>
-                    <h1 class="page-title">
-                        <i class="fas fa-sticky-note"></i>
-                        Мои заметки
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <i class="fas fa-sign-in-alt"></i><br>
+                        С возвращением!
                     </h1>
-                    <div class="notes-stats">
-                        <span><i class="fas fa-file-alt"></i> Всего заметок: {{ notes|length }}</span>
-                        <span><i class="fas fa-clock"></i> Последняя: {% if notes %}{{ notes.0.created_at|date:"d.m.Y" }}{% else %}нет{% endif %}</span>
-                    </div>
+                    <p class="hero-subtitle">
+                        Войдите в свой аккаунт чтобы продолжить пользоваться всеми возможностями WeatherFlow
+                    </p>
+
+                    <ul class="benefits-list">
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-cloud"></i>
+                            </div>
+                            <span>Доступ к персональному прогнозу</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-notes"></i>
+                            </div>
+                            <span>Ваши сохраненные заметки</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <span>История поиска городов</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <span>Персонализированные настройки</span>
+                        </li>
+                    </ul>
                 </div>
-                <a href="{% url 'note_create' %}" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Новая заметка
-                </a>
             </div>
 
-            <!-- Сетка заметок -->
-            {% if notes %}
-            <div class="notes-grid">
-                {% for note in notes %}
-                <div class="note-card">
-                    <div class="note-header">
-                        <h3 class="note-title">{{ note.title }}</h3>
-                        <div class="note-actions">
-                            <a href="{% url 'note_edit' note.pk %}" class="action-btn" title="Редактировать">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'note_delete' note.pk %}" class="action-btn" title="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </a>
+            <!-- Правая часть с формой -->
+            <div class="auth-form-section">
+                <div class="form-header">
+                    <h2 class="form-title">Вход в аккаунт</h2>
+                    <p class="form-subtitle">Введите свои данные для входа</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.tags == 'success' %}
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i> {{ message }}
+                        </div>
+                        {% elif message.tags == 'error' %}
+                        <div class="error-messages">
+                            <ul class="error-list">
+                                <li>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ message }}
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="error-messages">
+                        <ul class="error-list">
+                            {% for error in form.non_field_errors %}
+                                <li>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">
+                            <i class="fas fa-user"></i> Имя пользователя
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text"
+                                   name="username"
+                                   id="id_username"
+                                   class="form-input"
+                                   placeholder="Введите имя пользователя"
+                                   value="{{ form.username.value|default:'' }}"
+                                   required
+                                   autofocus>
                         </div>
                     </div>
-                    <div class="note-content">
-                        {{ note.content|linebreaksbr }}
-                    </div>
-                    <div class="note-meta">
-                        <div class="note-date">
-                            <span><i class="fas fa-calendar-plus"></i> Создано: {{ note.created_at|date:"d.m.Y H:i" }}</span>
-                            {% if note.updated_at != note.created_at %}
-                            <span><i class="fas fa-edit"></i> Обновлено: {{ note.updated_at|date:"d.m.Y H:i" }}</span>
-                            {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_password" class="form-label">
+                            <i class="fas fa-lock"></i> Пароль
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password"
+                                   name="password"
+                                   id="id_password"
+                                   class="form-input"
+                                   placeholder="Введите пароль"
+                                   required>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <!-- Состояние пустого списка -->
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-sticky-note"></i>
-                </div>
-                <h2 class="empty-title">Заметок пока нет</h2>
-                <p class="empty-description">
-                    Создайте свою первую заметку чтобы сохранять важные мысли и идеи
-                </p>
-                <a href="{% url 'note_create' %}" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Создать первую заметку
-                </a>
-            </div>
-            {% endif %}
 
-            <!-- Кнопка возврата -->
-            <div style="text-align: center; margin-top: 2rem;">
-                <a href="{% url 'home' %}" class="btn btn-outline">
-                    <i class="fas fa-arrow-left"></i> Назад к погоде
-                </a>
-            </div>
-        </main>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Войти в аккаунт
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> Назад на главную
+                        </a>
+                    </div>
 
-        <footer class="footer">
-            <p></p>
-            <p></p>
-        </footer>
+                    <div class="auth-link">
+                        Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь здесь</a>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Анимация появления карточек
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.note-card');
-            cards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.1}s`;
-            });
-        });
+        // Автофокус на поле username
+        document.getElementById('id_username').focus();
 
-        // Подтверждение удаления
-        const deleteButtons = document.querySelectorAll('a[href*="delete"]');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (!confirm('Вы уверены, что хотите удалить эту заметку?')) {
-                    e.preventDefault();
-                }
+        // Анимация появления элементов
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach((input, index) => {
+                input.style.animationDelay = `${index * 0.1}s`;
             });
         });
     </script>

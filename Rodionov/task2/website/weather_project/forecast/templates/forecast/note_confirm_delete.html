@@ -5,225 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Удаление заметки - WeatherFlow</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #f59e0b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --dark: #1f2937;
-            --light: #f8fafc;
-            --gray: #6b7280;
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow: 0 10px 25px rgba(0,0,0,0.1);
-            --shadow-hover: 0 20px 40px rgba(0,0,0,0.15);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--gradient);
-            min-height: 100vh;
-            color: var(--dark);
-            line-height: 1.6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        .delete-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 3rem;
-            box-shadow: var(--shadow);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .warning-icon {
-            font-size: 4rem;
-            color: var(--danger);
-            margin-bottom: 1.5rem;
-        }
-
-        .delete-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 1rem;
-        }
-
-        .delete-subtitle {
-            color: var(--gray);
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-        }
-
-        .note-preview {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            text-align: left;
-            border-left: 4px solid var(--danger);
-        }
-
-        .note-preview-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .note-preview-content {
-            color: var(--gray);
-            line-height: 1.5;
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .note-meta {
-            font-size: 0.8rem;
-            color: var(--gray);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .delete-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 1rem;
-            min-width: 140px;
-            justify-content: center;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--dark);
-            border: 2px solid var(--gray);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .warning-text {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid var(--danger);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            color: var(--danger);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .delete-container {
-                padding: 2rem;
-                margin: 1rem;
-            }
-
-            .delete-actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'forecast/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'forecast/css/notes.css' %}">
 </head>
 <body>
-    <div class="delete-container">
-        <div class="warning-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-
-        <h1 class="delete-title">Удаление заметки</h1>
-        <p class="delete-subtitle">Вы собираетесь удалить заметку. Это действие нельзя отменить.</p>
-
-        <div class="warning-text">
-            <i class="fas fa-radiation"></i>
-            <strong>Внимание!</strong> После удаления восстановить заметку будет невозможно.
-        </div>
-
-        <div class="note-preview">
-            <div class="note-preview-title">{{ note.title }}</div>
-            <div class="note-preview-content">
-                {{ note.content|truncatewords:30 }}
-            </div>
-            <div class="note-meta">
-                <span><i class="fas fa-calendar-plus"></i> Создано: {{ note.created_at|date:"d.m.Y H:i" }}</span>
-                {% if note.updated_at != note.created_at %}
-                <span><i class="fas fa-edit"></i> Обновлено: {{ note.updated_at|date:"d.m.Y H:i" }}</span>
-                {% endif %}
-            </div>
-        </div>
-
-        <form method="post" style="display: contents;">
-            {% csrf_token %}
-            <div class="delete-actions">
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Да, удалить
-                </button>
-                <a href="{% url 'note_list' %}" class="btn btn-outline">
-                    <i class="fas fa-times"></i> Отмена
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
                 </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="{% url 'note_list' %}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                </div>
+                <div class="user-section">
+                    <span>Привет, <strong>{{ user.username }}</strong>!</span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </header>
+
+        <main class="notes-main">
+            <div class="delete-container">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+
+                <h1 class="delete-title">Удаление заметки</h1>
+                <p class="delete-subtitle">Вы собираетесь удалить заметку. Это действие нельзя отменить.</p>
+
+                <div class="warning-text">
+                    <i class="fas fa-radiation"></i>
+                    <strong>Внимание!</strong> После удаления восстановить заметку будет невозможно.
+                </div>
+
+                <div class="note-preview">
+                    <div class="note-preview-title">{{ note.title }}</div>
+                    <div class="note-preview-content">
+                        {{ note.content|truncatewords:30 }}
+                    </div>
+                    <div class="note-meta">
+                        <span><i class="fas fa-calendar-plus"></i> Создано: {{ note.created_at|date:"d.m.Y H:i" }}</span>
+                        {% if note.updated_at != note.created_at %}
+                        <span><i class="fas fa-edit"></i> Обновлено: {{ note.updated_at|date:"d.m.Y H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post" style="display: contents;">
+                    {% csrf_token %}
+                    <div class="delete-actions">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Да, удалить
+                        </button>
+                        <a href="{% url 'note_list' %}" class="btn btn-outline">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                    </div>
+                </form>
             </div>
-        </form>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 WeatherFlow. Все права защищены.</p>
+            <p>Ваши мысли в безопасности с нами</p>
+        </footer>
     </div>
 
     <script>

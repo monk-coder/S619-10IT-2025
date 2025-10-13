@@ -4,39 +4,57 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
 from .models import UserNote
 from .forms import NoteForm
-
-# Введите сюда ваш API ключ
-API_KEY = 'de0ba8afcd2606f2eccf6c212abe0906'
 
 
 def home(request):
     context = {}
+
+    # Безопасное получение API ключа
+    API_KEY = settings.WEATHER_API_KEY
+
+    if not API_KEY:
+        messages.error(request, 'Сервис погоды временно недоступен. Пожалуйста, попробуйте позже.')
+        return render(request, 'forecast/home.html', context)
+
     # Обработка поиска города
     if request.method == 'POST' and 'city' in request.POST:
         city = request.POST.get('city')
         url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&lang=ru&appid={API_KEY}'
-        response = requests.get(url)
-        data = response.json()
 
-        if response.status_code == 200:
-            temperature = data['main']['temp']
-            description = data['weather'][0]['description']
-            humidity = data['main']['humidity']
-            forecast = f'{description.capitalize()}, {temperature}°C'
-            context['humidity'] = humidity
-        else:
-            forecast = 'Город не найден или произошла ошибка API.'
+        try:
+            response = requests.get(url, timeout=10)
+            data = response.json()
 
-        context['forecast'] = forecast
-        context['city'] = city
+            if response.status_code == 200:
+                temperature = data['main']['temp']
+                description = data['weather'][0]['description']
+                humidity = data['main']['humidity']
+                forecast = f'{description.capitalize()}, {temperature}°C'
+                context['humidity'] = humidity
+            else:
+                if response.status_code == 401:
+                    messages.error(request, 'Ошибка доступа к сервису погоды')
+                else:
+                    forecast = 'Город не найден или произошла ошибка API.'
 
-        # Работа с историей поиска
-        search_history = request.session.get('search_history', [])
-        if city not in search_history:
-            search_history.append(city)
-        request.session['search_history'] = search_history
+            context['forecast'] = forecast
+            context['city'] = city
+
+            # Работа с истории поиска
+            search_history = request.session.get('search_history', [])
+            if city not in search_history:
+                search_history.append(city)
+            request.session['search_history'] = search_history
+
+        except requests.exceptions.Timeout:
+            messages.error(request, 'Превышено время ожидания ответа от сервиса погоды')
+        except requests.exceptions.ConnectionError:
+            messages.error(request, 'Ошибка подключения к сервису погоды')
+        except Exception as e:
+            messages.error(request, f'Произошла ошибка: {e}')
 
     # Получение истории поиска из сессии
     context['search_history'] = request.session.get('search_history', [])
@@ -44,6 +62,7 @@ def home(request):
     return render(request, 'forecast/home.html', context)
 
 
+# ... остальные функции без изменений ...
 def clear_search_history(request):
     """Очистка истории поиска"""
     if 'search_history' in request.session:

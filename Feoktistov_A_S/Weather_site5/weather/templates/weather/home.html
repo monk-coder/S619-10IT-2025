@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Погода2.0</title>
+</head>
+<body>
+
+</body>
+</html>
+{% extends "weather/base.html" %}
+
+{% block content %}
+<div class="search-box">
+    <!-- ФОРМА ДЛЯ ВВОДА ГОРОДА -->
+    <form method="post" class="search-form">
+        {% csrf_token %}
+        <input type="text" name="city" class="search-input"
+               placeholder="Введите город (например: Москва)"
+               value="{{ weather_data.city|default:'' }}" required>
+        <button type="submit" class="btn">🌤️ Узнать погоду</button>
+    </form>
+
+    <!-- КНОПКИ ПОПУЛЯРНЫХ ГОРОДОВ -->
+    <div class="popular-cities">
+        <strong>Популярные города:</strong>
+        {% for city in popular_cities %}
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="city" value="{{ city }}">
+                <button type="submit" class="city-btn">{{ city }}</button>
+            </form>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- СООБЩЕНИЯ ОБ ОШИБКАХ -->
+{% if error %}
+    <div class="error">
+        {{ error }}
+    </div>
+{% endif %}
+
+<!-- БЛОК С РЕЗУЛЬТАТАМИ ПОГОДЫ -->
+{% if weather_data %}
+<div class="weather-card">
+    <h2>{{ weather_data.city }}, {{ weather_data.country }}</h2>
+
+    <div class="temp">{{ weather_data.temperature }}°C</div>
+
+    <div class="description">
+        {{ weather_data.description }}
+        <img src="http://openweathermap.org/img/w/{{ weather_data.icon }}.png"
+             alt="{{ weather_data.description }}">
+    </div>
+
+    <p>Ощущается как: <strong>{{ weather_data.feels_like }}°C</strong></p>
+
+    <div class="details">
+        <div class="detail-item">
+            <strong>💧 Влажность</strong><br>
+            {{ weather_data.humidity }}%
+        </div>
+        <div class="detail-item">
+            <strong>📊 Давление</strong><br>
+            {{ weather_data.pressure }} hPa
+        </div>
+        <div class="detail-item">
+            <strong>💨 Ветер</strong><br>
+            {{ weather_data.wind_speed }} м/с
+        </div>
+    </div>
+</div>
+
+<!-- ПРИВЕТСТВИЕ ЕСЛИ ЕЩЕ НЕ ИСКАЛИ ПОГОДУ -->
+{% else %}
+<div class="weather-card">
+    <h3>Аллах приветствует вас!</h3>
+    <p>Введите название города в поиске выше, чтобы узнать текущую погоду.</p>
+</div>
+{% endif %}
+{% endblock %}

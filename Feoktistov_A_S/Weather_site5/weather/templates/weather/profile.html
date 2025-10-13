@@ -1,0 +1,202 @@
+{% extends "weather/base.html" %}
+
+{% block title %}Профиль - Погода сейчас{% endblock %}
+
+{% block content %}
+<div class="profile-card">
+    <h2>👤 Ваш профиль</h2>
+
+    <div class="user-info">
+        <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email|default:"Не указан" }}</p>
+        <p><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y" }}</p>
+    </div>
+
+    <div class="favorite-city">
+        <h3>⭐ Любимый город</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="favorite_city"
+                   value="{{ user_profile.favorite_city|default:'' }}"
+                   placeholder="Введите ваш любимый город"
+                   class="search-input">
+            <button type="submit" class="btn">Сохранить город</button>
+        </form>
+    </div>
+
+    <div class="notes-section">
+        <h3>📝 Мои заметки</h3>
+
+        <!-- Форма для новой заметки -->
+        <div class="add-note-form">
+            <h4>Добавить новую заметку:</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="text" name="note_title"
+                       placeholder="Заголовок заметки"
+                       class="search-input" required>
+                <textarea name="note_content"
+                         placeholder="Содержание заметки..."
+                         class="note-textarea" required></textarea>
+                <button type="submit" class="btn">➕ Добавить заметку</button>
+            </form>
+        </div>
+
+        <!-- Список существующих заметок -->
+        <div class="notes-list">
+            <h4>Ваши заметки ({{ user_notes.count }}):</h4>
+            {% if user_notes %}
+                {% for note in user_notes %}
+                <div class="note-item">
+                    <div class="note-header">
+                        <strong>{{ note.title }}</strong>
+                        <span class="note-date">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <div class="note-content">{{ note.content|linebreaks }}</div>
+                    <div class="note-actions">
+                        <a href="{% url 'edit_note' note.id %}" class="btn-small">✏️ Редактировать</a>
+                        <form method="post" action="{% url 'delete_note' note.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-small btn-danger"
+                                    onclick="return confirm('Удалить эту заметку?')">🗑️ Удалить</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>У вас пока нет заметок. Добавьте первую!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- История поиска -->
+    <div class="search-history">
+        <h3>📊 История поиска</h3>
+        {% if search_history %}
+            <div class="history-list">
+                {% for search in search_history %}
+                <div class="history-item">
+                    <strong>{{ search.city }}</strong> -
+                    {{ search.temperature }}°C, {{ search.description }}
+                    <br>
+                    <small>{{ search.searched_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Вы еще не искали погоду</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.profile-card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.user-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.favorite-city, .notes-section, .search-history {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.note-textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    min-height: 100px;
+    margin: 10px 0;
+    resize: vertical;
+}
+
+.note-item {
+    background: white;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 10px;
+    border-left: 4px solid #0984e3;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.note-date {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.note-content {
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+.note-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-small {
+    background: #0984e3;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.btn-small:hover {
+    background: #074b83;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.add-note-form {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-item {
+    background: white;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+</style>
+{% endblock %}

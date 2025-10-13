@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Погода сейчас{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        .search-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #0984e3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #074b83;
+        }
+        .weather-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .temp {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #0984e3;
+            margin: 20px 0;
+        }
+        .description {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .detail-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .popular-cities {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .city-btn {
+            background: #e9ecef;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .city-btn:hover {
+            background: #dee2e6;
+        }
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .nav {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            transition: background 0.3s;
+        }
+        .nav a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .user-welcome {
+            color: white;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌤️ Погода сейчас</h1>
+            <p>Узнайте актуальную погоду в любом городе мира</p>
+
+            <!-- НАВИГАЦИЯ -->
+            <nav class="nav">
+                <a href="{% url 'weather_home' %}">🏠 Главная</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">👤 Профиль</a>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-btn">🚪 Выйти</button>
+                    </form>
+                    <span class="user-welcome">Привет, {{ user.username }}!</span>
+                {% else %}
+                    <a href="{% url 'login' %}">🔐 Войти</a>
+                    <a href="{% url 'register' %}">📝 Регистрация</a>
+                {% endif %}
+            </nav>
+        </header>
+
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

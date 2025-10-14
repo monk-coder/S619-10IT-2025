@@ -76,7 +76,6 @@ def weather_lookup_cost(level: int) -> int:
     min_price = definition.metadata.get("min_price", WEATHER_LOOKUP_PRICE)
     return max(int(round(price)), int(min_price))
 
-
 def coin_bonus_multiplier(level: int) -> float:
     bonus = get_upgrade_definition("coin_collector").metadata.get("bonus_per_level", 0)
     return 1 + bonus * level

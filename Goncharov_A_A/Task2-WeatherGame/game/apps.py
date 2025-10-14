@@ -6,4 +6,4 @@ class GameConfig(AppConfig):
     name = 'game'
 
     def ready(self) -> None:
-        from . import signals  # noqa: F401
+        from . import signals

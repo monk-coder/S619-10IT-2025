@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Случайные пользователи и контакты</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6b8cbc;
+            --accent: #ff9a76;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .panel h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h2 i {
+            color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .user-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            background-size: cover;
+            background-position: center;
+            border: 3px solid var(--primary);
+        }
+
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .user-phone {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .user-actions {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.3s;
+        }
+
+        .add-contact {
+            background: var(--success);
+            color: white;
+        }
+
+        .add-contact:hover {
+            background: #218838;
+        }
+
+        .remove-contact {
+            background: var(--danger);
+            color: white;
+        }
+
+        .remove-contact:hover {
+            background: #c82333;
+        }
+
+        .contact-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .contacts-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s;
+        }
+
+        .contact-item:hover {
+            transform: translateX(5px);
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            margin-right: 15px;
+        }
+
+        .contact-info {
+            flex-grow: 1;
+        }
+
+        .contact-info h4 {
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .contact-info p {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn {
+            background: var(--warning);
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #e0a800;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .empty-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .stat {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: var(--success);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        @media (max-width: 576px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .users-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .contact-avatar {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .contact-actions {
+                margin-top: 10px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-address-book"></i>
+                    <h1>Случайные пользователи и контакты</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="app-container">
+            <!-- Панель случайных пользователей -->
+            <div class="panel">
+                <h2><i class="fas fa-users"></i> Случайные пользователи</h2>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="generateUsers">
+                        <i class="fas fa-sync-alt"></i> Сгенерировать
+                    </button>
+                    <button class="btn btn-success" id="addAllContacts">
+                        <i class="fas fa-user-plus"></i> Добавить всех
+                    </button>
+                    <button class="btn btn-warning" id="clearRandomUsers">
+                        <i class="fas fa-trash"></i> Очистить
+                    </button>
+                </div>
+                
+                <div class="users-grid" id="usersGrid">
+                    <!-- Случайные пользователи будут здесь -->
+                </div>
+            </div>
+
+            <!-- Панель личных контактов -->
+            <div class="panel">
+                <h2><i class="fas fa-address-book"></i> Мои контакты</h2>
+                
+                <div class="contact-form">
+                    <h3><i class="fas fa-plus"></i> Добавить контакт</h3>
+                    <div class="form-group">
+                        <label for="contactName">Имя</label>
+                        <input type="text" id="contactName" class="form-control" placeholder="Введите имя">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" class="form-control" placeholder="Введите email">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPhone">Телефон</label>
+                        <input type="tel" id="contactPhone" class="form-control" placeholder="Введите телефон">
+                    </div>
+                    <button class="btn btn-primary" id="addContact">
+                        <i class="fas fa-save"></i> Сохранить контакт
+                    </button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalContacts">0</div>
+                        <div class="stat-label">Всего контактов</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="recentContacts">0</div>
+                        <div class="stat-label">Добавлено сегодня</div>
+                    </div>
+                </div>
+                
+                <div class="contacts-list" id="contactsList">
+                    <!-- Личные контакты будут здесь -->
+                    <div class="empty-message">
+                        <i class="fas fa-address-book"></i>
+                        <p>У вас пока нет контактов</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования контакта -->
+    <div class="modal" id="contactModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <h2>Редактировать контакт</h2>
+            <div class="form-group">
+                <label for="editContactName">Имя</label>
+                <input type="text" id="editContactName" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="editContactEmail">Email</label>
+                <input type="email" id="editContactEmail" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="editContactPhone">Телефон</label>
+                <input type="tel" id="editContactPhone" class="form-control">
+            </div>
+            <button class="btn btn-primary" id="saveContact">
+                <i class="fas fa-save"></i> Сохранить изменения
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2023 Случайные пользователи и контакты. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <div class="notification" id="notification">Контакт добавлен!</div>
+
+    <script>
+        // DOM элементы
+        const usersGrid = document.getElementById('usersGrid');
+        const contactsList = document.getElementById('contactsList');
+        const generateUsersBtn = document.getElementById('generateUsers');
+        const addAllContactsBtn = document.getElementById('addAllContacts');
+        const clearRandomUsersBtn = document.getElementById('clearRandomUsers');
+        const addContactBtn = document.getElementById('addContact');
+        const contactModal = document.getElementById('contactModal');
+        const closeModal = document.getElementById('closeModal');
+        const saveContactBtn = document.getElementById('saveContact');
+        const totalContactsEl = document.getElementById('totalContacts');
+        const recentContactsEl = document.getElementById('recentContacts');
+        const notification = document.getElementById('notification');
+
+        // Переменные состояния
+        let randomUsers = [];
+        let personalContacts = JSON.parse(localStorage.getItem('personalContacts')) || [];
+        let editingContactId = null;
+
+        // Инициализация приложения
+        function init() {
+            generateRandomUsers();
+            displayContacts();
+            updateStats();
+            setupEventListeners();
+        }
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            generateUsersBtn.addEventListener('click', generateRandomUsers);
+            addAllContactsBtn.addEventListener('click', addAllToContacts);
+            clearRandomUsersBtn.addEventListener('click', clearRandomUsers);
+            addContactBtn.addEventListener('click', addPersonalContact);
+            closeModal.addEventListener('click', () => contactModal.style.display = 'none');
+            saveContactBtn.addEventListener('click', saveContactChanges);
+            
+            // Закрытие модального окна при клике вне его
+            window.addEventListener('click', (e) => {
+                if (e.target === contactModal) {
+                    contactModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Генерация случайных пользователей
+        function generateRandomUsers() {
+            // Очищаем предыдущих пользователей
+            randomUsers = [];
+            
+            // Генерируем 12 случайных пользователей
+            for (let i = 0; i < 12; i++) {
+                const user = generateRandomUser();
+                randomUsers.push(user);
+            }
+            
+            displayRandomUsers();
+        }
+
+        // Генерация одного случайного пользователя с учетом пола
+        function generateRandomUser() {
+            // Мужские имена и фамилии
+            const maleFirstNames = ['Александр', 'Дмитрий', 'Сергей', 'Андрей', 'Иван', 'Михаил', 'Владимир', 'Алексей', 'Николай', 'Евгений'];
+            const maleLastNames = ['Иванов', 'Петров', 'Сидоров', 'Кузнецов', 'Смирнов', 'Попов', 'Васильев', 'Новиков', 'Федоров', 'Морозов'];
+            
+            // Женские имена и фамилии
+            const femaleFirstNames = ['Мария', 'Анна', 'Елена', 'Ольга', 'Наталья', 'Ирина', 'Светлана', 'Татьяна', 'Юлия', 'Екатерина'];
+            const femaleLastNames = ['Иванова', 'Петрова', 'Сидорова', 'Кузнецова', 'Смирнова', 'Попова', 'Васильева', 'Новикова', 'Федорова', 'Морозова'];
+            
+            const domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'yandex.ru', 'mail.ru'];
+            
+            // Случайно выбираем пол
+            const isMale = Math.random() > 0.5;
+            
+            let firstName, lastName;
+            
+            if (isMale) {
+                firstName = maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)];
+                lastName = maleLastNames[Math.floor(Math.random() * maleLastNames.length)];
+            } else {
+                firstName = femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];
+                lastName = femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];
+            }
+            
+            const domain = domains[Math.floor(Math.random() * domains.length)];
+            
+            return {
+                id: Date.now() + Math.random(),
+                name: `${firstName} ${lastName}`,
+                email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`,
+                phone: `+7${Math.floor(9000000000 + Math.random() * 1000000000)}`,
+                avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+                gender: isMale ? 'male' : 'female',
+                added: false
+            };
+        }
+
+        // Отображение случайных пользователей
+        function displayRandomUsers() {
+            usersGrid.innerHTML = '';
+            
+            if (randomUsers.length === 0) {
+                usersGrid.innerHTML = `
+                    <div class="empty-message">
+                        <i class="fas fa-users"></i>
+                        <p>Нет пользователей для отображения</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            randomUsers.forEach(user => {
+                const isAdded = personalContacts.some(contact => contact.email === user.email);
+                
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="user-avatar" style="background-image: url('${user.avatar}')"></div>
+                    <div class="user-name">${user.name}</div>
+                    <div class="user-email">${user.email}</div>
+                    <div class="user-phone">${user.phone}</div>
+                    <div class="user-actions">
+                        ${isAdded ? 
+                            `<button class="action-btn remove-contact" data-id="${user.id}">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>` :
+                            `<button class="action-btn add-contact" data-id="${user.id}">
+                                <i class="fas fa-plus"></i> Добавить
+                            </button>`
+                        }
+                    </div>
+                `;
+                
+                usersGrid.appendChild(userCard);
+            });
+            
+            // Добавляем обработчики для кнопок
+            document.querySelectorAll('.add-contact').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = parseFloat(btn.dataset.id);
+                    addToContacts(userId);
+                });
+            });
+            
+            document.querySelectorAll('.remove-contact').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const userId = parseFloat(btn.dataset.id);
+                    removeFromContacts(userId);
+                });
+            });
+        }
+
+        // Добавление одного пользователя в контакты
+        function addToContacts(userId) {
+            const user = randomUsers.find(u => u.id === userId);
+            if (user && !personalContacts.some(contact => contact.email === user.email)) {
+                const contact = {
+                    id: Date.now(),
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    avatar: user.avatar,
+                    dateAdded: new Date().toISOString(),
+                    source: 'random'
+                };
+                
+                personalContacts.push(contact);
+                saveContacts();
+                displayContacts();
+                displayRandomUsers();
+                updateStats();
+                showNotification(`${user.name} добавлен в контакты`);
+            }
+        }
+
+        // Удаление пользователя из контактов
+        function removeFromContacts(userId) {
+            const user = randomUsers.find(u => u.id === userId);
+            if (user) {
+                const contactIndex = personalContacts.findIndex(contact => contact.email === user.email);
+                if (contactIndex !== -1) {
+                    personalContacts.splice(contactIndex, 1);
+                    saveContacts();
+                    displayContacts();
+                    displayRandomUsers();
+                    updateStats();
+                    showNotification(`${user.name} удален из контактов`, 'danger');
+                }
+            }
+        }
+
+        // Добавление всех пользователей в контакты
+        function addAllToContacts() {
+            let addedCount = 0;
+            
+            randomUsers.forEach(user => {
+                if (!personalContacts.some(contact => contact.email === user.email)) {
+                    const contact = {
+                        id: Date.now() + Math.random(),
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone,
+                        avatar: user.avatar,
+                        dateAdded: new Date().toISOString(),
+                        source: 'random'
+                    };
+                    
+                    personalContacts.push(contact);
+                    addedCount++;
+                }
+            });
+            
+            if (addedCount > 0) {
+                saveContacts();
+                displayContacts();
+                displayRandomUsers();
+                updateStats();
+                showNotification(`Добавлено ${addedCount} контактов`);
+            } else {
+                showNotification('Все пользователи уже в контактах', 'warning');
+            }
+        }
+
+        // Очистка случайных пользователей
+        function clearRandomUsers() {
+            randomUsers = [];
+            displayRandomUsers();
+            showNotification('Список пользователей очищен', 'warning');
+        }
+
+        // Добавление личного контакта
+        function addPersonalContact() {
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            
+            if (!name || !email) {
+                showNotification('Заполните имя и email', 'danger');
+                return;
+            }
+            
+            // Проверяем, нет ли уже контакта с таким email
+            if (personalContacts.some(contact => contact.email === email)) {
+                showNotification('Контакт с таким email уже существует', 'danger');
+                return;
+            }
+            
+            const contact = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                phone: phone,
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4a6fa5&color=fff`,
+                dateAdded: new Date().toISOString(),
+                source: 'manual'
+            };
+            
+            personalContacts.push(contact);
+            saveContacts();
+            displayContacts();
+            updateStats();
+            
+            // Очищаем форму
+            document.getElementById('contactName').value = '';
+            document.getElementById('contactEmail').value = '';
+            document.getElementById('contactPhone').value = '';
+            
+            showNotification('Контакт успешно добавлен');
+        }
+
+        // Отображение контактов
+        function displayContacts() {
+            contactsList.innerHTML = '';
+            
+            if (personalContacts.length === 0) {
+                contactsList.innerHTML = `
+                    <div class="empty-message">
+                        <i class="fas fa-address-book"></i>
+                        <p>У вас пока нет контактов</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Сортируем контакты по дате добавления (новые сначала)
+            const sortedContacts = [...personalContacts].sort((a, b) => 
+                new Date(b.dateAdded) - new Date(a.dateAdded)
+            );
+            
+            sortedContacts.forEach(contact => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.innerHTML = `
+                    <div class="contact-avatar" style="background-image: url('${contact.avatar}')"></div>
+                    <div class="contact-info">
+                        <h4>${contact.name}</h4>
+                        <p><i class="fas fa-envelope"></i> ${contact.email}</p>
+                        <p><i class="fas fa-phone"></i> ${contact.phone}</p>
+                        <small>Добавлен: ${new Date(contact.dateAdded).toLocaleDateString('ru-RU')}</small>
+                        ${contact.source === 'random' ? '<small style="color: var(--primary);"><i class="fas fa-random"></i> Случайный пользователь</small>' : ''}
+                    </div>
+                    <div class="contact-actions">
+                        <button class="action-btn edit-btn" data-id="${contact.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete-btn" data-id="${contact.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                contactsList.appendChild(contactItem);
+            });
+            
+            // Добавляем обработчики для кнопок редактирования и удаления
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const contactId = parseInt(btn.dataset.id);
+                    editContact(contactId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const contactId = parseInt(btn.dataset.id);
+                    deleteContact(contactId);
+                });
+            });
+        }
+
+        // Редактирование контакта
+        function editContact(contactId) {
+            const contact = personalContacts.find(c => c.id === contactId);
+            if (contact) {
+                document.getElementById('editContactName').value = contact.name;
+                document.getElementById('editContactEmail').value = contact.email;
+                document.getElementById('editContactPhone').value = contact.phone;
+                
+                editingContactId = contactId;
+                contactModal.style.display = 'flex';
+            }
+        }
+
+        // Сохранение изменений контакта
+        function saveContactChanges() {
+            if (editingContactId === null) return;
+            
+            const name = document.getElementById('editContactName').value.trim();
+            const email = document.getElementById('editContactEmail').value.trim();
+            const phone = document.getElementById('editContactPhone').value.trim();
+            
+            if (!name || !email) {
+                showNotification('Заполните имя и email', 'danger');
+                return;
+            }
+            
+            // Проверяем, нет ли уже контакта с таким email (кроме редактируемого)
+            const existingContact = personalContacts.find(contact => 
+                contact.email === email && contact.id !== editingContactId
+            );
+            
+            if (existingContact) {
+                showNotification('Контакт с таким email уже существует', 'danger');
+                return;
+            }
+            
+            const contactIndex = personalContacts.findIndex(c => c.id === editingContactId);
+            if (contactIndex !== -1) {
+                personalContacts[contactIndex].name = name;
+                personalContacts[contactIndex].email = email;
+                personalContacts[contactIndex].phone = phone;
+                
+                saveContacts();
+                displayContacts();
+                contactModal.style.display = 'none';
+                editingContactId = null;
+                
+                showNotification('Контакт успешно обновлен');
+            }
+        }
+
+        // Удаление контакта
+        function deleteContact(contactId) {
+            if (confirm('Вы уверены, что хотите удалить этот контакт?')) {
+                personalContacts = personalContacts.filter(contact => contact.id !== contactId);
+                saveContacts();
+                displayContacts();
+                updateStats();
+                showNotification('Контакт удален', 'danger');
+            }
+        }
+
+        // Сохранение контактов в localStorage
+        function saveContacts() {
+            localStorage.setItem('personalContacts', JSON.stringify(personalContacts));
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            totalContactsEl.textContent = personalContacts.length;
+            
+            // Считаем контакты, добавленные сегодня
+            const today = new Date().toDateString();
+            const recentCount = personalContacts.filter(contact => 
+                new Date(contact.dateAdded).toDateString() === today
+            ).length;
+            
+            recentContactsEl.textContent = recentCount;
+        }
+
+        // Показать уведомление
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? 
+                'var(--success)' : type === 'warning' ? 
+                'var(--warning)' : 'var(--danger)';
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

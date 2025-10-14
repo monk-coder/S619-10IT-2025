@@ -6,15 +6,26 @@ class CountrySearch {
         try {
             const country = await CountryService.searchCountry(normalizedQuery);
             CountrySearch.hideLoading();
-            return country;
+            
+            if (country) {
+                CountrySearch.renderCountry(country);
+            } else {
+                CountrySearch.showError();
+            }
         } catch (error) {
             CountrySearch.hideLoading();
-            return null;
+            CountrySearch.showError();
         }
     }
     
     static renderCountry(countryData) {
-        const html = `
+        const html = this.createCountryHTML(countryData);
+        document.getElementById('results').innerHTML = html;
+        document.getElementById('errorMessage').style.display = 'none';
+    }
+    
+    static createCountryHTML(countryData) {
+        return `
             <div class="country-card">
                 <img src="${countryData.flag}" alt="Флаг ${countryData.name}" class="country-flag">
                 <div class="country-info">
@@ -63,9 +74,6 @@ class CountrySearch {
                 </div>
             </div>
         `;
-        
-        document.getElementById('results').innerHTML = html;
-        document.getElementById('errorMessage').style.display = 'none';
     }
     
     static showError() {

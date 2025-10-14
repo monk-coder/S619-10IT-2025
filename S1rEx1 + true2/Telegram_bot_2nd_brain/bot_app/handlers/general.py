@@ -1,0 +1,110 @@
+"""General handlers shared across modes."""
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ContextTypes
+
+import database as db_module
+from config import config
+from openrouter_client import openrouter_client
+from prompts import GENERAL_ASSISTANT_PROMPT
+
+
+class GeneralHandlers:
+    """General messages, search, and fallback handlers."""
+
+    async def start_search_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        query = update.callback_query
+        user_id = update.effective_user.id
+
+        async with db_module.AsyncSessionLocal() as session:
+            db = self.db_manager_class(session)
+            user = await db.get_or_create_user(telegram_id=user_id)
+            notes = await db.get_user_notes(user.id)
+
+        if not notes:
+            await query.edit_message_text(
+                "📭 У вас пока нет сохраненных конспектов для поиска.\n"
+                "Сначала создайте несколько конспектов!",
+                reply_markup=self.get_back_keyboard(),
+                parse_mode="Markdown",
+            )
+            return self.MAIN_MENU
+
+        topics = list({note.topic for note in notes})
+        keyboard = [[InlineKeyboardButton(topic, callback_data=f"search_topic_{topic[:20]}")] for topic in topics[:10]]
+        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="back_to_main")])
+
+        await query.edit_message_text(
+            "🔍 **Поиск по конспектам**\n\n"
+            "Выберите тему для поиска:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown",
+        )
+
+        return self.MAIN_MENU
+
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user_id = update.effective_user.id
+        message_text = update.message.text
+
+        async with db_module.AsyncSessionLocal() as session:
+            db = self.db_manager_class(session)
+            user = await db.get_or_create_user(telegram_id=user_id)
+
+            if 'conversation_id' not in context.user_data:
+                conversation = await db.create_conversation(user.id, 'general')
+                context.user_data['conversation_id'] = conversation.id
+
+            await db.add_message(
+                conversation_id=context.user_data['conversation_id'],
+                role='user',
+                content=message_text,
+            )
+
+            messages = await db.get_conversation_history(
+                context.user_data['conversation_id'],
+                limit=config.max_context_messages,
+            )
+
+            ai_messages = [{"role": msg.role, "content": msg.content} for msg in messages]
+
+            await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+
+            system_prompt = user.custom_prompt or GENERAL_ASSISTANT_PROMPT
+            if user.specific_instructions:
+                system_prompt += f"\n\n{user.specific_instructions}"
+
+            response_text, tokens_used = await openrouter_client.generate_response(
+                messages=ai_messages,
+                system_prompt=system_prompt,
+                max_tokens=user.max_tokens,
+                temperature=user.temperature,
+            )
+
+            await db.add_message(
+                conversation_id=context.user_data['conversation_id'],
+                role='assistant',
+                content=response_text,
+                tokens_used=tokens_used,
+            )
+
+            user.total_messages += 1
+            user.total_tokens_used += tokens_used
+            await session.commit()
+
+        await update.message.reply_text(response_text, parse_mode="Markdown")
+
+    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        await update.message.reply_text("❌ Операция отменена.", reply_markup=self.get_back_keyboard())
+        return self.MAIN_MENU
+
+    async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        self.logger.error("Update %s caused error %s", update, context.error)
+
+        try:
+            if update and getattr(update, "effective_message", None):
+                await update.effective_message.reply_text(
+                    "❌ Произошла ошибка при обработке вашего запроса. "
+                    "Пожалуйста, попробуйте еще раз или напишите /start для перезапуска."
+                )
+        except Exception:  # pragma: no cover - defensive fallback
+            pass

@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Поиск
-    // В обработчике поиска замени на:
 document.getElementById('searchForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const query = document.getElementById('searchInput').value.trim();
@@ -56,7 +55,6 @@ document.getElementById('searchForm').addEventListener('submit', async function(
     // Инициализация
     Wishlist.render();
 });
-// Добавь этот код в app.js после остального
 document.getElementById('saveApiKey').addEventListener('click', function() {
     const apiKey = document.getElementById('apiKeyInput').value.trim();
     if (apiKey) {
@@ -79,4 +77,5 @@ document.addEventListener('DOMContentLoaded', function() {
     if (savedKey) {
         document.getElementById('apiKeyInput').value = savedKey;
     }
+
 });

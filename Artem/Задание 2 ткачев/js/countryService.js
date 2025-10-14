@@ -1,4 +1,4 @@
-class CountryService {
+class CountryService {a
     static async searchCountry(query) {
         try {
             console.log("🔍 Ищем страну через API:", query);
@@ -25,7 +25,7 @@ class CountryService {
             return null;
         }
     }
-
+    // Data Mapper Pattern - преобразование данных API
     static formatCountryData(countryData) {
         const currencies = countryData.currencies ? Object.values(countryData.currencies) : [];
         const languages = countryData.languages ? Object.values(countryData.languages) : [];
@@ -69,4 +69,5 @@ class CountryService {
             ? `Страна ${facts.join(', ')}.` 
             : 'Удивительная страна с богатой культурой и историей.';
     }
+
 }

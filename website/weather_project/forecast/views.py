@@ -25,30 +25,41 @@ def home(request):
     # Обработка поиска города
     if request.method == 'POST' and 'city' in request.POST:
         city = request.POST.get('city')
-        url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&lang=ru&appid={API_KEY}'
+        # ИСПРАВЛЕНИЕ: используем HTTPS и добавляем таймаут
+        url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&units=metric&lang=ru&appid={API_KEY}'
 
         try:
-            response = requests.get(url)
+            # ИСПРАВЛЕНИЕ: добавляем таймаут 10 секунд
+            response = requests.get(url, timeout=10)
             data = response.json()
 
             if response.status_code == 200:
                 temperature = data['main']['temp']
                 description = data['weather'][0]['description']
                 humidity = data['main']['humidity']
+                city_name = data['name']  # Получаем правильное название города из API
                 forecast = f'{description.capitalize()}, {temperature}°C'
                 context['humidity'] = humidity
+                context['city'] = city_name  # Используем название из API
             else:
                 forecast = 'Город не найден или произошла ошибка API.'
+                context['city'] = city  # Используем введенное пользователем название
 
             context['forecast'] = forecast
-            context['city'] = city
 
             # Работа с историей поиска
             search_history = request.session.get('search_history', [])
             if city not in search_history:
                 search_history.append(city)
+                # Ограничиваем историю последними 10 городами
+                if len(search_history) > 10:
+                    search_history = search_history[-10:]
             request.session['search_history'] = search_history
 
+        except requests.exceptions.Timeout:
+            messages.error(request, 'Сервис погоды временно недоступен. Попробуйте позже.')
+        except requests.exceptions.ConnectionError:
+            messages.error(request, 'Ошибка подключения к интернету. Проверьте соединение.')
         except requests.exceptions.RequestException as e:
             messages.error(request, f'Ошибка подключения к сервису погоды: {e}')
         except Exception as e:

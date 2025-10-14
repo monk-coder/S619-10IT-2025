@@ -25,33 +25,13 @@ def _get_config_value(settings_name, env_name, default=None):
 
 
 API_KEY_WEATHER = _get_config_value("WEATHERBIT_API_KEY", "WEATHERBIT_API_KEY")
-API_URL_WEATHER = _get_config_value(
-    "WEATHERBIT_API_URL",
-    "WEATHERBIT_API_URL",
-    "https://api.weatherbit.io/v2.0/current",
-)
-API_ICON_BASE_URL = _get_config_value(
-    "WEATHERBIT_ICON_BASE_URL",
-    "WEATHERBIT_ICON_BASE_URL",
-    "https://www.weatherbit.io/static/img/icons/",
-)
+API_URL_WEATHER = _get_config_value("WEATHERBIT_API_URL", "WEATHERBIT_API_URL")
+API_ICON_BASE_URL = _get_config_value("WEATHERBIT_ICON_BASE_URL", "WEATHERBIT_ICON_BASE_URL")
 API_KEY_AVIA = _get_config_value("AVIATIONSTACK_API_KEY", "AVIATIONSTACK_API_KEY")
-API_URL_AVIA = _get_config_value(
-    "AVIATIONSTACK_API_URL",
-    "AVIATIONSTACK_API_URL",
-    "http://api.aviationstack.com/v1/flights",
-)
+API_URL_AVIA = _get_config_value("AVIATIONSTACK_API_URL", "AVIATIONSTACK_API_URL")
 API_KEY_CURRENCY = _get_config_value("FREECURRENCY_API_KEY", "FREECURRENCY_API_KEY")
-API_URL_CURRENCY = _get_config_value(
-    "FREECURRENCY_API_URL",
-    "FREECURRENCY_API_URL",
-    "https://api.freecurrencyapi.com/v1/latest",
-)
-API_URL_TIME = _get_config_value(
-    "WORLDTIME_API_URL",
-    "WORLDTIME_API_URL",
-    "https://worldtimeapi.org/api/timezone/Etc/UTC",
-)
+API_URL_CURRENCY = _get_config_value("FREECURRENCY_API_URL", "FREECURRENCY_API_URL")
+API_URL_TIME = _get_config_value("WORLDTIME_API_URL", "WORLDTIME_API_URL")
 
 
 BACKGROUND_KEYWORDS = (
@@ -70,6 +50,55 @@ EMPTY_FIELD_ERRORS = {
     "city": "Город не может быть пустым",
     "text": "Текст не может быть пустым",
 }
+
+
+def _normalize_task_fields(payload, *, required=False):
+    normalized = {}
+    for field, limit in TASK_FIELD_LIMITS.items():
+        if field not in payload and not required:
+            continue
+        value = str(payload.get(field) or "").strip()
+        if not value:
+            return None, _json_error(EMPTY_FIELD_ERRORS[field])
+        normalized[field] = value[:limit]
+    return normalized, None
+
+
+def _build_error_message(response, label):
+    return f"Ошибка {label} ({response.status_code})"
+
+
+def _fetch_json_or_error(
+    url,
+    *,
+    params=None,
+    headers=None,
+    timeout=10,
+    label="API",
+    error_builder=None,
+):
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=timeout)
+    except RequestException as exc:  # pragma: no cover - сеть
+        return None, _json_error(f"Ошибка соединения с {label}: {exc}", status=500)
+
+    if response.status_code != 200:
+        builder = error_builder or (lambda resp: _build_error_message(resp, label))
+        return None, _json_error(builder(response), status=500)
+
+    try:
+        return response.json(), None
+    except ValueError:
+        return None, _json_error(f"Некорректный ответ {label}", status=500)
+
+
+def _currency_error_builder(response):
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    message = payload.get("message") or payload.get("error") or response.text
+    return f"Ошибка API валют ({response.status_code}): {message}"
 
 
 def _json_error(message, status=400):
@@ -97,8 +126,8 @@ def index(request):
 
 @require_GET
 def get_weather(request):
-    if not API_KEY_WEATHER:
-        return _json_error("API ключ погоды не настроен", status=500)
+    if not API_KEY_WEATHER or not API_URL_WEATHER or not API_ICON_BASE_URL:
+        return _json_error("API погоды не настроен", status=500)
 
     city = (request.GET.get("city") or "").strip()
     if not city:
@@ -115,23 +144,14 @@ def get_weather(request):
         fetched_at = snapshot.fetched_at
         from_cache = True
     else:
-        params = {
-            "city": city,
-            "key": API_KEY_WEATHER,
-            "lang": "ru",
-        }
-        try:
-            response = requests.get(API_URL_WEATHER, params=params, timeout=10)
-        except RequestException as exc:  # pragma: no cover - сеть
-            return _json_error(f"Ошибка соединения с API погоды: {exc}", status=500)
-
-        if response.status_code != 200:
-            return _json_error(f"Ошибка API погоды ({response.status_code})", status=500)
-
-        try:
-            data = response.json()
-        except ValueError:
-            return _json_error("Некорректный ответ API погоды", status=500)
+        params = {"city": city, "key": API_KEY_WEATHER, "lang": "ru"}
+        data, error = _fetch_json_or_error(
+            API_URL_WEATHER,
+            params=params,
+            label="API погоды",
+        )
+        if error:
+            return error
 
         entries = data.get("data") or []
         if not entries:
@@ -178,18 +198,16 @@ def get_weather(request):
 
 @require_GET
 def get_time(request):
-    try:
-        response = requests.get(API_URL_TIME, timeout=5)
-    except RequestException as exc:  # pragma: no cover - сеть
-        return _json_error(f"Ошибка при запросе времени: {exc}", status=500)
+    if not API_URL_TIME:
+        return _json_error("API времени не настроен", status=500)
 
-    if response.status_code != 200:
-        return _json_error(f"Ошибка API времени ({response.status_code})", status=500)
-
-    try:
-        data = response.json()
-    except ValueError:
-        return _json_error("Некорректный ответ API времени", status=500)
+    data, error = _fetch_json_or_error(
+        API_URL_TIME,
+        timeout=5,
+        label="API времени",
+    )
+    if error:
+        return error
 
     return JsonResponse({
         "utc_datetime": data.get("utc_datetime"),
@@ -199,8 +217,8 @@ def get_time(request):
 
 @require_GET
 def get_flight(request):
-    if not API_KEY_AVIA:
-        return _json_error("API ключ авиации не настроен", status=500)
+    if not API_KEY_AVIA or not API_URL_AVIA:
+        return _json_error("API авиации не настроен", status=500)
 
     airport = (request.GET.get("airport") or "").strip().upper()
     if not airport:
@@ -212,18 +230,13 @@ def get_flight(request):
         "limit": 1,
     }
 
-    try:
-        response = requests.get(API_URL_AVIA, params=params, timeout=10)
-    except RequestException as exc:  # pragma: no cover - сеть
-        return _json_error(f"Ошибка соединения с API авиации: {exc}", status=500)
-
-    if response.status_code != 200:
-        return _json_error(f"Ошибка API авиации ({response.status_code})", status=500)
-
-    try:
-        data = response.json()
-    except ValueError:
-        return _json_error("Некорректный ответ API авиации", status=500)
+    data, error = _fetch_json_or_error(
+        API_URL_AVIA,
+        params=params,
+        label="API авиации",
+    )
+    if error:
+        return error
 
     flights = data.get("data") or []
     if not flights:
@@ -243,8 +256,8 @@ def get_flight(request):
 
 @require_GET
 def get_currency(request):
-    if not API_KEY_CURRENCY:
-        return _json_error("API ключ валюты не настроен", status=500)
+    if not API_KEY_CURRENCY or not API_URL_CURRENCY:
+        return _json_error("API валют не настроен", status=500)
 
     base = (request.GET.get("base") or "").strip().upper()
     symbols_raw = (request.GET.get("symbols") or "").strip().upper()
@@ -263,23 +276,15 @@ def get_currency(request):
 
     headers = {"apikey": API_KEY_CURRENCY}
 
-    try:
-        response = requests.get(API_URL_CURRENCY, params=params, headers=headers, timeout=10)
-    except RequestException as exc:  # pragma: no cover - сеть
-        return _json_error(f"Ошибка соединения с API валют: {exc}", status=500)
-
-    if response.status_code != 200:
-        try:
-            error_payload = response.json()
-        except ValueError:
-            error_payload = {}
-        message = error_payload.get("message") or error_payload.get("error") or response.text
-        return _json_error(f"Ошибка API валют ({response.status_code}): {message}", status=500)
-
-    try:
-        data = response.json()
-    except ValueError:
-        return _json_error("Некорректный ответ API валют", status=500)
+    data, error = _fetch_json_or_error(
+        API_URL_CURRENCY,
+        params=params,
+        headers=headers,
+        label="API валют",
+        error_builder=_currency_error_builder,
+    )
+    if error:
+        return error
 
     rates = data.get("data") or {}
     result = {code: rates.get(code) for code in symbols if code in rates}
@@ -402,12 +407,9 @@ def _create_task(request):
     except ValueError as exc:
         return _json_error(str(exc))
 
-    normalized = {}
-    for field, limit in TASK_FIELD_LIMITS.items():
-        value = str(payload.get(field) or "").strip()
-        if not value:
-            return _json_error("Укажите город и текст напоминания")
-        normalized[field] = value[:limit]
+    normalized, error = _normalize_task_fields(payload, required=True)
+    if error:
+        return error
 
     task = WeatherTask.objects.create(user=request.user, **normalized)
     return JsonResponse({"task": _serialize_task(task)}, status=201)
@@ -423,14 +425,9 @@ def _task_update_handler(request, task):
     except ValueError as exc:
         return _json_error(str(exc))
 
-    updates = {}
-    for field, limit in TASK_FIELD_LIMITS.items():
-        if field not in payload:
-            continue
-        value = str(payload.get(field) or "").strip()
-        if not value:
-            return _json_error(EMPTY_FIELD_ERRORS[field])
-        updates[field] = value[:limit]
+    updates, error = _normalize_task_fields(payload)
+    if error:
+        return error
 
     if updates:
         for field, value in updates.items():

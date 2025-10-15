@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - WeatherFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="{% url 'home' %}" class="logo">
+                <i class="fas fa-cloud-sun"></i>
+                WeatherFlow
+            </a>
+            <div class="nav-links">
+                <a href="{% url 'home' %}" class="nav-link">
+                    <i class="fas fa-home"></i> Главная
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'note_list' %}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                    <!-- ССЫЛКИ ДЛЯ АДМИНОВ -->
+                    {% if user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                        <i class="fas fa-chart-bar"></i> Статистика
+                    </a>
+                    <a href="{% url 'admin:index' %}" class="nav-link">
+                        <i class="fas fa-cog"></i> Админка
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="user-section">
+                {% if user.is_authenticated %}
+                    <span>
+                        {% if user.is_superuser %}
+                            👑 Админ: <strong>{{ user.username }}</strong>
+                        {% else %}
+                            Привет, <strong>{{ user.username }}</strong>!
+                        {% endif %}
+                    </span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline" style="margin-right: 10px;">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Регистрация
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Левая часть с описанием -->
+            <div class="auth-hero" style="background: linear-gradient(135deg, var(--secondary) 0%, #eab308 100%);">
+                <div class="floating-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <i class="fas fa-sign-in-alt"></i><br>
+                        С возвращением!
+                    </h1>
+                    <p class="hero-subtitle">
+                        Войдите в свой аккаунт чтобы продолжить пользоваться всеми возможностями WeatherFlow
+                    </p>
+
+                    <ul class="benefits-list">
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-cloud"></i>
+                            </div>
+                            <span>Доступ к персональному прогнозу</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-notes"></i>
+                            </div>
+                            <span>Ваши сохраненные заметки</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <span>История поиска городов</span>
+                        </li>
+                        <li class="benefit-item">
+                            <div class="benefit-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <span>Персонализированные настройки</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Правая часть с формой -->
+            <div class="auth-form-section">
+                <div class="form-header">
+                    <h2 class="form-title">Вход в аккаунт</h2>
+                    <p class="form-subtitle">Введите свои данные для входа</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.tags == 'success' %}
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i> {{ message }}
+                        </div>
+                        {% elif message.tags == 'error' %}
+                        <div class="error-messages">
+                            <ul class="error-list">
+                                <li>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ message }}
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="error-messages">
+                        <ul class="error-list">
+                            {% for error in form.non_field_errors %}
+                                <li>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">
+                            <i class="fas fa-user"></i> Имя пользователя
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text"
+                                   name="username"
+                                   id="id_username"
+                                   class="form-input"
+                                   placeholder="Введите имя пользователя"
+                                   value="{{ form.username.value|default:'' }}"
+                                   required
+                                   autofocus>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password" class="form-label">
+                            <i class="fas fa-lock"></i> Пароль
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password"
+                                   name="password"
+                                   id="id_password"
+                                   class="form-input"
+                                   placeholder="Введите пароль"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Войти в аккаунт
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> Назад на главную
+                        </a>
+                    </div>
+
+                    <div class="auth-link">
+                        Нет аккаунта? <a href="{% url 'register' %}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Зарегистрируйтесь здесь</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 WeatherFlow. Все права защищены.</p>
+    </footer>
+
+    <script>
+        // Автофокус на поле username
+        document.getElementById('id_username').focus();
+
+        // Анимация появления элементов
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach((input, index) => {
+                input.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>

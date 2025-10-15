@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherFlow - Прогноз погоды</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notes.css' %}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
+                </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'note_list' %}" class="nav-link">
+                            <i class="fas fa-sticky-note"></i> Мои заметки
+                        </a>
+                        <!-- ССЫЛКИ ДЛЯ АДМИНОВ -->
+                        {% if user.is_superuser %}
+                        <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> Статистика
+                        </a>
+                        <a href="{% url 'admin:index' %}" class="nav-link">
+                            <i class="fas fa-cog"></i> Админка
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="user-section">
+                    {% if user.is_authenticated %}
+                        <span>
+                            {% if user.is_superuser %}
+                                👑 Админ: <strong>{{ user.username }}</strong>
+                            {% else %}
+                                Привет, <strong>{{ user.username }}</strong>!
+                            {% endif %}
+                        </span>
+                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline" style="margin-right: 10px;">
+                            <i class="fas fa-sign-in-alt"></i> Войти
+                        </a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Регистрация
+                        </a>
+                    {% endif %}
+                </div>
+            </nav>
+        </header>
+
+        <main class="main">
+            <div class="weather-card">
+                <!-- Сообщения -->
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- БАННЕР ДЛЯ АДМИНОВ -->
+                {% if user.is_superuser %}
+                <div class="admin-banner" style="background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%); color: white; padding: 1.5rem; border-radius: 15px; margin-bottom: 2rem; text-align: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div style="text-align: left;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-crown"></i> Режим администратора
+                            </h3>
+                            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">У вас есть доступ к панели управления</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="{% url 'admin_dashboard' %}" class="btn" style="background: white; color: #f59e0b;">
+                                <i class="fas fa-chart-bar"></i> Статистика
+                            </a>
+                            <a href="{% url 'admin:index' %}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                                <i class="fas fa-cog"></i> Админка
+                            </a>
+                            <a href="{% url 'note_list' %}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                                <i class="fas fa-eye"></i> Все заметки
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <h1 class="card-title">
+                    <i class="fas fa-search-location"></i> Поиск погоды
+                </h1>
+
+                <form method="post" class="search-form">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <i class="fas fa-city input-icon"></i>
+                        <input type="text" name="city" class="form-input" placeholder="Введите название города..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-cloud-sun-rain"></i> Узнать погоду
+                    </button>
+                </form>
+
+                {% if forecast %}
+                <div class="weather-display">
+                    <div class="weather-icon">
+                        {% if 'ясно' in forecast or 'солнечно' in forecast %}
+                            <i class="fas fa-sun weather-sunny"></i>
+                        {% elif 'дождь' in forecast or 'ливень' in forecast %}
+                            <i class="fas fa-cloud-rain weather-rainy"></i>
+                        {% elif 'облачно' in forecast or 'облака' in forecast %}
+                            <i class="fas fa-cloud weather-cloudy"></i>
+                        {% elif 'снег' in forecast %}
+                            <i class="fas fa-snowflake weather-snowy"></i>
+                        {% elif 'туман' in forecast %}
+                            <i class="fas fa-smog weather-cloudy"></i>
+                        {% elif 'гроза' in forecast %}
+                            <i class="fas fa-bolt weather-stormy"></i>
+                        {% else %}
+                            <i class="fas fa-cloud-sun weather-cloudy"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="description">
+                        {{ forecast }}
+                    </div>
+
+                    {% if humidity %}
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <div class="detail-value">{{ humidity }}%</div>
+                            <div class="detail-label">Влажность</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">
+                                {% if city %}{{ city }}{% endif %}
+                            </div>
+                            <div class="detail-label">Город</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if search_history %}
+                <div class="history-section">
+                    <div class="history-header">
+                        <h3 class="section-title">
+                            <i class="fas fa-history"></i> История поиска
+                        </h3>
+                        <div class="history-actions">
+                            <a href="{% url 'clear_search_history' %}" class="btn-clear-history"
+                               onclick="return confirm('Вы уверены, что хотите очистить всю историю поиска?')">
+                                <i class="fas fa-trash-alt"></i> Очистить всю историю
+                            </a>
+                        </div>
+                    </div>
+                    <div class="history-list">
+                        {% for city in search_history %}
+                        <div class="history-item">
+                            <form method="post" class="history-search-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="city" value="{{ city }}">
+                                <button type="submit" class="history-city-btn">
+                                    <i class="fas fa-map-marker-alt"></i> {{ city }}
+                                </button>
+                            </form>
+                            <a href="{% url 'remove_search_item' city %}" class="remove-city-btn"
+                               onclick="return confirm('Удалить \"{{ city }}\" из истории поиска?')"
+                               title="Удалить из истории">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-history">
+                    <i class="fas fa-history"></i>
+                    <p>История поиска пуста</p>
+                </div>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                <div class="notes-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-sticky-note"></i> Быстрый доступ
+                    </h3>
+                    <div class="notes-grid">
+                        <a href="{% url 'note_list' %}" class="note-preview">
+                            <i class="fas fa-list"></i> Все заметки
+                        </a>
+                        <a href="{% url 'note_create' %}" class="note-preview">
+                            <i class="fas fa-plus"></i> Новая заметка
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p></p>
+            <p><i class="fas fa-heart" style="color: var(--danger);"></i> </p>
+        </footer>
+    </div>
+
+    <script>
+        // Анимация появления элементов
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.weather-card, .history-item, .note-preview');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Подтверждение действий
+        const clearHistoryBtn = document.querySelector('.btn-clear-history');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', function(e) {
+                if (!confirm('Вы уверены, что хотите очистить всю историю поиска?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

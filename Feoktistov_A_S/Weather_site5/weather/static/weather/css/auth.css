@@ -1,0 +1,177 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+    color: #333;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: white;
+}
+
+/* Навигация */
+.nav {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.3s;
+}
+
+.nav a:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.nav-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.nav-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.user-welcome {
+    color: white;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Общие стили для карточек */
+.search-box, .weather-card, .auth-card, .profile-card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 30px;
+}
+
+/* Формы */
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.btn {
+    background: #0984e3;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    background: #074b83;
+}
+
+/* Погода */
+.temp {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #0984e3;
+    margin: 20px 0;
+}
+
+.description {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.detail-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.popular-cities {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.city-btn {
+    background: #e9ecef;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.city-btn:hover {
+    background: #dee2e6;
+}
+
+.error {
+    background: #ff6b6b;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.message {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}

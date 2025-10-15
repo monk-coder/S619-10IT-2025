@@ -3,7 +3,7 @@
 {% block title %}Редактировать заметку - Погода сейчас{% endblock %}
 
 {% block content %}
-<div class="auth-card">
+<div class="auth-card edit-note-form">
     <h2>✏️ Редактировать заметку</h2>
 
     <form method="post">
@@ -27,36 +27,4 @@
         </div>
     </form>
 </div>
-
-<style>
-.auth-card {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.note-textarea {
-    width: 100%;
-    padding: 15px;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    font-size: 16px;
-    min-height: 200px;
-    resize: vertical;
-    font-family: Arial, sans-serif;
-}
-</style>
 {% endblock %}

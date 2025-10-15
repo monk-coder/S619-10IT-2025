@@ -1,5 +1,14 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv  # Добавь эту строку
+
+# Загружаем переменные из .env файла
+load_dotenv()
+
+# Теперь можно использовать os.getenv() для получения переменных
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY', 'default_key_if_not_found')
+import os
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

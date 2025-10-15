@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings  # Добавь эту строку
 import requests
 import random
 from .models import UserProfile, SearchHistory, UserNote
@@ -16,11 +17,11 @@ def home(request):
         city = request.POST.get('city', '').strip()
 
         if not city:
-            error = "Аллах говорит:Введите название города"
+            error = "Введите название города"
         else:
             try:
-                # ТВОЙ API КЛЮЧ
-                api_key = "fa77f2b3447d3ec6c1f38b71c9c5da1c"
+                # ИСПОЛЬЗУЕМ API КЛЮЧ ИЗ НАСТРОЕК
+                api_key = settings.WEATHER_API_KEY
                 url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric&lang=ru"
 
                 response = requests.get(url, timeout=10)
@@ -98,7 +99,7 @@ def home(request):
                 'country': '??',
                 'temperature': random.randint(-10, 30),
                 'feels_like': random.randint(-12, 28),
-                'description': random.choice(['Аллах сказал что ясно', 'Аллах сказал что облачно', 'Аллах сказал что дождь', 'Аллах сказал что снег']),
+                'description': random.choice(['ясно', 'облачно', 'дождь', 'снег']),
                 'humidity': random.randint(40, 80),
                 'pressure': random.randint(980, 1030),
                 'wind_speed': round(random.uniform(1, 15), 1),
@@ -124,7 +125,7 @@ def register_view(request):
                 user = form.save()
                 UserProfile.objects.create(user=user)
                 login(request, user)
-                messages.success(request, f'Аллах2.0 приветствует вас, {user.username}!')
+                messages.success(request, f'Добро пожаловать, {user.username}!')
                 return redirect('weather_home')
             except Exception as e:
                 messages.error(request, f'Ошибка при регистрации: {str(e)}')
@@ -184,7 +185,7 @@ def profile_view(request):
                 title=note_title,
                 content=note_content
             )
-            messages.success(request, 'Аллах добавил заметку!')
+            messages.success(request, 'Заметка добавлена!')
             return redirect('profile')
 
     context = {
@@ -203,7 +204,7 @@ def edit_note(request, note_id):
         note.title = request.POST.get('title', '')
         note.content = request.POST.get('content', '')
         note.save()
-        messages.success(request, 'Аллах обновил заметку!')
+        messages.success(request, 'Заметка обновлена!')
         return redirect('profile')
 
     return render(request, 'weather/edit_note.html', {'note': note})
@@ -215,6 +216,11 @@ def delete_note(request, note_id):
 
     if request.method == 'POST':
         note.delete()
-        messages.success(request, 'Аллах удалил Заметку!')
+        messages.success(request, 'Заметка удалена!')
 
     return redirect('profile')
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def admin_embed(request):
+    return render(request, 'weather/admin_embed.html')

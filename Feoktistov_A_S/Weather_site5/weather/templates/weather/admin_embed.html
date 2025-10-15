@@ -1,0 +1,11 @@
+{% extends "weather/base.html" %}
+
+{% block title %}Админка - Погода сейчас{% endblock %}
+
+{% block content %}
+<div style="height: 80vh;">
+    <iframe src="/admin/"
+            style="width: 100%; height: 100%; border: none; border-radius: 10px;">
+    </iframe>
+</div>
+{% endblock %}

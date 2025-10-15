@@ -79,3 +79,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 🔮 Предзагрузка популярных стран через 2 секунды после загрузки
+    setTimeout(() => {
+        CountryService.preloadPopularCountries();
+    }, 2000);
+    
+    // 📊 Для отладки - посмотреть статистику кэша
+    window.getCacheInfo = function() {
+        const stats = CountryService.getCacheStats();
+        console.log('📊 Статистика кэша:', stats);
+        return stats;
+    };
+    
+    // 🗑️ Для отладки - очистить кэш
+    window.clearCache = function() {
+        CountryService.clearCache();
+        console.log('Кэш очищен');
+    };
+});

@@ -1,2 +1,0 @@
-import pip
-pip list

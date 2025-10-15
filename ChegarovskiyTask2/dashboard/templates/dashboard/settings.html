@@ -1,0 +1,24 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="settings-section">
+            <h2 class="mb-4">Настройки</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold mb-3">Тема оформления</label>
+                    {{ form.theme }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold mb-3">Язык интерфейса</label>
+                    {{ form.language }}
+                </div>
+                <button type="submit" class="btn btn-primary-custom w-100 py-3">Сохранить настройки</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-custom w-100 mt-2 py-3">Отмена</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

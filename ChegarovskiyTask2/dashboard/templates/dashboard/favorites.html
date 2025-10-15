@@ -1,0 +1,40 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="settings-section">
+            <h2 class="mb-4">Избранные города</h2>
+
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" name="city_name" class="form-control form-control-custom"
+                           placeholder="Введите название города" required autocomplete="off">
+                    <button type="submit" class="btn btn-primary-custom">Добавить в избранное</button>
+                </div>
+            </form>
+
+            {% if favorite_cities %}
+                <div class="row">
+                    {% for favorite in favorite_cities %}
+                    <div class="col-md-6 mb-3">
+                        <div class="favorite-city-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">{{ favorite.city_name }}</h5>
+                                <a href="{% url 'remove_favorite' favorite.id %}" class="btn btn-sm btn-light">Удалить</a>
+                            </div>
+                            <small>Добавлен: {{ favorite.added_at|date:"d.m.Y" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted">У вас пока нет избранных городов</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

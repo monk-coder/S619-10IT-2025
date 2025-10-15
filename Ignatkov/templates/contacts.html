@@ -1,28 +1,37 @@
 <!doctype html>
+<head>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+<p class=".container">
+</body>
 <title>Мои контакты</title>
 <h2>Мои контакты</h2>
 <a href="{{ url_for('index') }}">Назад</a> |
 <a href="{{ url_for('logout') }}">Выйти</a> |
 <a href="{{ url_for('export') }}">Экспортировать контакты</a>
 <table border="1">
-<tr><th>Имя</th><th>Email</th><th>Телефон</th><th>Заметка</th><th>Действия</th></tr>
-{% for c in contacts %}
-<tr>
-<td>{{ c.name }}</td>
-<td>{{ c.email }}</td>
-<td>{{ c.phone }}</td>
-<td>{{ c.note.content if c.note else '' }}</td>
-<td>
-  <a href="{{ url_for('edit_note', contact_id=c.id) }}">Редактировать заметку</a> |
-  <a href="{{ url_for('delete_contact', contact_id=c.id) }}">Удалить</a>
-</td>
-</tr>
-{% endfor %}
+    <body>
+    <p class=".card">
+    </body>
+    <tr><th>Имя</th><th>Email</th><th>Телефон</th><th>Заметка</th><th>Действия</th></tr>
+    {% for c in contacts %}
+    <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.phone }}</td>
+        <td>{{ c.note.content if c.note else '' }}</td>
+        <td>
+            <a href="{{ url_for('edit_note', contact_id=c.id) }}">Редактировать заметку</a> |
+            <a href="{{ url_for('delete_contact', contact_id=c.id) }}">Удалить</a>
+        </td>
+    </tr>
+    {% endfor %}
 </table>
 <h3>Добавить контакт</h3>
 <form method="post" action="{{ url_for('add_contact') }}">
-  <input name="name" placeholder="Имя" required>
-  <input name="email" placeholder="Email" required>
-  <input name="phone" placeholder="Телефон" required>
-  <button type="submit">Добавить</button>
+    <input name="name" placeholder="Имя" required>
+    <input name="email" placeholder="Email" required>
+    <input name="phone" placeholder="Телефон" required>
+    <button type="submit">Добавить</button>
 </form>

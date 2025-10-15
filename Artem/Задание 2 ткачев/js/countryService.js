@@ -1,14 +1,29 @@
-class CountryService {a
+class CountryService {
+    // 🎯 Кэш в памяти для быстрого доступа
+    static cache = new Map();
+    
+    // ⭐ Популярные страны для предзагрузки
+    static popularCountries = ['россия', 'сша', 'франция', 'германия', 'япония'];
+
     static async searchCountry(query) {
+        const normalizedQuery = query.toLowerCase().trim();
+        
+        // 1. 🔍 ПРОВЕРЯЕМ КЭШ ПЕРВЫМ
+        if (this.cache.has(normalizedQuery)) {
+            console.log('✅ Данные из кэша:', normalizedQuery);
+            return this.cache.get(normalizedQuery);
+        }
+        
+        // 2. 🌐 ЕСЛИ НЕТ В КЭШЕ - ИДЕМ В API
+        console.log('🌐 Запрос к API:', normalizedQuery);
+        
         try {
-            console.log("🔍 Ищем страну через API:", query);
-            
             // Пробуем разные варианты API
-            let response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(query)}`);
+            let response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(normalizedQuery)}`);
             
             if (!response.ok) {
                 // Пробуем альтернативный эндпоинт
-                response = await fetch(`https://restcountries.com/v3.1/translation/${encodeURIComponent(query)}`);
+                response = await fetch(`https://restcountries.com/v3.1/translation/${encodeURIComponent(normalizedQuery)}`);
             }
             
             if (!response.ok) {
@@ -16,16 +31,27 @@ class CountryService {a
             }
             
             const data = await response.json();
-            const countryData = data[0];
+            const countryData = this.formatCountryData(data[0]);
             
-            return this.formatCountryData(countryData);
+            // 3. 💾 СОХРАНЯЕМ В КЭШ
+            this.cache.set(normalizedQuery, countryData);
+            console.log('💾 Сохранено в кэш:', normalizedQuery);
+            
+            // 4. 📦 ОГРАНИЧИВАЕМ РАЗМЕР КЭША (макс. 20 стран)
+            if (this.cache.size > 20) {
+                const firstKey = this.cache.keys().next().value;
+                this.cache.delete(firstKey);
+                console.log('📦 Очищен старый кэш:', firstKey);
+            }
+            
+            return countryData;
             
         } catch (error) {
-            console.error("💥 Ошибка API:", error);
+            console.error('💥 Ошибка API:', error);
             return null;
         }
     }
-    // Data Mapper Pattern - преобразование данных API
+
     static formatCountryData(countryData) {
         const currencies = countryData.currencies ? Object.values(countryData.currencies) : [];
         const languages = countryData.languages ? Object.values(countryData.languages) : [];
@@ -46,7 +72,7 @@ class CountryService {a
 
     static formatNumber(num) {
         if (num >= 1000000000) return (num / 1000000000).toFixed(1) + ' млрд';
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + ' млн';
+        if (num >= 1000000) return (num / 1000000000).toFixed(1) + ' млн';
         if (num >= 1000) return (num / 1000).toFixed(1) + ' тыс';
         return num.toLocaleString();
     }
@@ -63,11 +89,35 @@ class CountryService {a
         if (countryData.region) facts.push(`расположена в ${countryData.region}`);
         if (countryData.population > 100000000) facts.push('одна из самых населенных стран');
         if (countryData.area > 1000000) facts.push('обладает огромной территорией');
-        if (countryData.subregion) facts.push(`в регионе ${countryData.subregion}`);
         
         return facts.length > 0 
             ? `Страна ${facts.join(', ')}.` 
             : 'Удивительная страна с богатой культурой и историей.';
     }
 
+    // 🚀 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ УЛУЧШЕНИЯ
+    static preloadPopularCountries() {
+        // Предзагрузка популярных стран в фоне
+        this.popularCountries.forEach(country => {
+            setTimeout(() => {
+                this.searchCountry(country).then(data => {
+                    if (data) {
+                        console.log('🔮 Предзагружена популярная страна:', country);
+                    }
+                });
+            }, 1000);
+        });
+    }
+
+    static clearCache() {
+        this.cache.clear();
+        console.log('🗑️ Кэш полностью очищен');
+    }
+
+    static getCacheStats() {
+        return {
+            size: this.cache.size,
+            countries: Array.from(this.cache.keys())
+        };
+    }
 }

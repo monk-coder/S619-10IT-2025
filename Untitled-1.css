@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Контакты - Случайные пользователи</title>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 1.5rem;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: background-color 0.3s;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+
+        main {
+            padding: 2rem 0;
+        }
+
+        .section-title {
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .user-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .user-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .user-card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            border: 3px solid white;
+            object-fit: cover;
+        }
+
+        .default-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            border: 3px solid white;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .user-info h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .user-info p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .user-card-body {
+            padding: 1rem;
+        }
+
+        .user-details {
+            margin-bottom: 1rem;
+        }
+
+        .user-detail {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-detail-label {
+            font-weight: bold;
+            min-width: 80px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .contact-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+
+        .contact-card-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .contact-card-body {
+            padding: 1rem;
+        }
+
+        .notes-section {
+            margin-top: 1rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .notes-list {
+            margin-bottom: 1rem;
+        }
+
+        .note-item {
+            background-color: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .note-content {
+            flex-grow: 1;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .note-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .note-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+
+        .auth-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-color);
+        }
+
+        .export-section {
+            margin-top: 2rem;
+            text-align: right;
+        }
+
+        .create-contact-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .create-contact-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-full-width {
+            grid-column: 1 / -1;
+        }
+
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .user-cards, .contacts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .create-contact-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Контакты+</div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="tab-link active" data-tab="random-users">Случайные пользователи</a></li>
+                        <li><a href="#" class="tab-link" data-tab="my-contacts">Мои контакты</a></li>
+                    </ul>
+                </nav>
+                <div class="auth-buttons">
+                    <button id="login-btn" class="btn btn-outline">Войти</button>
+                    <button id="register-btn" class="btn btn-primary">Регистрация</button>
+                    <div id="user-menu" style="display: none;">
+                        <span id="username-display"></span>
+                        <button id="logout-btn" class="btn btn-danger">Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Случайные пользователи -->
+        <div id="random-users" class="tab-content active">
+            <h2 class="section-title">Случайные пользователи</h2>
+            <div class="user-actions" style="margin-bottom: 1.5rem;">
+                <button id="load-users" class="btn btn-primary">Загрузить пользователей</button>
+                <button id="load-more" class="btn btn-outline" style="display: none;">Загрузить еще</button>
+            </div>
+            <div id="users-container" class="user-cards">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка пользователей...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Мои контакты -->
+        <div id="my-contacts" class="tab-content">
+            <h2 class="section-title">Мои контакты</h2>
+            
+            <!-- Форма создания контакта -->
+            <div class="create-contact-section">
+                <h3>Создать новый контакт</h3>
+                <form id="create-contact-form" class="create-contact-form">
+                    <div class="form-group">
+                        <label for="contact-name">Имя *</label>
+                        <input type="text" id="contact-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Email</label>
+                        <input type="email" id="contact-email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-phone">Телефон</label>
+                        <input type="tel" id="contact-phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-location">Местоположение</label>
+                        <input type="text" id="contact-location" class="form-control">
+                    </div>
+                    <div class="form-group form-full-width">
+                        <label for="contact-avatar">Аватар (URL)</label>
+                        <input type="url" id="contact-avatar" class="form-control" placeholder="https://example.com/avatar.jpg">
+                    </div>
+                    <div class="form-group form-full-width">
+                        <label for="contact-notes">Заметки</label>
+                        <textarea id="contact-notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group form-full-width">
+                        <button type="submit" class="btn btn-success">Создать контакт</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="export-section">
+                <button id="export-csv" class="btn btn-success">Экспорт в CSV</button>
+            </div>
+            <div id="contacts-container" class="contacts-grid">
+                <div class="empty-state">
+                    <h3>У вас пока нет контактов</h3>
+                    <p>Добавьте пользователей из раздела "Случайные пользователи" или создайте новый контакт</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модальное окно авторизации -->
+    <div id="auth-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="auth-form">
+            <h2 id="auth-modal-title">Вход</h2>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="auth-password">Пароль</label>
+                    <input type="password" id="auth-password" class="form-control" required>
+                </div>
+                <div id="auth-confirm-password" class="form-group" style="display: none;">
+                    <label for="confirm-password">Подтвердите пароль</label>
+                    <input type="password" id="confirm-password" class="form-control">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Войти</button>
+                </div>
+            </form>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="#" id="auth-switch">Нет аккаунта? Зарегистрироваться</a>
+            </div>
+            <button id="close-auth-modal" class="btn btn-outline" style="position: absolute; top: 10px; right: 10px;">×</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно заметки -->
+    <div id="note-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background-color: white; padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 500px;">
+            <h2 id="note-modal-title">Добавить заметку</h2>
+            <form id="note-form">
+                <input type="hidden" id="note-contact-id">
+                <input type="hidden" id="note-id">
+                <div class="form-group">
+                    <textarea id="note-content" class="form-control" placeholder="Введите текст заметки..."></textarea>
+                </div>
+                <div class="form-group" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" id="cancel-note" class="btn btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+            <button id="close-note-modal" class="btn btn-outline" style="position: absolute; top: 10px; right: 10px;">×</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования контакта -->
+    <div id="edit-contact-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background-color: white; padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 500px;">
+            <h2>Редактировать контакт</h2>
+            <form id="edit-contact-form">
+                <input type="hidden" id="edit-contact-id">
+                <div class="form-group">
+                    <label for="edit-contact-name">Имя *</label>
+                    <input type="text" id="edit-contact-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-email">Email</label>
+                    <input type="email" id="edit-contact-email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-phone">Телефон</label>
+                    <input type="tel" id="edit-contact-phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-location">Местоположение</label>
+                    <input type="text" id="edit-contact-location" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-avatar">Аватар (URL)</label>
+                    <input type="url" id="edit-contact-avatar" class="form-control">
+                </div>
+                <div class="form-group" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" id="cancel-edit-contact" class="btn btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+            <button id="close-edit-contact-modal" class="btn btn-outline" style="position: absolute; top: 10px; right: 10px;">×</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Контакты+. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Состояние приложения
+        const state = {
+            currentUser: null,
+            randomUsers: [],
+            contacts: [],
+            isLoginMode: true
+        };
+
+        // DOM элементы
+        const elements = {
+            randomUsersTab: document.getElementById('random-users'),
+            myContactsTab: document.getElementById('my-contacts'),
+            usersContainer: document.getElementById('users-container'),
+            contactsContainer: document.getElementById('contacts-container'),
+            loadUsersBtn: document.getElementById('load-users'),
+            loadMoreBtn: document.getElementById('load-more'),
+            exportCsvBtn: document.getElementById('export-csv'),
+            loginBtn: document.getElementById('login-btn'),
+            registerBtn: document.getElementById('register-btn'),
+            logoutBtn: document.getElementById('logout-btn'),
+            userMenu: document.getElementById('user-menu'),
+            usernameDisplay: document.getElementById('username-display'),
+            authModal: document.getElementById('auth-modal'),
+            authModalTitle: document.getElementById('auth-modal-title'),
+            authForm: document.getElementById('auth-form'),
+            authEmail: document.getElementById('auth-email'),
+            authPassword: document.getElementById('auth-password'),
+            authConfirmPassword: document.getElementById('auth-confirm-password'),
+            authSwitch: document.getElementById('auth-switch'),
+            closeAuthModal: document.getElementById('close-auth-modal'),
+            noteModal: document.getElementById('note-modal'),
+            noteModalTitle: document.getElementById('note-modal-title'),
+            noteForm: document.getElementById('note-form'),
+            noteContactId: document.getElementById('note-contact-id'),
+            noteId: document.getElementById('note-id'),
+            noteContent: document.getElementById('note-content'),
+            cancelNote: document.getElementById('cancel-note'),
+            closeNoteModal: document.getElementById('close-note-modal'),
+            createContactForm: document.getElementById('create-contact-form'),
+            editContactModal: document.getElementById('edit-contact-modal'),
+            editContactForm: document.getElementById('edit-contact-form'),
+            editContactId: document.getElementById('edit-contact-id'),
+            editContactName: document.getElementById('edit-contact-name'),
+            editContactEmail: document.getElementById('edit-contact-email'),
+            editContactPhone: document.getElementById('edit-contact-phone'),
+            editContactLocation: document.getElementById('edit-contact-location'),
+            editContactAvatar: document.getElementById('edit-contact-avatar'),
+            cancelEditContact: document.getElementById('cancel-edit-contact'),
+            closeEditContactModal: document.getElementById('close-edit-contact-modal')
+        };
+
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем, авторизован ли пользователь (в реальном приложении здесь будет проверка токена)
+            checkAuthStatus();
+            
+            // Загружаем контакты, если пользователь авторизован
+            if (state.currentUser) {
+                loadContacts();
+            }
+            
+            // Назначаем обработчики событий
+            setupEventListeners();
+        });
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Переключение между вкладками
+            document.querySelectorAll('.tab-link').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Обновляем активные вкладки
+                    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Кнопки авторизации
+            elements.loginBtn.addEventListener('click', showAuthModal);
+            elements.registerBtn.addEventListener('click', function() {
+                state.isLoginMode = false;
+                showAuthModal();
+            });
+            elements.logoutBtn.addEventListener('click', logout);
+            
+            // Модальное окно авторизации
+            elements.closeAuthModal.addEventListener('click', hideAuthModal);
+            elements.authSwitch.addEventListener('click', function(e) {
+                e.preventDefault();
+                state.isLoginMode = !state.isLoginMode;
+                updateAuthModal();
+            });
+            elements.authForm.addEventListener('submit', handleAuth);
+            
+            // Загрузка пользователей
+            elements.loadUsersBtn.addEventListener('click', loadRandomUsers);
+            elements.loadMoreBtn.addEventListener('click', loadMoreUsers);
+            
+            // Экспорт CSV
+            elements.exportCsvBtn.addEventListener('click', exportToCSV);
+            
+            // Модальное окно заметок
+            elements.closeNoteModal.addEventListener('click', hideNoteModal);
+            elements.cancelNote.addEventListener('click', hideNoteModal);
+            elements.noteForm.addEventListener('submit', handleNoteSubmit);
+            
+            // Форма создания контакта
+            elements.createContactForm.addEventListener('submit', handleCreateContact);
+            
+            // Модальное окно редактирования контакта
+            elements.closeEditContactModal.addEventListener('click', hideEditContactModal);
+            elements.cancelEditContact.addEventListener('click', hideEditContactModal);
+            elements.editContactForm.addEventListener('submit', handleEditContact);
+        }
+
+        // Проверка статуса авторизации
+        function checkAuthStatus() {
+            // В реальном приложении здесь будет проверка токена в localStorage/cookies
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                state.currentUser = JSON.parse(savedUser);
+                updateAuthUI();
+            }
+        }
+
+        // Обновление UI в зависимости от статуса авторизации
+        function updateAuthUI() {
+            if (state.currentUser) {
+                elements.loginBtn.style.display = 'none';
+                elements.registerBtn.style.display = 'none';
+                elements.userMenu.style.display = 'flex';
+                elements.usernameDisplay.textContent = state.currentUser.name;
+            } else {
+                elements.loginBtn.style.display = 'block';
+                elements.registerBtn.style.display = 'block';
+                elements.userMenu.style.display = 'none';
+            }
+        }
+
+        // Показать модальное окно авторизации
+        function showAuthModal() {
+            updateAuthModal();
+            elements.authModal.style.display = 'flex';
+        }
+
+        // Скрыть модальное окно авторизации
+        function hideAuthModal() {
+            elements.authModal.style.display = 'none';
+            elements.authForm.reset();
+        }
+
+        // Обновить модальное окно авторизации
+        function updateAuthModal() {
+            if (state.isLoginMode) {
+                elements.authModalTitle.textContent = 'Вход';
+                elements.authSwitch.textContent = 'Нет аккаунта? Зарегистрироваться';
+                elements.authConfirmPassword.style.display = 'none';
+            } else {
+                elements.authModalTitle.textContent = 'Регистрация';
+                elements.authSwitch.textContent = 'Уже есть аккаунт? Войти';
+                elements.authConfirmPassword.style.display = 'block';
+            }
+        }
+
+        // Обработка авторизации/регистрации
+        function handleAuth(e) {
+            e.preventDefault();
+            
+            const email = elements.authEmail.value;
+            const password = elements.authPassword.value;
+            
+            if (!state.isLoginMode) {
+                const confirmPassword = document.getElementById('confirm-password').value;
+                if (password !== confirmPassword) {
+                    alert('Пароли не совпадают');
+                    return;
+                }
+            }
+            
+            // В реальном приложении здесь будет запрос к API
+            // Для демонстрации просто создаем пользователя
+            if (state.isLoginMode) {
+                // Логин
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                const user = users.find(u => u.email === email && u.password === password);
+                
+                if (user) {
+                    state.currentUser = user;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    updateAuthUI();
+                    hideAuthModal();
+                    loadContacts();
+                    alert('Вход выполнен успешно!');
+                } else {
+                    alert('Неверный email или пароль');
+                }
+            } else {
+                // Регистрация
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                
+                if (users.find(u => u.email === email)) {
+                    alert('Пользователь с таким email уже существует');
+                    return;
+                }
+                
+                const newUser = {
+                    id: Date.now(),
+                    email: email,
+                    password: password, // В реальном приложении пароль должен хэшироваться
+                    name: email.split('@')[0]
+                };
+                
+                users.push(newUser);
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                state.currentUser = newUser;
+                localStorage.setItem('currentUser', JSON.stringify(newUser));
+                updateAuthUI();
+                hideAuthModal();
+                loadContacts();
+                alert('Регистрация выполнена успешно!');
+            }
+        }
+
+        // Выход из системы
+        function logout() {
+            state.currentUser = null;
+            localStorage.removeItem('currentUser');
+            updateAuthUI();
+            state.contacts = [];
+            renderContacts();
+            alert('Вы вышли из системы');
+        }
+
+        // Загрузка случайных пользователей
+        async function loadRandomUsers() {
+            elements.usersContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка пользователей...</p>
+                </div>
+            `;
+            
+            try {
+                // Используем Random User API
+                const response = await fetch('https://randomuser.me/api/?results=6');
+                const data = await response.json();
+                
+                state.randomUsers = data.results;
+                renderRandomUsers();
+                elements.loadMoreBtn.style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                elements.usersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Ошибка загрузки</h3>
+                        <p>Не удалось загрузить пользователей. Попробуйте еще раз.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Загрузка дополнительных пользователей
+        async function loadMoreUsers() {
+            try {
+                const response = await fetch('https://randomuser.me/api/?results=3');
+                const data = await response.json();
+                
+                state.randomUsers = [...state.randomUsers, ...data.results];
+                renderRandomUsers();
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                alert('Не удалось загрузить дополнительных пользователей');
+            }
+        }
+
+        // Отображение случайных пользователей
+        function renderRandomUsers() {
+            if (state.randomUsers.length === 0) {
+                elements.usersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Нет пользователей</h3>
+                        <p>Нажмите "Загрузить пользователей" для отображения</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.usersContainer.innerHTML = '';
+            
+            state.randomUsers.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                
+                const isContact = state.contacts.some(contact => 
+                    contact.email === user.email
+                );
+                
+                userCard.innerHTML = `
+                    <div class="user-card-header">
+                        <img src="${user.picture.large}" alt="${user.name.first} ${user.name.last}" class="user-avatar">
+                        <div class="user-info">
+                            <h3>${user.name.first} ${user.name.last}</h3>
+                            <p>${user.location.city}, ${user.location.country}</p>
+                        </div>
+                    </div>
+                    <div class="user-card-body">
+                        <div class="user-details">
+                            <div class="user-detail">
+                                <span class="user-detail-label">Email:</span>
+                                <span>${user.email}</span>
+                            </div>
+                            <div class="user-detail">
+                                <span class="user-detail-label">Телефон:</span>
+                                <span>${user.phone}</span>
+                            </div>
+                            <div class="user-detail">
+                                <span class="user-detail-label">Дата рождения:</span>
+                                <span>${new Date(user.dob.date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <div class="user-actions">
+                            ${isContact ? 
+                                '<button class="btn btn-outline" disabled>Уже в контактах</button>' : 
+                                '<button class="btn btn-primary add-contact">Добавить в контакты</button>'
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                if (!isContact) {
+                    const addBtn = userCard.querySelector('.add-contact');
+                    addBtn.addEventListener('click', () => addToContacts(user));
+                }
+                
+                elements.usersContainer.appendChild(userCard);
+            });
+        }
+
+        // Добавление пользователя в контакты
+        function addToContacts(user) {
+            if (!state.currentUser) {
+                alert('Для добавления контактов необходимо войти в систему');
+                return;
+            }
+            
+            const contact = {
+                id: Date.now(),
+                userId: user.login.uuid,
+                name: `${user.name.first} ${user.name.last}`,
+                email: user.email,
+                phone: user.phone,
+                picture: user.picture.large,
+                location: `${user.location.city}, ${user.location.country}`,
+                notes: [],
+                isCustom: false
+            };
+            
+            // В реальном приложении здесь будет запрос к API
+            state.contacts.push(contact);
+            saveContacts();
+            renderContacts();
+            renderRandomUsers(); // Обновляем кнопки "Добавить в контакты"
+            
+            alert('Контакт добавлен!');
+        }
+
+        // Создание собственного контакта
+        function handleCreateContact(e) {
+            e.preventDefault();
+            
+            if (!state.currentUser) {
+                alert('Для создания контактов необходимо войти в систему');
+                return;
+            }
+            
+            const name = document.getElementById('contact-name').value;
+            const email = document.getElementById('contact-email').value;
+            const phone = document.getElementById('contact-phone').value;
+            const location = document.getElementById('contact-location').value;
+            const avatar = document.getElementById('contact-avatar').value;
+            const notesText = document.getElementById('contact-notes').value;
+            
+            if (!name) {
+                alert('Поле "Имя" обязательно для заполнения');
+                return;
+            }
+            
+            const contact = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                phone: phone,
+                location: location,
+                picture: avatar,
+                notes: notesText ? [{
+                    id: Date.now(),
+                    content: notesText,
+                    createdAt: new Date().toISOString()
+                }] : [],
+                isCustom: true
+            };
+            
+            state.contacts.push(contact);
+            saveContacts();
+            renderContacts();
+            
+            // Очищаем форму
+            elements.createContactForm.reset();
+            
+            alert('Контакт успешно создан!');
+        }
+
+        // Загрузка контактов
+        function loadContacts() {
+            // В реальном приложении здесь будет запрос к API
+            const savedContacts = localStorage.getItem(`contacts_${state.currentUser.id}`);
+            if (savedContacts) {
+                state.contacts = JSON.parse(savedContacts);
+            }
+            renderContacts();
+        }
+
+        // Сохранение контактов
+        function saveContacts() {
+            // В реальном приложении здесь будет запрос к API
+            localStorage.setItem(`contacts_${state.currentUser.id}`, JSON.stringify(state.contacts));
+        }
+
+        // Отображение контактов
+        function renderContacts() {
+            if (state.contacts.length === 0) {
+                elements.contactsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>У вас пока нет контактов</h3>
+                        <p>Добавьте пользователей из раздела "Случайные пользователи" или создайте новый контакт</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            elements.contactsContainer.innerHTML = '';
+            
+            state.contacts.forEach(contact => {
+                const contactCard = document.createElement('div');
+                contactCard.className = 'contact-card';
+                
+                contactCard.innerHTML = `
+                    <div class="contact-card-header">
+                        <h3>${contact.name} ${contact.isCustom ? '<span style="font-size: 0.8rem; opacity: 0.8;">(созданный)</span>' : ''}</h3>
+                        <div class="contact-actions">
+                            ${contact.isCustom ? 
+                                `<button class="btn btn-outline edit-contact">Редактировать</button>` : 
+                                ''
+                            }
+                            <button class="btn btn-danger delete-contact">Удалить</button>
+                        </div>
+                    </div>
+                    <div class="contact-card-body">
+                        <div class="user-details">
+                            ${contact.picture ? 
+                                `<img src="${contact.picture}" alt="${contact.name}" class="user-avatar" style="float: right; margin-left: 1rem;">` : 
+                                `<div class="default-avatar">${contact.name.charAt(0)}</div>`
+                            }
+                            ${contact.email ? `
+                                <div class="user-detail">
+                                    <span class="user-detail-label">Email:</span>
+                                    <span>${contact.email}</span>
+                                </div>
+                            ` : ''}
+                            ${contact.phone ? `
+                                <div class="user-detail">
+                                    <span class="user-detail-label">Телефон:</span>
+                                    <span>${contact.phone}</span>
+                                </div>
+                            ` : ''}
+                            ${contact.location ? `
+                                <div class="user-detail">
+                                    <span class="user-detail-label">Местоположение:</span>
+                                    <span>${contact.location}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="notes-section">
+                            <h4>Заметки</h4>
+                            <div class="notes-list" id="notes-${contact.id}">
+                                ${contact.notes.length > 0 ? 
+                                    contact.notes.map(note => `
+                                        <div class="note-item" data-note-id="${note.id}">
+                                            <div class="note-content">${note.content}</div>
+                                            <div class="note-actions">
+                                                <button class="btn btn-outline edit-note">Редактировать</button>
+                                                <button class="btn btn-danger delete-note">Удалить</button>
+                                            </div>
+                                        </div>
+                                    `).join('') : 
+                                    '<p>Нет заметок</p>'
+                                }
+                            </div>
+                            <button class="btn btn-primary add-note" data-contact-id="${contact.id}">Добавить заметку</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Назначаем обработчики событий
+                const deleteBtn = contactCard.querySelector('.delete-contact');
+                deleteBtn.addEventListener('click', () => deleteContact(contact.id));
+                
+                const addNoteBtn = contactCard.querySelector('.add-note');
+                addNoteBtn.addEventListener('click', () => showNoteModal(contact.id));
+                
+                // Обработчики для существующих заметок
+                contactCard.querySelectorAll('.edit-note').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const noteItem = this.closest('.note-item');
+                        const noteId = parseInt(noteItem.getAttribute('data-note-id'));
+                        const note = contact.notes.find(n => n.id === noteId);
+                        showNoteModal(contact.id, noteId, note.content);
+                    });
+                });
+                
+                contactCard.querySelectorAll('.delete-note').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const noteItem = this.closest('.note-item');
+                        const noteId = parseInt(noteItem.getAttribute('data-note-id'));
+                        deleteNote(contact.id, noteId);
+                    });
+                });
+                
+                // Кнопка редактирования для созданных контактов
+                if (contact.isCustom) {
+                    const editBtn = contactCard.querySelector('.edit-contact');
+                    editBtn.addEventListener('click', () => showEditContactModal(contact));
+                }
+                
+                elements.contactsContainer.appendChild(contactCard);
+            });
+        }
+
+        // Показать модальное окно редактирования контакта
+        function showEditContactModal(contact) {
+            elements.editContactId.value = contact.id;
+            elements.editContactName.value = contact.name;
+            elements.editContactEmail.value = contact.email || '';
+            elements.editContactPhone.value = contact.phone || '';
+            elements.editContactLocation.value = contact.location || '';
+            elements.editContactAvatar.value = contact.picture || '';
+            
+            elements.editContactModal.style.display = 'flex';
+        }
+
+        // Скрыть модальное окно редактирования контакта
+        function hideEditContactModal() {
+            elements.editContactModal.style.display = 'none';
+            elements.editContactForm.reset();
+        }
+
+        // Обработка редактирования контакта
+        function handleEditContact(e) {
+            e.preventDefault();
+            
+            const contactId = parseInt(elements.editContactId.value);
+            const name = elements.editContactName.value;
+            const email = elements.editContactEmail.value;
+            const phone = elements.editContactPhone.value;
+            const location = elements.editContactLocation.value;
+            const avatar = elements.editContactAvatar.value;
+            
+            if (!name) {
+                alert('Поле "Имя" обязательно для заполнения');
+                return;
+            }
+            
+            const contactIndex = state.contacts.findIndex(c => c.id === contactId);
+            if (contactIndex !== -1) {
+                state.contacts[contactIndex].name = name;
+                state.contacts[contactIndex].email = email;
+                state.contacts[contactIndex].phone = phone;
+                state.contacts[contactIndex].location = location;
+                state.contacts[contactIndex].picture = avatar;
+                
+                saveContacts();
+                renderContacts();
+                hideEditContactModal();
+                
+                alert('Контакт успешно обновлен!');
+            }
+        }
+
+        // Удаление контакта
+        function deleteContact(contactId) {
+            if (confirm('Вы уверены, что хотите удалить этот контакт?')) {
+                state.contacts = state.contacts.filter(contact => contact.id !== contactId);
+                saveContacts();
+                renderContacts();
+                renderRandomUsers(); // Обновляем кнопки "Добавить в контакты"
+            }
+        }
+
+        // Показать модальное окно заметки
+        function showNoteModal(contactId, noteId = null, content = '') {
+            elements.noteContactId.value = contactId;
+            elements.noteId.value = noteId || '';
+            elements.noteContent.value = content;
+            
+            if (noteId) {
+                elements.noteModalTitle.textContent = 'Редактировать заметку';
+            } else {
+                elements.noteModalTitle.textContent = 'Добавить заметку';
+            }
+            
+            elements.noteModal.style.display = 'flex';
+        }
+
+        // Скрыть модальное окно заметки
+        function hideNoteModal() {
+            elements.noteModal.style.display = 'none';
+            elements.noteForm.reset();
+        }
+
+        // Обработка сохранения заметки
+        function handleNoteSubmit(e) {
+            e.preventDefault();
+            
+            const contactId = parseInt(elements.noteContactId.value);
+            const noteId = elements.noteId.value ? parseInt(elements.noteId.value) : Date.now();
+            const content = elements.noteContent.value.trim();
+            
+            if (!content) {
+                alert('Заметка не может быть пустой');
+                return;
+            }
+            
+            const contact = state.contacts.find(c => c.id === contactId);
+            if (!contact) return;
+            
+            if (elements.noteId.value) {
+                // Редактирование существующей заметки
+                const noteIndex = contact.notes.findIndex(n => n.id === noteId);
+                if (noteIndex !== -1) {
+                    contact.notes[noteIndex].content = content;
+                }
+            } else {
+                // Добавление новой заметки
+                contact.notes.push({
+                    id: noteId,
+                    content: content,
+                    createdAt: new Date().toISOString()
+                });
+            }
+            
+            saveContacts();
+            renderContacts();
+            hideNoteModal();
+        }
+
+        // Удаление заметки
+        function deleteNote(contactId, noteId) {
+            if (confirm('Вы уверены, что хотите удалить эту заметку?')) {
+                const contact = state.contacts.find(c => c.id === contactId);
+                if (contact) {
+                    contact.notes = contact.notes.filter(note => note.id !== noteId);
+                    saveContacts();
+                    renderContacts();
+                }
+            }
+        }
+
+        // Экспорт контактов в CSV
+        function exportToCSV() {
+            if (state.contacts.length === 0) {
+                alert('Нет контактов для экспорта');
+                return;
+            }
+            
+            // Заголовки CSV
+            let csvContent = "Имя,Email,Телефон,Местоположение,Заметки\n";
+            
+            // Данные контактов
+            state.contacts.forEach(contact => {
+                const notes = contact.notes.map(note => note.content).join('; ');
+                const row = [
+                    `"${contact.name}"`,
+                    `"${contact.email}"`,
+                    `"${contact.phone}"`,
+                    `"${contact.location}"`,
+                    `"${notes}"`
+                ].join(',');
+                
+                csvContent += row + '\n';
+            });
+            
+            // Создание и скачивание файла
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'contacts.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

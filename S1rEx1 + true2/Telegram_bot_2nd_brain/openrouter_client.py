@@ -226,6 +226,7 @@ class OpenRouterClient:
         Returns:
             Educational response
         """
+
         try:
             system_prompt = instructor_system_prompt(topic, level, custom_instructions)
             

@@ -1,53 +1,23 @@
 """General handlers shared across modes."""
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import ContextTypes
 
-import database as db_module
 from config import config
 from openrouter_client import openrouter_client
 from prompts import GENERAL_ASSISTANT_PROMPT
 
+from ..responses import general as general_responses
+from ..services import db_session
+
 
 class GeneralHandlers:
-    """General messages, search, and fallback handlers."""
-
-    async def start_search_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        query = update.callback_query
-        user_id = update.effective_user.id
-
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
-            user = await db.get_or_create_user(telegram_id=user_id)
-            notes = await db.get_user_notes(user.id)
-
-        if not notes:
-            await query.edit_message_text(
-                "📭 У вас пока нет сохраненных конспектов для поиска.\n"
-                "Сначала создайте несколько конспектов!",
-                reply_markup=self.get_back_keyboard(),
-                parse_mode="Markdown",
-            )
-            return self.MAIN_MENU
-
-        topics = list({note.topic for note in notes})
-        keyboard = [[InlineKeyboardButton(topic, callback_data=f"search_topic_{topic[:20]}")] for topic in topics[:10]]
-        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="back_to_main")])
-
-        await query.edit_message_text(
-            "🔍 **Поиск по конспектам**\n\n"
-            "Выберите тему для поиска:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown",
-        )
-
-        return self.MAIN_MENU
+    """General conversation and fallback handlers."""
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         user_id = update.effective_user.id
         message_text = update.message.text
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (session, db):
             user = await db.get_or_create_user(telegram_id=user_id)
 
             if 'conversation_id' not in context.user_data:
@@ -94,7 +64,10 @@ class GeneralHandlers:
         await update.message.reply_text(response_text, parse_mode="Markdown")
 
     async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        await update.message.reply_text("❌ Операция отменена.", reply_markup=self.get_back_keyboard())
+        await update.message.reply_text(
+            general_responses.cancel_message(),
+            reply_markup=self.get_back_keyboard(),
+        )
         return self.MAIN_MENU
 
     async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -103,8 +76,7 @@ class GeneralHandlers:
         try:
             if update and getattr(update, "effective_message", None):
                 await update.effective_message.reply_text(
-                    "❌ Произошла ошибка при обработке вашего запроса. "
-                    "Пожалуйста, попробуйте еще раз или напишите /start для перезапуска."
+                    general_responses.error_message()
                 )
         except Exception:  # pragma: no cover - defensive fallback
             pass

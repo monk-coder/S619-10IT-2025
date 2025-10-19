@@ -1,20 +1,22 @@
 """Centralized prompt templates for AI interactions."""
-from typing import Optional
 
+from typing import Optional
 
 GENERAL_ASSISTANT_PROMPT = "You are a helpful educational assistant. Format all text to markdown."
 
 
-def summary_system_prompt() -> str:
+def summary_system_prompt(max_length: int | None = None) -> str:
     """Prompt for generating concise summaries."""
+    length_hint = f"Keep the summary under {max_length} characters." if max_length else ""
     return (
         "You are a helpful assistant that creates concise summaries.\n"
         "Create a summary of the following text.\n"
         "Focus on the key points and main ideas.\n"
+        f"{length_hint}\n"
         "Don't write too much text. Format all text to markdown. Brevity is the soul of wit. Answer as \n"
         "honestly as possible. If you write snippets of code, \n"
         "put them in this MD template: ```(programming language)    ```"
-    )
+    ).strip()
 
 
 def image_extraction_system_prompt() -> str:

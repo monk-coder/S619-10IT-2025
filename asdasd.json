@@ -1,0 +1,61 @@
+{
+    "services": {
+      "useFahrenheit": false,
+      "weatherLocation": "Saint Petersburg"
+    },
+    "bar": {
+      "workspaces": {
+        "shown": 7,
+        "showWindows": false
+      },
+      "tray": {
+        "compact": true,
+        "recolour": true
+      },
+              "entries": [
+              {
+                  "id": "logo",
+                  "enabled": true
+              },
+              {
+                  "id": "workspaces",
+                  "enabled": true
+              },
+              {
+                  "id": "spacer",
+                  "enabled": true
+              },
+              {
+                  "id": "activeWindow",
+                  "enabled": true
+              },
+              {
+                  "id": "spacer",
+                  "enabled": true
+              },
+              {
+                  "id": "tray",
+                  "enabled": true
+              },
+              {
+                  "id": "clock",
+                  "enabled": true
+              },
+              {
+                  "id": "statusIcons",
+                  "enabled": true
+              },
+              {
+                  "id": "power",
+                  "enabled": false
+              }
+          ],
+      "status": {
+        "showAudio": true,
+        "showKbLayout": true,
+        "showNetwork": false
+      }
+    }
+    }
+  
+  

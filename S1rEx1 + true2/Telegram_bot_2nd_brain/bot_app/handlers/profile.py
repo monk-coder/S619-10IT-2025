@@ -1,10 +1,9 @@
 """Handlers for profile management."""
-from html import escape
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-import database as db_module
+from ..responses import profile as profile_responses
+from ..services import db_session
 
 
 class ProfileHandlers:
@@ -14,8 +13,7 @@ class ProfileHandlers:
         query = update.callback_query
         user_id = update.effective_user.id
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             await db.get_or_create_user(telegram_id=user_id)
 
         keyboard = [
@@ -28,7 +26,7 @@ class ProfileHandlers:
         ]
 
         await query.edit_message_text(
-            "👤 **Профиль**\n\nВыберите действие:",
+            profile_responses.profile_menu_intro(),
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown",
         )
@@ -45,19 +43,13 @@ class ProfileHandlers:
             return await self.show_profile_menu(update, context)
         if query.data == "set_prompt":
             await query.edit_message_text(
-                "⚙️ **Настройка промпта**\n\n"
-                "Отправьте новый системный промпт для AI.\n"
-                "Это повлияет на стиль и поведение ответов.\n\n"
-                "Для отмены напишите /cancel",
+                profile_responses.prompt_setting_message(),
                 parse_mode="Markdown",
             )
             return self.PROMPT_SETTING
         if query.data == "set_instructions":
             await query.edit_message_text(
-                "📋 **Специфические инструкции**\n\n"
-                "Отправьте дополнительные инструкции для AI.\n"
-                "Например: 'Отвечай кратко', 'Используй примеры', и т.д.\n\n"
-                "Для отмены напишите /cancel",
+                profile_responses.instructions_setting_message(),
                 parse_mode="Markdown",
             )
             return self.INSTRUCTIONS_SETTING
@@ -74,8 +66,7 @@ class ProfileHandlers:
         user_id = update.effective_user.id
         new_prompt = update.message.text
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             await db.update_user_profile(telegram_id=user_id, custom_prompt=new_prompt)
 
         await update.message.reply_text("✅ Промпт успешно обновлен!", reply_markup=self.get_back_keyboard())
@@ -85,8 +76,7 @@ class ProfileHandlers:
         user_id = update.effective_user.id
         new_instructions = update.message.text
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             await db.update_user_profile(
                 telegram_id=user_id,
                 specific_instructions=new_instructions,
@@ -102,16 +92,14 @@ class ProfileHandlers:
         query = update.callback_query
         user_id = update.effective_user.id
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             user = await db.get_or_create_user(telegram_id=user_id)
 
-        settings_text = (
-            "👁 **Текущие настройки**\n\n"
-            f"**Промпт:** {user.custom_prompt or 'Стандартный'}\n\n"
-            f"**Инструкции:** {user.specific_instructions or 'Не заданы'}\n\n"
-            f"**Max токенов:** {user.max_tokens}\n"
-            f"**Temperature:** {user.temperature}"
+        settings_text = profile_responses.current_settings_text(
+            custom_prompt=user.custom_prompt,
+            instructions=user.specific_instructions,
+            max_tokens=user.max_tokens,
+            temperature=user.temperature,
         )
 
         await query.edit_message_text(
@@ -126,20 +114,11 @@ class ProfileHandlers:
         query = update.callback_query
         user_id = update.effective_user.id
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             user = await db.get_or_create_user(telegram_id=user_id)
             stats = await db.get_user_statistics(user.id)
 
-        stats_text = (
-            "📊 **Статистика использования**\n\n"
-            f"**Всего сообщений:** {stats.get('total_messages', 0)}\n"
-            f"**Токенов использовано:** {stats.get('total_tokens_used', 0)}\n"
-            f"**Конспектов создано:** {stats.get('notes_count', 0)}\n"
-            f"**Диалогов:** {stats.get('conversations_count', 0)}\n"
-            f"**Зарегистрирован:** {stats.get('member_since', 'Неизвестно')}\n"
-            f"**Последняя активность:** {stats.get('last_active', 'Неизвестно')}"
-        )
+        stats_text = profile_responses.statistics_text(stats)
 
         await query.edit_message_text(
             stats_text,
@@ -151,20 +130,23 @@ class ProfileHandlers:
 
     async def show_user_info(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         query = update.callback_query
-        user = update.effective_user
+        user_id = update.effective_user.id
 
-        info_text = (
-            "ℹ️ <b>Информация о пользователе</b>\n\n"
-            f"<b>ID:</b> {escape(str(user.id))}\n"
-            f"<b>Имя:</b> {escape(user.first_name or 'Не указано')}\n"
-            f"<b>Фамилия:</b> {escape(user.last_name or 'Не указана')}\n"
-            f"<b>Username:</b> @{escape(user.username) if user.username else 'Не указан'}\n"
-            f"<b>Язык:</b> {escape(user.language_code or 'Не определен')}"
+        async with db_session(self.db_manager_class) as (_, db):
+            user = await db.get_or_create_user(telegram_id=user_id)
+
+        info_text = profile_responses.user_info_text(user_context=user.specific_instructions)
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("📝 Поделиться информацией", callback_data="set_instructions")],
+                [InlineKeyboardButton("🔙 Назад", callback_data="profile")],
+            ]
         )
 
         await query.edit_message_text(
             info_text,
-            reply_markup=self.get_back_to_profile_keyboard(),
+            reply_markup=keyboard,
             parse_mode="HTML",
         )
 

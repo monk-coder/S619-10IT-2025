@@ -7,7 +7,7 @@ def welcome_message(first_name: str | None) -> str:
     name = first_name or "друг"
     return (
         f"👋 Привет, {name}!\n\n"
-        "i use arch btw .!.\n"
+        "eto umniy bot\n"
         "Выберите режим работы:"
     )
 

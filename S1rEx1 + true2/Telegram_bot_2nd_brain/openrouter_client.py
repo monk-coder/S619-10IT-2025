@@ -24,8 +24,8 @@ class OpenRouterClient:
             api_key=config.openrouter_api_key,
             base_url=config.openrouter_base_url,
             default_headers={
-                "HTTP-Referer": "https://github.com/yourusername/telegram-bot",  # Optional
-                "X-Title": "Telegram Educational Bot",  # Optional
+                "HTTP-Referer": "https://github.com/yourusername/telegram-bot",
+                "X-Title": "Telegram Educational Bot",
             }
         )
         self.model = config.model_name

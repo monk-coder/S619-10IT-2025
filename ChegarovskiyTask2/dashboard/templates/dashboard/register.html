@@ -1,0 +1,79 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="weather-card">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">Создание аккаунта</h2>
+                <p class="text-muted">Зарегистрируйтесь для доступа ко всем функциям</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Имя пользователя</label>
+                    <input type="text" name="username" class="form-control-custom" placeholder="Введите имя пользователя" required>
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.username.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Пароль</label>
+                    <input type="password" name="password1" class="form-control-custom" placeholder="Введите пароль" required>
+                    {% if form.password1.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.password1.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-medium">Подтверждение пароля</label>
+                    <input type="password" name="password2" class="form-control-custom" placeholder="Повторите пароль" required>
+                    {% if form.password2.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.password2.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-semibold">
+                    Создать аккаунт
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="text-muted mb-0">Уже есть аккаунт?</p>
+                <a href="{% url 'login' %}" class="btn btn-outline-custom mt-2 w-100">
+                    Войти в существующий аккаунт
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .weather-card {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .border-top {
+        border-color: var(--border-light) !important;
+    }
+
+    .dark-theme .border-top {
+        border-color: var(--border-dark) !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Путешествия и Вишлист</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-globe-americas"></i> Путешествие по миру</h1>
+        <p>Откройте для себя новые страны и сохраните их</p>
+        <!-- Секция авторизации будет добавлена автоматически -->
+    </header>
+
+    <div class="container">
+        <div class="tab-container">
+            <div class="tab active" data-tab="search">Поиск стран</div>
+            <div class="tab" data-tab="wishlist">Мой вишлист</div>
+            <div class="tab" data-tab="settings">Настройки API</div>
+        </div>
+
+        <div class="tab-content active" id="search-tab">
+            <section id="search-section" class="card">
+                <h2>Найти страну</h2>
+                <p>Введите название страны на русском или английском (Россия, USA, France, Germany, Japan)</p>
+                <form id="searchForm">
+                    <input type="text" id="searchInput" placeholder="Например: Россия или USA" autocomplete="off">
+                    <button type="submit"><i class="fas fa-search"></i> Искать</button>
+                </form>
+                <div id="loading" class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Ищем информацию о стране...</p>
+                </div>
+                <div id="errorMessage" class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Страна не найдена. Попробуйте другое название.</p>
+                </div>
+            </section>
+
+            <section id="results"></section>
+        </div>
+
+        <div class="tab-content" id="wishlist-tab">
+            <section id="wishlist-section" class="card">
+                <h2><i class="fas fa-heart"></i> Мой вишлист путешествий</h2>
+                <p>Здесь хранятся страны, которые вам понравились</p>
+                <div id="wishlist-list">
+                    <!-- Wishlist items will be loaded here -->
+                </div>
+            </section>
+        </div>
+
+        <div class="tab-content" id="settings-tab">
+            <section id="settings-section" class="card">
+                <h2><i class="fas fa-cog"></i> Настройки API</h2>
+                <p>Для получения AI-гидов по странам введите ваш API ключ OpenRouter</p>
+                <div class="api-settings">
+                    <label for="apiKeyInput">API Key OpenRouter:</label>
+                    <input type="password" id="apiKeyInput" placeholder="Введите ваш API ключ...">
+                    <div class="api-buttons">
+                        <button type="button" id="saveApiKey"><i class="fas fa-save"></i> Сохранить ключ</button>
+                        <button type="button" id="clearApiKey"><i class="fas fa-trash"></i> Очистить ключ</button>
+                    </div>
+                    <div id="apiStatus"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="authModalTitle">Вход в систему</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="authTabs" class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Вход</button>
+                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                </div>
+                
+                <form id="loginForm" class="auth-form active">
+                    <div class="form-group">
+                        <label for="loginUsername">Имя пользователя:</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Пароль:</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </button>
+                </form>
+
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="registerUsername">Имя пользователя:</label>
+                        <input type="text" id="registerUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Пароль:</label>
+                        <input type="password" id="registerPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerConfirmPassword">Подтвердите пароль:</label>
+                        <input type="password" id="registerConfirmPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">
+                        <i class="fas fa-user-plus"></i> Зарегистрироваться
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">
+        <span id="notification-text"></span>
+    </div>
+
+    <footer>
+    </footer>
+
+    <!-- JavaScript файлы в правильном порядке -->
+    <script src="js/Notification.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/Wishlist.js"></script>
+    <script src="js/CountryService.js"></script>
+    <script src="js/CountrySearch.js"></script>
+    <script src="js/Country.js"></script>
+    <script src="js/AIService.js"></script>
+    <script src="js/AuthUI.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

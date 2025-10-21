@@ -1,8 +1,5 @@
-
 class Country {
-    constructor(data) {
-        this.data = data;
-    }
+    constructor(data) { this.data = data; }
     
     render() {
         const safeData = this.escapeHtml(JSON.stringify(this.data));
@@ -50,7 +47,6 @@ class Country {
                         <p><strong>Описание:</strong> ${this.data.description}</p>
                     </div>
 
-                    <!-- AI Guide Section -->
                     <div class="ai-guide-section">
                         <button class="ai-guide-btn" onclick="Country.getAIGuide('${this.escapeHtml(this.data.name)}')">
                             <i class="fas fa-robot"></i> Получить AI-гид по стране
@@ -58,7 +54,7 @@ class Country {
                         <div id="ai-guide-${this.data.name.replace(/\s+/g, '-')}" class="ai-guide-content"></div>
                     </div>
                     
-                    <button class="add-to-wishlist" onclick="Wishlist.addFromSearch(${safeData})">
+                    <button class="add-to-wishlist" onclick="Wishlist.add(${safeData})">
                         <i class="fas fa-heart"></i> Добавить в вишлист
                     </button>
                 </div>
@@ -67,14 +63,12 @@ class Country {
     }
 
     static async getAIGuide(countryName) {
-        console.log('Получение AI-гида для:', countryName);
-        
         if (!AuthService.isLoggedIn()) {
             Notification.show('Войдите в систему для получения AI-гида', 'error');
             return;
         }
 
-        const wishlist = Wishlist.get();
+        const wishlist = await Wishlist.get();
         const country = wishlist.find(item => item.name === countryName);
         
         if (!country) {
@@ -134,5 +128,4 @@ class Country {
     }
 }
 
-// Делаем методы глобально доступными
 window.Country = Country;

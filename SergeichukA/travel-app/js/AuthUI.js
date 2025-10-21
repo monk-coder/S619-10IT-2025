@@ -1,4 +1,3 @@
-
 class AuthUI {
     static init() {
         this.createAuthSection();
@@ -10,32 +9,30 @@ class AuthUI {
         const header = document.querySelector('header');
         const existingAuthSection = document.getElementById('auth-section');
         
-        if (existingAuthSection) {
-            existingAuthSection.remove();
-        }
+        if (existingAuthSection) existingAuthSection.remove();
 
         const authSection = document.createElement('div');
         authSection.id = 'auth-section';
         authSection.className = 'auth-section';
+        authSection.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        `;
         header.appendChild(authSection);
     }
 
     static bindAuthEvents() {
-        // Закрытие модального окна
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('close')) {
-                this.hideAuthModal();
-            }
+            if (e.target.classList.contains('close')) this.hideAuthModal();
         });
 
-        // Клик вне модального окна
         document.getElementById('authModal').addEventListener('click', (e) => {
-            if (e.target.id === 'authModal') {
-                this.hideAuthModal();
-            }
+            if (e.target.id === 'authModal') this.hideAuthModal();
         });
 
-        // Переключение между вкладками
         document.querySelectorAll('.auth-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -44,13 +41,11 @@ class AuthUI {
             });
         });
 
-        // Форма входа
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleLogin();
         });
 
-        // Форма регистрации
         document.getElementById('registerForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleRegister();
@@ -58,19 +53,14 @@ class AuthUI {
     }
 
     static switchAuthTab(tabName) {
-        console.log('Switching to tab:', tabName);
-        
-        // Обновляем активные вкладки
         document.querySelectorAll('.auth-tab').forEach(tab => {
             tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
         });
 
-        // Обновляем активные формы
         document.querySelectorAll('.auth-form').forEach(form => {
             form.classList.toggle('active', form.id === `${tabName}Form`);
         });
 
-        // Обновляем заголовок
         document.getElementById('authModalTitle').textContent = 
             tabName === 'login' ? 'Вход в систему' : 'Регистрация';
     }
@@ -90,9 +80,7 @@ class AuthUI {
             this.hideAuthModal();
             this.updateAuthUI();
             Wishlist.render();
-        } catch (error) {
-            Notification.show(error.message, 'error');
-        }
+        } catch (error) { Notification.show(error.message, 'error'); }
     }
 
     static async handleRegister() {
@@ -122,26 +110,21 @@ class AuthUI {
             this.hideAuthModal();
             this.updateAuthUI();
             Wishlist.render();
-        } catch (error) {
-            Notification.show(error.message, 'error');
-        }
+        } catch (error) { Notification.show(error.message, 'error'); }
     }
 
     static showLoginModal() {
-        console.log('Showing login modal');
         this.switchAuthTab('login');
         document.getElementById('authModal').style.display = 'block';
     }
 
     static showRegisterModal() {
-        console.log('Showing register modal');
         this.switchAuthTab('register');
         document.getElementById('authModal').style.display = 'block';
     }
 
     static hideAuthModal() {
         document.getElementById('authModal').style.display = 'none';
-        // Очищаем формы
         document.querySelectorAll('.auth-form').forEach(form => form.reset());
     }
 
@@ -153,23 +136,49 @@ class AuthUI {
 
         if (user) {
             authSection.innerHTML = `
-                <div class="user-info">
-                    <i class="fas fa-user-circle"></i>
-                    <span>${user.username}</span>
-                    <button onclick="AuthUI.logout()" class="logout-btn">
+                <div class="user-info" style="display: flex; align-items: center; gap: 10px; color: white;">
+                    <i class="fas fa-user-circle" style="font-size: 1.5rem;"></i>
+                    <span style="font-weight: 500;">${user.username}</span>
+                    <button onclick="AuthUI.logout()" class="logout-btn" style="
+                        background: rgba(255,255,255,0.2);
+                        color: white;
+                        border: 1px solid rgba(255,255,255,0.3);
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
                         <i class="fas fa-sign-out-alt"></i> Выйти
                     </button>
                 </div>
             `;
         } else {
             authSection.innerHTML = `
-                <div class="auth-buttons">
-                    <a href="https://yandex.ru/video/preview/101741706696071987" target="_blank" class="auth-btn login-btn">
+                <div class="auth-buttons" style="display: flex; gap: 10px;">
+                    <button onclick="AuthUI.showLoginModal()" class="auth-btn login-btn" style="
+                        background: var(--primary);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.3s;
+                    ">
                         <i class="fas fa-sign-in-alt"></i> Войти
-                    </a>
-                    <a href="https://yandex.ru/video/preview/101741706696071987" target="_blank" class="auth-btn register-btn">
+                    </button>
+                    <button onclick="AuthUI.showRegisterModal()" class="auth-btn register-btn" style="
+                        background: rgba(255,255,255,0.2);
+                        color: white;
+                        border: 1px solid rgba(255,255,255,0.3);
+                        padding: 10px 20px;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.3s;
+                    ">
                         <i class="fas fa-user-plus"></i> Регистрация
-                    </a>
+                    </button>
                 </div>
             `;
         }
@@ -183,5 +192,4 @@ class AuthUI {
     }
 }
 
-// Делаем методы глобально доступными
 window.AuthUI = AuthUI;

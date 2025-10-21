@@ -1,12 +1,8 @@
 class AIService {
     static async getCountryGuide(countryName, countryData) {
-        console.log('Запрос AI-гида для:', countryName);
-        
         const apiKey = this.getApiKey();
         
-        if (!apiKey) {
-            throw new Error('API ключ не найден. Пожалуйста, добавьте ваш OpenRouter API ключ в настройках.');
-        }
+        if (!apiKey) throw new Error('API ключ не найден. Пожалуйста, добавьте ваш OpenRouter API ключ в настройках.');
 
         const prompt = this.generatePrompt(countryName, countryData);
         
@@ -21,26 +17,17 @@ class AIService {
                 },
                 body: JSON.stringify({
                     model: "meta-llama/llama-3.1-8b-instruct:free",
-                    messages: [
-                        {
-                            role: "user",
-                            content: prompt
-                        }
-                    ],
+                    messages: [{ role: "user", content: prompt }],
                     max_tokens: 800,
                     temperature: 0.7
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(`Ошибка API: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
 
             const data = await response.json();
             
-            if (!data.choices || !data.choices[0]) {
-                throw new Error('Неверный формат ответа от API');
-            }
+            if (!data.choices || !data.choices[0]) throw new Error('Неверный формат ответа от API');
             
             return data.choices[0].message.content;
             
@@ -69,9 +56,7 @@ class AIService {
 Будь информативным и дружелюбным! Отвечай на русском языке.`;
     }
 
-    static getApiKey() {
-        return localStorage.getItem('openrouter_api_key');
-    }
+    static getApiKey() { return localStorage.getItem('openrouter_api_key'); }
 
     static saveApiKey(apiKey) {
         if (apiKey && apiKey.trim()) {
@@ -81,19 +66,13 @@ class AIService {
         return false;
     }
 
-    static clearApiKey() {
-        localStorage.removeItem('openrouter_api_key');
-    }
+    static clearApiKey() { localStorage.removeItem('openrouter_api_key'); }
 
-    static hasApiKey() {
-        return !!this.getApiKey();
-    }
+    static hasApiKey() { return !!this.getApiKey(); }
 
     static testApiKey() {
         const apiKey = this.getApiKey();
-        if (!apiKey) {
-            return { valid: false, message: 'API ключ не найден' };
-        }
+        if (!apiKey) return { valid: false, message: 'API ключ не найден' };
         return { valid: true, message: 'API ключ сохранен' };
     }
 }

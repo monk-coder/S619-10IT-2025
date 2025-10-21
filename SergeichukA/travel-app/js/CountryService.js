@@ -3,9 +3,7 @@ class CountryService {
         try {
             const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(query)}`);
             
-            if (!response.ok) {
-                throw new Error('Страна не найдена');
-            }
+            if (!response.ok) throw new Error('Страна не найдена');
             
             const data = await response.json();
             return this.formatCountryData(data[0]);
@@ -17,14 +15,11 @@ class CountryService {
     }
 
     static formatCountryData(countryData) {
-        // Получаем валюты
         const currencies = countryData.currencies ? Object.values(countryData.currencies) : [];
         const currency = currencies.length > 0 ? `${currencies[0].name} (${currencies[0].symbol || ''})` : 'Не указано';
         
-        // Получаем языки
         const languages = countryData.languages ? Object.values(countryData.languages) : [];
         
-        // Получаем native name
         const nativeNameObj = countryData.name?.nativeName || {};
         const nativeNameKey = Object.keys(nativeNameObj)[0];
         const nativeName = nativeNameKey ? nativeNameObj[nativeNameKey]?.common : countryData.name?.common;

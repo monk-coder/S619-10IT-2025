@@ -19,7 +19,8 @@ def generate_automatic_tasks(user, city, weather_data):
     weather_main = weather_data.get('weather_main', '')
     temperature = weather_data.get('temperature', 0)
     humidity = weather_data.get('humidity', 0)
-
+    
+    # Правило 1: Дождь > 70%
     if rain_prob >= 70:
         task_desc = "Взять зонт — возможен дождь"
         if not WeatherTask.objects.filter(
@@ -33,7 +34,8 @@ def generate_automatic_tasks(user, city, weather_data):
                 weather_condition='rain_high'
             )
             created_tasks.append(task)
-
+    
+    # Правило 2: Очень холодно (< -10°C)
     if temperature < -5:
         task_desc = "Надеть тёплую куртку и перчатки"
         if not WeatherTask.objects.filter(
@@ -47,7 +49,8 @@ def generate_automatic_tasks(user, city, weather_data):
                 weather_condition='cold_extreme'
             )
             created_tasks.append(task)
-
+    
+    # Правило 3: Очень жарко (> 30°C)
     if temperature > 30:
         task_desc = "Нанести солнцезащитный крем и взять воду"
         if not WeatherTask.objects.filter(
@@ -61,7 +64,8 @@ def generate_automatic_tasks(user, city, weather_data):
                 weather_condition='hot_extreme'
             )
             created_tasks.append(task)
-
+    
+    # Правило 4: Высокая влажность (> 90%) + тепло (> 25°C)
     if humidity > 90 and temperature > 25:
         task_desc = "Возможна духота — проветрить помещение"
         if not WeatherTask.objects.filter(
@@ -76,6 +80,7 @@ def generate_automatic_tasks(user, city, weather_data):
             )
             created_tasks.append(task)
 
+    # Пользовательские правила
     user_rules = WeatherRule.objects.filter(user=user, is_active=True)
     for rule in user_rules:
         if rule.check_condition(weather_data):
@@ -109,7 +114,8 @@ def get_city_icon(city_name):
         'Tokyo': 'fas fa-landmark',
         'Beijing': 'fas fa-landmark',
         'New Delhi': 'fas fa-landmark',
-
+        
+        # Крупные города
         'New York': 'fas fa-city',
         'Los Angeles': 'fas fa-city',
         'Chicago': 'fas fa-city',
@@ -120,7 +126,8 @@ def get_city_icon(city_name):
         'San Diego': 'fas fa-city',
         'Dallas': 'fas fa-city',
         'San Jose': 'fas fa-city',
-
+        
+        # Курорты и приморские города
         'Sochi': 'fas fa-umbrella-beach',
         'Nice': 'fas fa-umbrella-beach',
         'Barcelona': 'fas fa-umbrella-beach',
@@ -128,7 +135,8 @@ def get_city_icon(city_name):
         'Venice': 'fas fa-water',
         'Amsterdam': 'fas fa-water',
         'Hamburg': 'fas fa-water',
-
+        
+        # Города с известными достопримечательностями
         'Las Vegas': 'fas fa-dice',
         'Orlando': 'fas fa-magic',
         'Disneyland': 'fas fa-magic',
@@ -138,7 +146,8 @@ def get_city_icon(city_name):
     for city, icon in city_icons.items():
         if city.lower() == city_lower:
             return icon
-
+    
+    # Fallback иконки по ключевым словам
     if any(word in city_lower for word in ['beach', 'coast', 'sea', 'ocean', 'port']):
         return 'fas fa-umbrella-beach'
     elif any(word in city_lower for word in ['mountain', 'alps', 'peak', 'hill']):
@@ -180,121 +189,90 @@ def user_logout(request):
     return redirect('login')
 
 @login_required
-def handle_search_city(request):
-    """Обработчик для поиска погоды по городу."""
-    form = WeatherSearchForm(request.POST)
-    if form.is_valid():
-        current_city = form.cleaned_data['city']
-        request.session['current_city'] = current_city
-
-        # Получаем данные о погоде и обрабатываем ошибки
-        weather = get_weather_for_city(current_city)
-        if weather:
-            save_search_history(request.user, weather['city'])
-            generate_tasks_from_weather(request.user, weather)
-        return weather
-    else:
-        # Если форма не валидна, возвращаем сообщение об ошибке
-        return None, "Некорректное название города"
-
-
-def get_weather_for_city(city):
-    """Получение данных о погоде, обработка ошибок."""
-    try:
-        return get_weather_data(city)
-    except Exception as e:
-        # Обработка исключений, если что-то пошло не так
-        return None
-
-
-def save_search_history(user, city):
-    """Сохранение истории поиска."""
-    SearchHistory.objects.create(user=user, city=city)
-
-
-def generate_tasks_from_weather(user, weather):
-    """Генерация автоматических задач на основе данных о погоде."""
-    new_automatic_tasks = generate_automatic_tasks(user, weather['city'], weather)
-    if new_automatic_tasks:
-        messages.info(user.request, f'Создано {len(new_automatic_tasks)} автоматических задач на основе погоды!')
-
-
-def main_handler(request):
-    """Основной обработчик запроса."""
+def dashboard(request):
+    weather = None
+    error = None
+    task_filter = request.GET.get('filter', 'all')
+    current_city = 'Санкт-Петербург'
+    
     if request.method == 'POST':
         if 'search_city' in request.POST:
-            weather, error = handle_search_city(request)
-            if error:
+            form = WeatherSearchForm(request.POST)
+            if form.is_valid():
+                current_city = form.cleaned_data['city']
+                request.session['current_city'] = current_city
+                
+                try:
+                    weather = get_weather_data(current_city)
+                    SearchHistory.objects.create(user=request.user, city=weather['city'])
+                    current_city = weather['city']
+                    request.session['current_city'] = current_city
+                    # Генерируем автоматические задачи
+                    new_automatic_tasks = generate_automatic_tasks(request.user, current_city, weather)
+                    if new_automatic_tasks:
+                        messages.info(request, f'Создано {len(new_automatic_tasks)} автоматических задач на основе погоды!')
+                except Exception as e:
+                    error = str(e)
+                    weather = None
+            else:
+                error = "Некорректное название города"
                 current_city = request.session.get('current_city', 'Санкт-Петербург')
-                weather = get_weather_for_city(current_city)
+                try:
+                    weather = get_weather_data(current_city)
+                except Exception as e:
+                    weather = None
+        
         elif 'add_task' in request.POST:
             task_form = TaskForm(request.POST)
-            # Дополнительная логика по добавлению задачи (не предоставлена в исходном коде)
+            if task_form.is_valid():
+                description = task_form.cleaned_data['description']
+                # Берём город именно из формы задачи (скрытое поле)
+                city_from_form = request.POST.get('city', '').strip()
                         
                 # === ПРОВЕРКА СУЩЕСТВОВАНИЯ ГОРОДА ===
-                def handle_city_and_weather(request):
-    # Получение текущего города из сессии, если он не указан
-    current_city = request.session.get('current_city', 'Санкт-Петербург')
-
-    # Проверка POST-запроса
-    if request.method == 'POST':
-        city_from_form = request.POST.get('city')
-        if not city_from_form:
-            messages.error(request, 'Не указан город для задачи')
-        else:
-            try:
-                # Получаем данные о погоде для указанного города
-                weather_check = get_weather_data(city_from_form)
-                city = weather_check['city']
-
-                # Создание новой задачи
-                WeatherTask.objects.create(
-                    user=request.user,
-                    city=city,
-                    description=request.POST.get('description')
-                )
-                messages.success(request, 'Задача добавлена!')
-                current_city = city
+                if not city_from_form:
+                    messages.error(request, 'Не указан город для задачи')
+                    current_city = request.session.get('current_city', 'Санкт-Петербург')
+                else:
+                    try:
+                        # Проверяем именно этот город
+                        weather_check = get_weather_data(city_from_form)
+                        city = weather_check['city']  # Используем корректное название от API
+                
+                        WeatherTask.objects.create(
+                            user=request.user,
+                            city=city,
+                            description=description
+                        )
+                        messages.success(request, 'Задача добавлена!')
+                        current_city = city
+                        request.session['current_city'] = current_city
+                        # Генерируем автоматические задачи
+                        new_automatic_tasks = generate_automatic_tasks(request.user, current_city, weather)
+                        if new_automatic_tasks:
+                            messages.info(request, f'Создано {len(new_automatic_tasks)} автоматических задач на основе погоды!')
+                    except Exception as e:
+                        messages.error(request, f'Невозможно добавить задачу: город "{city_from_form}" не найден')
+                        # Оставляем текущий город без изменений
+                        current_city = request.session.get('current_city', 'Санкт-Петербург')
+            else:
+                current_city = request.POST.get('city', request.session.get('current_city', 'Санкт-Петербург'))
                 request.session['current_city'] = current_city
-
-                # Генерация автоматических задач
-                create_automatic_tasks(request.user, current_city)
-
-            except Exception:
-                messages.error(request, f'Невозможно добавить задачу: город "{city_from_form}" не найден')
-
-    else:  # Обработка GET-запроса
-        current_city = request.POST.get('city', current_city)
-        request.session['current_city'] = current_city
-
-    # Получение данных о погоде для текущего города
-    weather = fetch_weather_data(current_city)
-
-    # Перенаправление
-    return HttpResponseRedirect(f"{request.path}?{urlencode({'filter': task_filter})}")
-
-
-def fetch_weather_data(city):
-    """ Получение данных о погоде и форматирование времени. """
-    try:
-        weather = get_weather_data(city)
-        if 'formatted_time' not in weather and 'timestamp' in weather:
-            from datetime import datetime
-            timestamp_str = weather['timestamp'].replace('Z', '+00:00')
-            timestamp_dt = datetime.fromisoformat(timestamp_str)
-            weather['formatted_time'] = timestamp_dt.strftime('%d.%m.%Y %H:%M')
-        return weather
-    except Exception:
-        return None
-
-
-def create_automatic_tasks(user, current_city):
-    """ Генерация автоматических задач на основе погоды. """
-    weather = fetch_weather_data(current_city)
-    if weather:
-        new_automatic_tasks = generate_automatic_tasks(user, current_city, weather)
-        if new_automatic_tasks:
-            messages.info(request, f'Создано {len(new_automatic_tasks)} автоматических задач на основе погоды!')
+    
+            # Получаем погоду для текущего города (того, что в сессии)
+            try:
+                weather = get_weather_data(current_city)
+                if 'formatted_time' not in weather and 'timestamp' in weather:
+                    from datetime import datetime
+                    try:
+                        timestamp_str = weather['timestamp'].replace('Z', '+00:00')
+                        timestamp_dt = datetime.fromisoformat(timestamp_str)
+                        weather['formatted_time'] = timestamp_dt.strftime('%d.%m.%Y %H:%M')
+                    except:
+                        weather['formatted_time'] = 'Неизвестно'
+            except Exception as e:
+                weather = None
+    
             return HttpResponseRedirect(f"{request.path}?{urlencode({'filter': task_filter})}")
     # GET-запрос
     else:
@@ -356,42 +334,24 @@ def toggle_task(request, task_id):
     task.save()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-
-@login_required
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import WeatherTask
-
-
 @login_required
 def toggle_task_ajax(request, task_id):
     """AJAX-обработчик для переключения статуса задачи"""
     if request.method == 'POST':
-        return toggle_task_status(request, task_id)
-
-    return invalid_request_response()
-
-
-def toggle_task_status(request, task_id):
-    """Переключает статус задачи и возвращает JSON-ответ"""
-    task = get_object_or_404(WeatherTask, id=task_id, user=request.user)
-    task.completed = not task.completed
-    task.save()
-    return success_response(task)
-
-
-def success_response(task):
-    """Создает успешный JSON-ответ при переключении статуса задачи"""
-    return JsonResponse({
-        'success': True,
-        'completed': task.completed,
-        'message': f'Задача "{task.description}" {"выполнена" if task.completed else "отменена"}!'
-    })
-
-
-def invalid_request_response():
-    """Создает ответ на недопустимый метод запроса"""
+        try:
+            task = get_object_or_404(WeatherTask, id=task_id, user=request.user)
+            task.completed = not task.completed
+            task.save()
+            return JsonResponse({
+                'success': True,
+                'completed': task.completed,
+                'message': f'Задача "{task.description}" {"выполнена" if task.completed else "отменена"}!'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ошибка при обновлении задачи'
+            })
     return JsonResponse({'success': False, 'error': 'Неверный метод запроса'})
 
 @login_required
@@ -407,52 +367,21 @@ def clear_history(request):
         messages.success(request, 'История поиска очищена!')
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-
-from django.contrib import messages
-from django.shortcuts import redirect, render
-from .forms import WeatherRuleForm
-from .models import WeatherRule
-
-
 @login_required
 def weather_rules(request):
     """Страница управления правилами погоды"""
     if request.method == 'POST':
-        return handle_post_request(request)
-
-    form = WeatherRuleForm()
-    rules = get_user_weather_rules(request.user)
-    return render_weather_rules_page(request, form, rules)
-
-
-@login_required
-def handle_post_request(request):
-    form = WeatherRuleForm(request.POST)
-    if form.is_valid():
-        save_weather_rule(form, request.user)
-        messages.success(request, 'Правило успешно создано!')
-        return redirect('weather_rules')
-
-    return render(request, 'dashboard/weather_rules.html', {
-        'form': form,
-        'rules': get_user_weather_rules(request.user)
-    })
-
-
-def save_weather_rule(form, user):
-    """Сохраняет правило погоды и ассоциирует его с пользователем"""
-    rule = form.save(commit=False)
-    rule.user = user
-    rule.save()
-
-
-def get_user_weather_rules(user):
-    """Получает все правила погоды пользователя"""
-    return WeatherRule.objects.filter(user=user).order_by('-created_at')
-
-
-def render_weather_rules_page(request, form, rules):
-    """Отображает страницу с правилами погоды"""
+        form = WeatherRuleForm(request.POST)
+        if form.is_valid():
+            rule = form.save(commit=False)
+            rule.user = request.user
+            rule.save()
+            messages.success(request, 'Правило успешно создано!')
+            return redirect('weather_rules')
+    else:
+        form = WeatherRuleForm()
+    
+    rules = WeatherRule.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'dashboard/weather_rules.html', {
         'form': form,
         'rules': rules

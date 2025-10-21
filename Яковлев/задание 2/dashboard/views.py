@@ -195,7 +195,11 @@ def dashboard(request):
     task_filter = request.GET.get('filter', 'all')
     current_city = request.session.get('current_city', 'Санкт-Петербург')
     weather = None
-    error = None
+    error = request.session.get('weather_error')  # Получаем ошибку из сессии
+
+    # Очищаем ошибку из сессии после получения
+    if error:
+        request.session.pop('weather_error', None)
 
     # Обработка POST-запросов
     if request.method == 'POST':
@@ -205,11 +209,12 @@ def dashboard(request):
             return _handle_task_creation(request, task_filter)
 
     # Обработка GET-запроса (или после обработки POST без редиректа)
-    try:
-        weather = get_weather_data(current_city)
-        _generate_and_notify_automatic_tasks(request, current_city, weather)
-    except Exception as e:
-        weather = None
+    if not error:  # Только если нет ошибки валидации
+        try:
+            weather = get_weather_data(current_city)
+            _generate_and_notify_automatic_tasks(request, current_city, weather)
+        except Exception as e:
+            weather = None
 
     # Подготовка данных для шаблона
     tasks = _get_filtered_tasks(request.user, current_city, task_filter)
@@ -242,21 +247,43 @@ def _handle_city_search(request, task_filter):
         current_city = form.cleaned_data['city']
         try:
             weather = get_weather_data(current_city)
-            SearchHistory.objects.create(user=request.user, city=weather['city'])
+            # === ОБНОВЛЕНИЕ ИСТОРИИ БЕЗ ДУБЛИКАТОВ ===
+            _update_search_history(request.user, weather['city'])
             current_city = weather['city']
             request.session['current_city'] = current_city
             _generate_and_notify_automatic_tasks(request, current_city, weather)
         except Exception as e:
             error = str(e)
     else:
+        # Валидация формы не прошла - получаем ошибки из формы
         error = "Некорректное название города"
+        # Можно также получить конкретные ошибки из формы:
+        # error = form.errors.get('city', ['Некорректное название города'])[0]
 
     # В любом случае получаем погоду для текущего города
     final_city = current_city if not error else request.session.get('current_city', 'Санкт-Петербург')
     request.session['current_city'] = final_city
 
-    return _redirect_with_weather(request, final_city, task_filter, error)
+    # Сохраняем ошибку в сессии для отображения в шаблоне
+    if error:
+        request.session['weather_error'] = error
+    else:
+        request.session.pop('weather_error', None)
 
+    return _redirect_with_weather(request, final_city, task_filter)
+
+
+def _update_search_history(user, city):
+    """
+    Удаляет старую запись о городе и создаёт новую (для корректной сортировки).
+    """
+    from django.utils import timezone
+
+    # Удаляем старую запись, если существует
+    SearchHistory.objects.filter(user=user, city=city).delete()
+
+    # Создаём новую запись
+    SearchHistory.objects.create(user=user, city=city, timestamp=timezone.now())
 
 def _handle_task_creation(request, task_filter):
     """Обработка создания задачи"""

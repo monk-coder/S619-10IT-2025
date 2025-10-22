@@ -103,13 +103,13 @@ def _calculate_rain_probability(data):
     humidity = data['main']['humidity']
 
     if 'rain' in weather_main or 'drizzle' in weather_main:
-        return 100  # Идёт дождь
+        return 100
     elif 'shower' in weather_description:
-        return 80  # Ливень возможен
+        return 80  
     elif 'cloud' in weather_description and humidity > 80:
-        return 60  # Высокая влажность + облачно
+        return 60 
     elif 'cloud' in weather_description:
-        return 30  # Облачно, возможен дождь
+        return 30  
     return 0
 
 
@@ -125,8 +125,9 @@ def _process_timezone(data):
 
 
 def _cache_weather_data(cache_key, weather_data):"
-    cache.set(cache_key, weather_data, 7200)  # 2 часа
+    cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 
 

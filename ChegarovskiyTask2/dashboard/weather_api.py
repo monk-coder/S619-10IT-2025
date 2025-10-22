@@ -31,6 +31,7 @@ def get_weather_data(city_name):
             
         data = response.json()
         
+        # Проверяем наличие обязательных полей
         required_fields = ['name', 'main', 'weather']
         if not all(field in data for field in required_fields):
             return None
@@ -49,7 +50,9 @@ def get_weather_data(city_name):
         save_to_cache(city_name, weather_info)
         return weather_info
         
-    except (requests.exceptions.RequestException, KeyError, ValueError):
+    except requests.exceptions.RequestException:
+        return None
+    except (KeyError, ValueError):
         return None
 
 def get_cached_weather_data(city_name):
@@ -60,7 +63,8 @@ def get_cached_weather_data(city_name):
             data['cached'] = True
             return data
     except Exception:
-        pass
+        # Вместо пасс
+        print(f"Ошибка при получении кэша для города: {city_name}")
     return None
 
 def save_to_cache(city_name, weather_info):
@@ -73,4 +77,5 @@ def save_to_cache(city_name, weather_info):
             }
         )
     except Exception:
-        pass
+        # Вместо пасс
+        print(f"Ошибка при сохранении кэша для города: {city_name}")

@@ -15,6 +15,18 @@ def _make_weather_api_request(city):
         'lang': 'ru'
     }
 
+    logger.info(f"Запрос к OpenWeatherMap для города: {city}")
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        return response
+    except requests.exceptions.Timeout:
+        raise Exception("Тайм-аут запроса к сервису погоды")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Ошибка подключения к сервису погоды")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Ошибка при получении погоды для {city}: {str(e)}")
+        raise Exception(f"Ошибка запроса к сервису погоды: {str(e)}")
+
 USE_TZ = True  # Включить поддержку часовых поясов
 TIME_ZONE = 'Europe/Moscow'  # Часовой пояс сервера (можно изменить)
 
@@ -147,3 +159,4 @@ LANGUAGES = [
     ('ru', _('Russian')),
 
 ]
+

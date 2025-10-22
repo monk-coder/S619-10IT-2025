@@ -1,0 +1,560 @@
+INFO 2025-10-22 20:49:58,459 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 20:57:05,541 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 20:57:07,569 basehttp "GET / HTTP/1.1" 200 21379
+WARNING 2025-10-22 20:57:08,849 log Not Found: /favicon.ico
+WARNING 2025-10-22 20:57:08,850 basehttp "GET /favicon.ico HTTP/1.1" 404 4333
+INFO 2025-10-22 20:57:11,750 basehttp "GET /login/ HTTP/1.1" 200 22167
+INFO 2025-10-22 20:57:25,804 basehttp "POST /login/ HTTP/1.1" 200 23192
+INFO 2025-10-22 20:57:38,732 basehttp "POST /login/ HTTP/1.1" 200 23192
+INFO 2025-10-22 20:57:55,612 basehttp "POST /login/ HTTP/1.1" 200 23192
+INFO 2025-10-22 20:58:05,840 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 20:58:05,859 basehttp "GET /dashboard/ HTTP/1.1" 200 38069
+INFO 2025-10-22 20:58:41,611 basehttp "POST /dashboard/ HTTP/1.1" 302 0
+INFO 2025-10-22 20:58:41,623 basehttp "GET /dashboard/ HTTP/1.1" 200 40412
+INFO 2025-10-22 20:58:44,583 basehttp "POST /task/toggle/3/ HTTP/1.1" 302 0
+INFO 2025-10-22 20:58:44,596 basehttp "GET /dashboard/ HTTP/1.1" 200 40492
+INFO 2025-10-22 20:58:49,360 basehttp "POST /task/delete/3/ HTTP/1.1" 302 0
+INFO 2025-10-22 20:58:49,371 basehttp "GET /dashboard/ HTTP/1.1" 200 37811
+INFO 2025-10-22 20:58:53,439 basehttp "POST /task/delete/2/ HTTP/1.1" 302 0
+INFO 2025-10-22 20:58:53,449 basehttp "GET /dashboard/ HTTP/1.1" 200 35353
+ERROR 2025-10-22 20:58:56,175 log Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 60, in dashboard_view
+    response = handle_post_request(request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 71, in handle_post_request
+    handle_city_search(request)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 87, in handle_city_search
+    weather_data = get_validated_weather_data(weather_service, city_name, request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 101, in get_validated_weather_data
+    api_result = weather_service.get_weather(city_name)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\utils.py", line 19, in get_weather
+    cached_data = cache.get(cache_key)
+                  ^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+ERROR 2025-10-22 20:58:56,177 basehttp "POST /dashboard/ HTTP/1.1" 500 90753
+INFO 2025-10-22 20:58:58,034 basehttp "GET /dashboard/ HTTP/1.1" 200 34462
+ERROR 2025-10-22 20:59:01,849 log Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 60, in dashboard_view
+    response = handle_post_request(request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 71, in handle_post_request
+    handle_city_search(request)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 87, in handle_city_search
+    weather_data = get_validated_weather_data(weather_service, city_name, request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 101, in get_validated_weather_data
+    api_result = weather_service.get_weather(city_name)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\utils.py", line 19, in get_weather
+    cached_data = cache.get(cache_key)
+                  ^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+ERROR 2025-10-22 20:59:01,851 basehttp "POST /dashboard/ HTTP/1.1" 500 90733
+ERROR 2025-10-22 20:59:10,922 log Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 60, in dashboard_view
+    response = handle_post_request(request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 71, in handle_post_request
+    handle_city_search(request)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 87, in handle_city_search
+    weather_data = get_validated_weather_data(weather_service, city_name, request)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 101, in get_validated_weather_data
+    api_result = weather_service.get_weather(city_name)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\utils.py", line 19, in get_weather
+    cached_data = cache.get(cache_key)
+                  ^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+ERROR 2025-10-22 20:59:10,923 basehttp "POST /dashboard/ HTTP/1.1" 500 90733
+INFO 2025-10-22 21:01:36,405 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\utils.py changed, reloading.
+INFO 2025-10-22 21:01:36,841 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:01:38,911 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:01:40,933 basehttp "GET /dashboard/ HTTP/1.1" 200 34462
+INFO 2025-10-22 21:01:43,772 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:01:44,142 utils Weather data fetched and cached for Красноярск
+INFO 2025-10-22 21:01:44,154 basehttp "POST /dashboard/ HTTP/1.1" 200 35564
+INFO 2025-10-22 21:01:49,077 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:01:49,384 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 21:01:49,400 basehttp "POST /dashboard/ HTTP/1.1" 200 35552
+INFO 2025-10-22 21:02:24,148 basehttp "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:02:24,168 basehttp "GET /admin/login/?next=/admin/ HTTP/1.1" 200 3867
+INFO 2025-10-22 21:02:24,238 basehttp "GET /static/admin/css/login.css HTTP/1.1" 200 951
+INFO 2025-10-22 21:02:24,241 basehttp "GET /static/admin/css/base.css HTTP/1.1" 200 23100
+INFO 2025-10-22 21:02:24,241 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 200 16194
+INFO 2025-10-22 21:02:24,243 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+INFO 2025-10-22 21:02:24,244 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 3538
+INFO 2025-10-22 21:02:24,246 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+INFO 2025-10-22 21:02:24,286 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+INFO 2025-10-22 21:02:26,550 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4142
+INFO 2025-10-22 21:02:41,150 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4139
+INFO 2025-10-22 21:04:09,731 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:04:12,352 basehttp "GET /dashboard/ HTTP/1.1" 200 34612
+INFO 2025-10-22 21:04:13,567 basehttp "GET /dashboard/ HTTP/1.1" 200 34612
+INFO 2025-10-22 21:04:17,542 utils Using cached weather data for Москва
+INFO 2025-10-22 21:04:17,557 basehttp "POST /dashboard/ HTTP/1.1" 200 35540
+INFO 2025-10-22 21:05:18,032 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\views.py changed, reloading.
+INFO 2025-10-22 21:05:18,482 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:05:21,665 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:05:23,227 basehttp "GET /dashboard/ HTTP/1.1" 200 34600
+INFO 2025-10-22 21:05:25,317 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:05:25,688 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 21:05:25,699 basehttp "POST /dashboard/ HTTP/1.1" 200 35540
+INFO 2025-10-22 21:09:19,811 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:09:21,724 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:09:23,269 basehttp "GET /dashboard/ HTTP/1.1" 200 10261
+INFO 2025-10-22 21:09:44,794 utils Fetching weather for Saint-Peterrsburg from API
+INFO 2025-10-22 21:09:45,136 basehttp "POST /dashboard/ HTTP/1.1" 200 10586
+INFO 2025-10-22 21:09:53,361 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:09:53,654 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 21:09:53,669 basehttp "POST /dashboard/ HTTP/1.1" 200 10602
+INFO 2025-10-22 21:10:05,868 basehttp "POST /dashboard/ HTTP/1.1" 200 10579
+INFO 2025-10-22 21:10:10,610 basehttp "POST /dashboard/ HTTP/1.1" 200 10579
+INFO 2025-10-22 21:10:27,022 basehttp "POST /dashboard/ HTTP/1.1" 200 10579
+INFO 2025-10-22 21:19:45,969 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:19:47,470 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:19:48,987 basehttp "GET /dashboard/ HTTP/1.1" 200 12992
+INFO 2025-10-22 21:20:02,834 basehttp "POST /dashboard/ HTTP/1.1" 200 13326
+INFO 2025-10-22 21:20:11,620 basehttp "POST /dashboard/ HTTP/1.1" 200 13326
+INFO 2025-10-22 21:20:26,038 basehttp "POST /dashboard/ HTTP/1.1" 200 13326
+INFO 2025-10-22 21:20:29,579 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:20:31,028 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:20:31,405 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:20:39,835 basehttp - Broken pipe from ('127.0.0.1', 54590)
+INFO 2025-10-22 21:20:40,470 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:41,271 basehttp - Broken pipe from ('127.0.0.1', 54591)
+INFO 2025-10-22 21:20:41,629 basehttp - Broken pipe from ('127.0.0.1', 54602)
+INFO 2025-10-22 21:20:41,877 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:42,392 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:42,767 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:43,009 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:43,252 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:43,459 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:43,877 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:44,095 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:44,302 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:44,522 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:44,721 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:44,910 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:45,102 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:45,290 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:45,499 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:45,681 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:45,891 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:46,073 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:46,273 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:46,486 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:46,655 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:46,855 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:47,056 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:47,278 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:47,485 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:47,686 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:47,885 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:48,104 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:48,311 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:48,505 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:48,715 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:49,043 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:49,231 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:50,710 basehttp - Broken pipe from ('127.0.0.1', 54604)
+INFO 2025-10-22 21:20:52,113 basehttp - Broken pipe from ('127.0.0.1', 54607)
+INFO 2025-10-22 21:20:52,626 basehttp - Broken pipe from ('127.0.0.1', 54611)
+INFO 2025-10-22 21:20:52,723 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:52,960 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:53,002 basehttp - Broken pipe from ('127.0.0.1', 54613)
+INFO 2025-10-22 21:20:53,229 basehttp - Broken pipe from ('127.0.0.1', 54615)
+INFO 2025-10-22 21:20:53,344 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:20:53,502 basehttp - Broken pipe from ('127.0.0.1', 54617)
+INFO 2025-10-22 21:20:53,692 basehttp - Broken pipe from ('127.0.0.1', 54619)
+INFO 2025-10-22 21:20:54,110 basehttp - Broken pipe from ('127.0.0.1', 54621)
+INFO 2025-10-22 21:20:54,327 basehttp - Broken pipe from ('127.0.0.1', 54623)
+INFO 2025-10-22 21:20:54,524 basehttp - Broken pipe from ('127.0.0.1', 54625)
+INFO 2025-10-22 21:20:54,754 basehttp - Broken pipe from ('127.0.0.1', 54627)
+INFO 2025-10-22 21:20:54,942 basehttp - Broken pipe from ('127.0.0.1', 54629)
+INFO 2025-10-22 21:20:55,146 basehttp - Broken pipe from ('127.0.0.1', 54631)
+INFO 2025-10-22 21:20:55,334 basehttp - Broken pipe from ('127.0.0.1', 54633)
+INFO 2025-10-22 21:20:55,520 basehttp - Broken pipe from ('127.0.0.1', 54635)
+INFO 2025-10-22 21:20:55,722 basehttp - Broken pipe from ('127.0.0.1', 54637)
+INFO 2025-10-22 21:20:55,922 basehttp - Broken pipe from ('127.0.0.1', 54639)
+INFO 2025-10-22 21:20:56,116 basehttp - Broken pipe from ('127.0.0.1', 54641)
+INFO 2025-10-22 21:20:56,307 basehttp - Broken pipe from ('127.0.0.1', 54643)
+INFO 2025-10-22 21:20:56,541 basehttp - Broken pipe from ('127.0.0.1', 54645)
+INFO 2025-10-22 21:20:56,708 basehttp - Broken pipe from ('127.0.0.1', 54647)
+INFO 2025-10-22 21:20:56,894 basehttp - Broken pipe from ('127.0.0.1', 54649)
+INFO 2025-10-22 21:20:57,083 basehttp - Broken pipe from ('127.0.0.1', 54651)
+INFO 2025-10-22 21:20:57,271 basehttp - Broken pipe from ('127.0.0.1', 54653)
+INFO 2025-10-22 21:20:57,519 basehttp - Broken pipe from ('127.0.0.1', 54655)
+INFO 2025-10-22 21:20:57,819 basehttp - Broken pipe from ('127.0.0.1', 54657)
+INFO 2025-10-22 21:20:57,975 basehttp - Broken pipe from ('127.0.0.1', 54660)
+INFO 2025-10-22 21:20:58,142 basehttp - Broken pipe from ('127.0.0.1', 54663)
+INFO 2025-10-22 21:20:58,335 basehttp - Broken pipe from ('127.0.0.1', 54666)
+INFO 2025-10-22 21:20:58,553 basehttp - Broken pipe from ('127.0.0.1', 54668)
+INFO 2025-10-22 21:20:58,722 basehttp - Broken pipe from ('127.0.0.1', 54670)
+INFO 2025-10-22 21:20:58,958 basehttp - Broken pipe from ('127.0.0.1', 54672)
+INFO 2025-10-22 21:20:59,274 basehttp - Broken pipe from ('127.0.0.1', 54674)
+INFO 2025-10-22 21:20:59,466 basehttp - Broken pipe from ('127.0.0.1', 54678)
+INFO 2025-10-22 21:21:02,955 basehttp - Broken pipe from ('127.0.0.1', 54680)
+INFO 2025-10-22 21:21:03,186 basehttp - Broken pipe from ('127.0.0.1', 54683)
+INFO 2025-10-22 21:21:03,611 basehttp - Broken pipe from ('127.0.0.1', 54685)
+INFO 2025-10-22 21:23:32,885 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\views.py changed, reloading.
+INFO 2025-10-22 21:23:33,361 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:24:06,420 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:24:08,058 basehttp "GET / HTTP/1.1" 200 21856
+INFO 2025-10-22 21:24:10,188 basehttp "GET /dashboard/ HTTP/1.1" 200 8011
+INFO 2025-10-22 21:24:13,969 basehttp "POST /dashboard/ HTTP/1.1" 200 8374
+INFO 2025-10-22 21:24:24,706 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:24:25,020 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 21:24:25,028 basehttp "POST /dashboard/ HTTP/1.1" 200 9300
+INFO 2025-10-22 21:24:35,128 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:24:35,440 utils Weather data fetched and cached for Красноярск
+INFO 2025-10-22 21:24:35,455 basehttp "POST /dashboard/ HTTP/1.1" 200 9332
+INFO 2025-10-22 21:24:43,757 utils Fetching weather for Санкт петебург from API
+INFO 2025-10-22 21:24:44,089 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:24:52,746 utils Fetching weather for Санкт Петебург from API
+INFO 2025-10-22 21:24:53,090 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:24:59,743 utils Fetching weather for Санкт-Петебург from API
+INFO 2025-10-22 21:25:00,065 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:25:05,122 utils Fetching weather for Санкт-Питебург from API
+INFO 2025-10-22 21:25:05,467 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:25:06,675 utils Fetching weather for Санкт-Питебург from API
+INFO 2025-10-22 21:25:07,004 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:25:07,493 utils Fetching weather for Санкт-Питебург from API
+INFO 2025-10-22 21:25:07,806 basehttp "POST /dashboard/ HTTP/1.1" 200 8382
+INFO 2025-10-22 21:25:14,539 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 21:25:14,853 utils Weather data fetched and cached for Санкт-Петербург
+INFO 2025-10-22 21:25:14,869 basehttp "POST /dashboard/ HTTP/1.1" 200 9373
+INFO 2025-10-22 21:25:19,167 utils Using cached weather data for Санкт-Петербург
+INFO 2025-10-22 21:25:19,175 basehttp "POST /dashboard/ HTTP/1.1" 200 9390
+INFO 2025-10-22 21:25:19,954 utils Using cached weather data for Санкт-Петербург
+INFO 2025-10-22 21:25:19,963 basehttp "POST /dashboard/ HTTP/1.1" 200 9407
+INFO 2025-10-22 21:25:20,427 utils Using cached weather data for Санкт-Петербург
+INFO 2025-10-22 21:25:20,434 basehttp "POST /dashboard/ HTTP/1.1" 200 9424
+INFO 2025-10-22 21:25:25,308 utils Fetching weather for Токио from API
+INFO 2025-10-22 21:25:25,639 utils Weather data fetched and cached for Токио
+INFO 2025-10-22 21:25:25,654 basehttp "POST /dashboard/ HTTP/1.1" 200 9363
+INFO 2025-10-22 21:25:31,172 utils Fetching weather for Англия from API
+INFO 2025-10-22 21:25:31,478 utils Weather data fetched and cached for Англия
+INFO 2025-10-22 21:25:31,494 basehttp "POST /dashboard/ HTTP/1.1" 200 9335
+INFO 2025-10-22 21:25:41,878 basehttp "GET /dashboard/ HTTP/1.1" 200 8052
+INFO 2025-10-22 21:25:42,734 basehttp "GET /dashboard/ HTTP/1.1" 200 8052
+INFO 2025-10-22 21:25:43,097 basehttp "GET /dashboard/ HTTP/1.1" 200 8052
+INFO 2025-10-22 21:25:43,328 basehttp "GET /dashboard/ HTTP/1.1" 200 8052
+INFO 2025-10-22 21:25:43,494 basehttp "GET /dashboard/ HTTP/1.1" 200 8052
+INFO 2025-10-22 21:25:44,095 basehttp "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:25:44,100 basehttp "GET / HTTP/1.1" 200 22519
+INFO 2025-10-22 21:25:48,395 basehttp "GET /login/ HTTP/1.1" 200 22167
+INFO 2025-10-22 21:25:50,374 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:25:50,388 basehttp "GET /dashboard/ HTTP/1.1" 200 8392
+INFO 2025-10-22 21:25:55,977 basehttp "POST /dashboard/ HTTP/1.1" 200 8399
+INFO 2025-10-22 21:33:23,146 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\views.py changed, reloading.
+INFO 2025-10-22 21:33:23,632 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:41:48,758 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\models.py changed, reloading.
+INFO 2025-10-22 21:41:49,183 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:41:59,458 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\models.py changed, reloading.
+INFO 2025-10-22 21:41:59,896 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:43:30,312 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:46:37,234 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:46:39,129 basehttp "GET / HTTP/1.1" 200 21856
+ERROR 2025-10-22 21:46:41,267 log Internal Server Error: /dashboard/
+Traceback (most recent call last):
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 359, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: dashboard_weathertask.related_city
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\brawl\Downloads\PythonProject\dashboard\views.py", line 74, in dashboard_view
+    return render(request, 'dashboard/dashboard.html', context)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\base.py", line 173, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\base.py", line 165, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\base.py", line 1089, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\base.py", line 1050, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\template\defaulttags.py", line 332, in render
+    if match:
+       ^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\models\query.py", line 402, in __bool__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\models\query.py", line 1995, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1624, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\utils.py", line 94, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\brawl\Downloads\PythonProject\.venv\Lib\site-packages\django\db\backends\sqlite3\base.py", line 359, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: dashboard_weathertask.related_city
+ERROR 2025-10-22 21:46:41,272 basehttp "GET /dashboard/ HTTP/1.1" 500 180135
+INFO 2025-10-22 21:49:43,989 autoreload C:\Users\brawl\Downloads\PythonProject\dashboard\models.py changed, reloading.
+INFO 2025-10-22 21:49:44,453 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:52:11,631 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 21:52:14,535 basehttp "GET / HTTP/1.1" 200 21379
+INFO 2025-10-22 21:52:15,941 basehttp "GET /login/ HTTP/1.1" 200 22167
+INFO 2025-10-22 21:52:18,845 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:52:18,859 basehttp "GET /dashboard/ HTTP/1.1" 200 6041
+INFO 2025-10-22 21:52:23,237 basehttp "POST /dashboard/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:52:23,253 basehttp "GET /dashboard/ HTTP/1.1" 200 8223
+INFO 2025-10-22 21:52:24,954 basehttp "POST /task/toggle/1/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:52:24,963 basehttp "GET /dashboard/ HTTP/1.1" 200 8264
+INFO 2025-10-22 21:52:26,087 basehttp "POST /task/toggle/1/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:52:26,097 basehttp "GET /dashboard/ HTTP/1.1" 200 8248
+INFO 2025-10-22 21:52:27,808 basehttp "POST /task/delete/1/ HTTP/1.1" 302 0
+INFO 2025-10-22 21:52:27,816 basehttp "GET /dashboard/ HTTP/1.1" 200 6001
+INFO 2025-10-22 21:52:29,720 utils Fetching weather for Москва from API
+INFO 2025-10-22 21:52:30,123 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 21:52:30,139 basehttp "POST /dashboard/ HTTP/1.1" 200 7718
+INFO 2025-10-22 21:52:33,637 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 21:52:33,939 utils Weather data fetched and cached for Санкт-Петербург
+INFO 2025-10-22 21:52:33,953 basehttp "POST /dashboard/ HTTP/1.1" 200 8091
+INFO 2025-10-22 21:52:37,390 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 21:52:37,727 utils Weather data fetched and cached for Красноярск
+INFO 2025-10-22 21:52:37,741 basehttp "POST /dashboard/ HTTP/1.1" 200 8410
+INFO 2025-10-22 21:52:43,122 utils Fetching weather for Япония from API
+INFO 2025-10-22 21:52:43,421 utils Weather data fetched and cached for Япония
+INFO 2025-10-22 21:52:43,436 basehttp "POST /dashboard/ HTTP/1.1" 200 8721
+INFO 2025-10-22 21:52:50,853 utils Fetching weather for Токио from API
+INFO 2025-10-22 21:52:51,149 utils Weather data fetched and cached for Токио
+INFO 2025-10-22 21:52:51,164 basehttp "POST /dashboard/ HTTP/1.1" 200 9040
+INFO 2025-10-22 21:53:00,297 utils Fetching weather for Караганда from API
+INFO 2025-10-22 21:53:00,611 utils Weather data fetched and cached for Караганда
+INFO 2025-10-22 21:53:00,625 basehttp "POST /dashboard/ HTTP/1.1" 200 9041
+INFO 2025-10-22 21:53:03,990 utils Fetching weather for Нигер from API
+INFO 2025-10-22 21:53:04,290 utils Weather data fetched and cached for Нигер
+INFO 2025-10-22 21:53:04,305 basehttp "POST /dashboard/ HTTP/1.1" 200 9023
+INFO 2025-10-22 21:53:22,977 basehttp "GET /dashboard/ HTTP/1.1" 200 8675
+INFO 2025-10-22 21:53:23,822 basehttp "GET /dashboard/ HTTP/1.1" 200 8675
+INFO 2025-10-22 21:54:04,341 basehttp "GET /admin/ HTTP/1.1" 200 8361
+INFO 2025-10-22 21:54:04,353 basehttp "GET /static/admin/css/base.css HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,356 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,356 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,358 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,359 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,360 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+INFO 2025-10-22 21:54:04,375 basehttp "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+INFO 2025-10-22 21:54:04,379 basehttp "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 978
+INFO 2025-10-22 21:54:04,380 basehttp "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 593
+INFO 2025-10-22 21:54:07,948 basehttp "GET /admin/dashboard/weathertask/add/ HTTP/1.1" 200 15962
+INFO 2025-10-22 21:54:07,965 basehttp "GET /static/admin/css/forms.css HTTP/1.1" 200 8834
+INFO 2025-10-22 21:54:07,967 basehttp "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO 2025-10-22 21:54:07,968 basehttp "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO 2025-10-22 21:54:07,969 basehttp "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+INFO 2025-10-22 21:54:07,970 basehttp "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO 2025-10-22 21:54:07,972 basehttp "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO 2025-10-22 21:54:07,974 basehttp "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO 2025-10-22 21:54:07,976 basehttp "GET /static/admin/css/widgets.css HTTP/1.1" 200 11811
+INFO 2025-10-22 21:54:07,978 basehttp "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+INFO 2025-10-22 21:54:07,978 basehttp "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO 2025-10-22 21:54:07,979 basehttp "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO 2025-10-22 21:54:07,980 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 17546
+INFO 2025-10-22 21:54:07,985 basehttp "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 928
+INFO 2025-10-22 21:54:07,985 basehttp "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+INFO 2025-10-22 21:54:10,620 basehttp "GET /admin/dashboard/citysearchhistory/add/ HTTP/1.1" 200 13981
+INFO 2025-10-22 21:54:10,639 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 17546
+INFO 2025-10-22 21:54:33,848 basehttp "GET /admin/auth/user/1/change/?_to_field=id HTTP/1.1" 200 27089
+INFO 2025-10-22 21:54:33,866 basehttp "GET /static/admin/js/calendar.js HTTP/1.1" 200 9159
+INFO 2025-10-22 21:54:33,867 basehttp "GET /static/admin/js/SelectFilter2.js HTTP/1.1" 200 16428
+INFO 2025-10-22 21:54:33,866 basehttp "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19698
+INFO 2025-10-22 21:54:33,868 basehttp "GET /static/admin/js/SelectBox.js HTTP/1.1" 200 4530
+INFO 2025-10-22 21:54:33,872 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 17546
+INFO 2025-10-22 21:54:33,915 basehttp "GET /static/admin/img/selector-icons.svg HTTP/1.1" 200 2387
+INFO 2025-10-22 21:54:33,915 basehttp "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1112
+INFO 2025-10-22 21:54:33,915 basehttp "GET /static/admin/img/search.svg HTTP/1.1" 200 607
+INFO 2025-10-22 21:54:33,916 basehttp "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 805
+INFO 2025-10-22 21:54:56,108 basehttp "GET /admin/dashboard/citysearchhistory/ HTTP/1.1" 200 16725
+INFO 2025-10-22 21:54:56,119 basehttp "GET /static/admin/css/changelists.css HTTP/1.1" 200 7501
+INFO 2025-10-22 21:54:56,126 basehttp "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO 2025-10-22 21:54:56,131 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 17546
+INFO 2025-10-22 21:54:56,143 basehttp "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 593
+INFO 2025-10-22 21:55:00,930 basehttp "GET /admin/dashboard/weathertask/ HTTP/1.1" 200 12114
+INFO 2025-10-22 21:55:00,948 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 17546
+INFO 2025-10-22 22:00:44,826 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 22:00:46,423 basehttp "GET / HTTP/1.1" 200 22407
+INFO 2025-10-22 22:00:48,541 basehttp "GET /admin/ HTTP/1.1" 200 8361
+INFO 2025-10-22 22:00:51,114 basehttp "GET /dashboard/ HTTP/1.1" 200 8675
+INFO 2025-10-22 22:00:58,462 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:00:59,303 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:00:59,469 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:00,419 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:00,615 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:00,819 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,009 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,201 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,383 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,549 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,742 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:01,917 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:08,719 basehttp - Broken pipe from ('127.0.0.1', 55193)
+INFO 2025-10-22 22:01:09,574 basehttp - Broken pipe from ('127.0.0.1', 55194)
+INFO 2025-10-22 22:01:09,722 basehttp - Broken pipe from ('127.0.0.1', 55203)
+INFO 2025-10-22 22:01:10,633 basehttp - Broken pipe from ('127.0.0.1', 55207)
+INFO 2025-10-22 22:01:10,658 basehttp - Broken pipe from ('127.0.0.1', 55205)
+INFO 2025-10-22 22:01:11,163 basehttp - Broken pipe from ('127.0.0.1', 55209)
+INFO 2025-10-22 22:01:11,280 basehttp - Broken pipe from ('127.0.0.1', 55211)
+INFO 2025-10-22 22:01:11,437 basehttp - Broken pipe from ('127.0.0.1', 55213)
+INFO 2025-10-22 22:01:11,629 basehttp - Broken pipe from ('127.0.0.1', 55215)
+INFO 2025-10-22 22:01:11,820 basehttp - Broken pipe from ('127.0.0.1', 55217)
+INFO 2025-10-22 22:01:12,041 basehttp - Broken pipe from ('127.0.0.1', 55220)
+INFO 2025-10-22 22:01:12,164 basehttp "POST /dashboard/ HTTP/1.1" 200 8991
+INFO 2025-10-22 22:01:28,597 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 22:01:29,658 basehttp "GET / HTTP/1.1" 200 22407
+INFO 2025-10-22 22:01:30,785 basehttp "GET /dashboard/ HTTP/1.1" 200 8675
+INFO 2025-10-22 22:01:32,947 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:33,607 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:33,771 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:33,967 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:01:43,204 basehttp - Broken pipe from ('127.0.0.1', 55232)
+INFO 2025-10-22 22:01:43,879 basehttp - Broken pipe from ('127.0.0.1', 55233)
+INFO 2025-10-22 22:01:44,047 basehttp - Broken pipe from ('127.0.0.1', 55238)
+INFO 2025-10-22 22:01:44,235 basehttp "POST /dashboard/ HTTP/1.1" 200 8991
+INFO 2025-10-22 22:02:22,140 utils Fetching weather for Москва from API
+INFO 2025-10-22 22:02:22,340 utils Fetching weather for Москва from API
+INFO 2025-10-22 22:02:22,589 utils Fetching weather for Москва from API
+INFO 2025-10-22 22:02:26,123 basehttp "POST /dashboard/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:02:26,134 basehttp "GET /dashboard/ HTTP/1.1" 200 11198
+INFO 2025-10-22 22:02:27,165 basehttp "POST /task/toggle/2/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:02:27,174 basehttp "GET /dashboard/ HTTP/1.1" 200 11241
+INFO 2025-10-22 22:02:28,007 basehttp "POST /task/toggle/2/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:02:28,019 basehttp "GET /dashboard/ HTTP/1.1" 200 11225
+INFO 2025-10-22 22:02:29,568 basehttp "POST /task/delete/2/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:02:29,578 basehttp "GET /dashboard/ HTTP/1.1" 200 8975
+INFO 2025-10-22 22:02:32,392 basehttp - Broken pipe from ('127.0.0.1', 55240)
+INFO 2025-10-22 22:02:32,634 basehttp - Broken pipe from ('127.0.0.1', 55242)
+INFO 2025-10-22 22:02:32,855 basehttp - Broken pipe from ('127.0.0.1', 55254)
+INFO 2025-10-22 22:13:07,197 autoreload Watching for file changes with StatReloader
+INFO 2025-10-22 22:13:08,632 basehttp "GET / HTTP/1.1" 200 22407
+INFO 2025-10-22 22:13:10,595 basehttp "GET /dashboard/ HTTP/1.1" 200 8675
+INFO 2025-10-22 22:13:12,719 utils Fetching weather for Санкт-Петербург from API
+INFO 2025-10-22 22:13:13,065 utils Weather data fetched and cached for Санкт-Петербург
+INFO 2025-10-22 22:13:13,080 basehttp "POST /dashboard/ HTTP/1.1" 200 9072
+INFO 2025-10-22 22:13:15,326 utils Fetching weather for Москва from API
+INFO 2025-10-22 22:13:15,496 utils Fetching weather for Москва from API
+INFO 2025-10-22 22:13:15,641 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 22:13:15,658 basehttp - Broken pipe from ('127.0.0.1', 55366)
+INFO 2025-10-22 22:13:15,814 utils Weather data fetched and cached for Москва
+INFO 2025-10-22 22:13:15,821 basehttp "POST /dashboard/ HTTP/1.1" 200 9041
+INFO 2025-10-22 22:13:18,059 utils Fetching weather for Красноярск from API
+INFO 2025-10-22 22:13:18,362 utils Weather data fetched and cached for Красноярск
+INFO 2025-10-22 22:13:18,377 basehttp "POST /dashboard/ HTTP/1.1" 200 9058
+INFO 2025-10-22 22:13:21,686 utils Fetching weather for Санкт-Питебург from API
+INFO 2025-10-22 22:13:22,023 basehttp "POST /dashboard/ HTTP/1.1" 200 9036
+INFO 2025-10-22 22:13:26,591 utils Using cached weather data for Санкт-Петербург
+INFO 2025-10-22 22:13:26,598 basehttp "POST /dashboard/ HTTP/1.1" 200 9072
+INFO 2025-10-22 22:13:29,506 utils Using cached weather data for Красноярск
+INFO 2025-10-22 22:13:29,514 basehttp "POST /dashboard/ HTTP/1.1" 200 9058
+INFO 2025-10-22 22:13:31,618 utils Using cached weather data for Санкт-Петербург
+INFO 2025-10-22 22:13:31,626 basehttp "POST /dashboard/ HTTP/1.1" 200 9072
+INFO 2025-10-22 22:13:34,854 utils Fetching weather for Токио from API
+INFO 2025-10-22 22:13:35,158 utils Weather data fetched and cached for Токио
+INFO 2025-10-22 22:13:35,165 basehttp "POST /dashboard/ HTTP/1.1" 200 9040
+INFO 2025-10-22 22:13:48,440 utils Fetching weather for Пекин from API
+INFO 2025-10-22 22:13:48,754 utils Weather data fetched and cached for Пекин
+INFO 2025-10-22 22:13:48,768 basehttp "POST /dashboard/ HTTP/1.1" 200 9037
+INFO 2025-10-22 22:13:55,206 basehttp "POST /dashboard/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:13:55,217 basehttp "GET /dashboard/ HTTP/1.1" 200 11233
+INFO 2025-10-22 22:13:56,078 basehttp "POST /task/toggle/3/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:13:56,088 basehttp "GET /dashboard/ HTTP/1.1" 200 11278
+INFO 2025-10-22 22:13:56,594 basehttp "POST /task/toggle/3/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:13:56,603 basehttp "GET /dashboard/ HTTP/1.1" 200 11262
+INFO 2025-10-22 22:13:58,047 basehttp "POST /task/delete/3/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:13:58,056 basehttp "GET /dashboard/ HTTP/1.1" 200 8990
+INFO 2025-10-22 22:14:01,483 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:02,340 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:02,529 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:02,723 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:02,989 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:03,220 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:03,781 basehttp "GET /dashboard/ HTTP/1.1" 200 8690
+INFO 2025-10-22 22:14:05,213 basehttp "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:05,217 basehttp "GET / HTTP/1.1" 200 22519
+INFO 2025-10-22 22:14:09,643 basehttp "GET /login/ HTTP/1.1" 200 22305
+INFO 2025-10-22 22:14:11,375 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:11,386 basehttp "GET /dashboard/ HTTP/1.1" 200 8105
+INFO 2025-10-22 22:14:15,029 basehttp "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:15,034 basehttp "GET / HTTP/1.1" 200 22519
+INFO 2025-10-22 22:14:16,167 basehttp "GET /register/ HTTP/1.1" 200 24932
+INFO 2025-10-22 22:14:35,283 basehttp "POST /register/ HTTP/1.1" 200 25269
+INFO 2025-10-22 22:14:36,983 basehttp "GET /login/ HTTP/1.1" 200 22305
+INFO 2025-10-22 22:14:39,245 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:39,256 basehttp "GET /dashboard/ HTTP/1.1" 200 8105
+INFO 2025-10-22 22:14:42,058 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:42,445 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:42,819 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:43,232 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:43,635 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:43,876 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:44,100 basehttp "GET /dashboard/ HTTP/1.1" 200 7765
+INFO 2025-10-22 22:14:45,100 basehttp "POST /logout/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:45,103 basehttp "GET / HTTP/1.1" 200 22519
+INFO 2025-10-22 22:14:46,711 basehttp "GET /login/ HTTP/1.1" 200 22305
+INFO 2025-10-22 22:14:47,981 basehttp "POST /login/ HTTP/1.1" 302 0
+INFO 2025-10-22 22:14:47,993 basehttp "GET /dashboard/ HTTP/1.1" 200 8105

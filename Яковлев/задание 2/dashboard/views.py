@@ -172,8 +172,7 @@ def _handle_city_search(request, task_filter):
             error = str(e)
     else:
         error = "Некорректное название города"
-        # Можно также получить конкретные ошибки из формы:
-        # error = form.errors.get('city', ['Некорректное название города'])[0]
+       
 
     final_city = current_city if not error else request.session.get('current_city', 'Санкт-Петербург')
     request.session['current_city'] = final_city
@@ -252,10 +251,8 @@ def _get_filtered_tasks(user, city, task_filter):
 
 def index(request):
     if request.user.is_authenticated:
-        # Для авторизованных перенаправляем на дашборд
         return dashboard(request)
     else:
-        # Для неавторизованных показываем приветственную страницу
         return render(request, 'dashboard/index.html', {
             'not_authenticated': True
         })
@@ -334,6 +331,7 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+
 
 
 

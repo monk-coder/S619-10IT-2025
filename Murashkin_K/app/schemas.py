@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
 
 
@@ -27,9 +27,6 @@ class ContactBase(BaseModel):
     picture: str = Field(..., example="https://example.com/photo.jpg")
 
 
-class ContactCreate(ContactBase):
-    pass
-
 
 class Contact(ContactBase):
     id: int
@@ -41,14 +38,6 @@ class Contact(ContactBase):
 
 class NoteBase(BaseModel):
     content: str = Field(..., min_length=1, max_length=1000, example="This is a note")
-
-
-class NoteCreate(NoteBase):
-    pass
-
-
-class NoteUpdate(NoteBase):
-    pass
 
 
 class Note(NoteBase):

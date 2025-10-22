@@ -20,7 +20,6 @@ def generate_automatic_tasks(user, city, weather_data):
     temperature = weather_data.get('temperature', 0)
     humidity = weather_data.get('humidity', 0)
     
-    # Правило 1: Дождь > 70%
     if rain_prob >= 70:
         task_desc = "Взять зонт — возможен дождь"
         if not WeatherTask.objects.filter(
@@ -35,7 +34,6 @@ def generate_automatic_tasks(user, city, weather_data):
             )
             created_tasks.append(task)
     
-    # Правило 2: Очень холодно (< -10°C)
     if temperature < -5:
         task_desc = "Надеть тёплую куртку и перчатки"
         if not WeatherTask.objects.filter(
@@ -50,7 +48,6 @@ def generate_automatic_tasks(user, city, weather_data):
             )
             created_tasks.append(task)
     
-    # Правило 3: Очень жарко (> 30°C)
     if temperature > 30:
         task_desc = "Нанести солнцезащитный крем и взять воду"
         if not WeatherTask.objects.filter(
@@ -65,7 +62,6 @@ def generate_automatic_tasks(user, city, weather_data):
             )
             created_tasks.append(task)
     
-    # Правило 4: Высокая влажность (> 90%) + тепло (> 25°C)
     if humidity > 90 and temperature > 25:
         task_desc = "Возможна духота — проветрить помещение"
         if not WeatherTask.objects.filter(
@@ -278,11 +274,7 @@ def _update_search_history(user, city):
     Удаляет старую запись о городе и создаёт новую (для корректной сортировки).
     """
     from django.utils import timezone
-
-    # Удаляем старую запись, если существует
     SearchHistory.objects.filter(user=user, city=city).delete()
-
-    # Создаём новую запись
     SearchHistory.objects.create(user=user, city=city, timestamp=timezone.now())
 
 def _handle_task_creation(request, task_filter):
@@ -439,3 +431,4 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+

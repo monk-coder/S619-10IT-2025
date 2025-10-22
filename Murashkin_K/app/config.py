@@ -1,6 +1,8 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
 import os
 
 load_dotenv()
@@ -9,6 +11,10 @@ app = FastAPI(title="Contact Manager API")
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(CURRENT_DIR, "static")
+
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
 
 os.makedirs(STATIC_DIR, exist_ok=True)
 

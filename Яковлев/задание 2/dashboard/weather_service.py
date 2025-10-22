@@ -60,16 +60,23 @@ def _validate_weather_data(data):
         raise WeatherAPIError("Некорректный ответ от сервиса погоды")
 
 def _handle_http_error(original_exception):
-    if _is_request_related_error(original_exception):
-        if isinstance(original_exception, (CityNotFoundError, RateLimitExceededError)):
-            raise original_exception
-        else:
-            raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробуйте позже.") from original_exception
+    if _is_request_error(original_exception):
+        handle_specific_errors(original_exception)
     else:
         raise DatabaseError("Произошла ошибка в базе данных. Пожалуйста, попробуйте позже.") from original_exception
 
-def _is_request_related_error(exception):
-    return isinstance(exception, (CityNotFoundError, RateLimitExceededError))
+def _is_request_error(exception):
+    return hasattr(exception, 'response') and isinstance(exception.response, requests.Response)
+
+def handle_specific_errors(exception):
+    if isinstance(exception, requests.HTTPError):
+        if exception.response.status_code == 404:
+            raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from exception
+        elif exception.response.status_code == 429:
+            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from exception
+        elif exception.response.status_code >= 500:
+            raise ServerError("Ошибка сервера, попробуйте позже.") from exception
+    raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробуйте позже.") from exception
 
 
 def _handle_api_server_error(city):
@@ -134,6 +141,7 @@ def _process_timezone(data):
 def _cache_weather_data(cache_key, weather_data):"
     cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 
 

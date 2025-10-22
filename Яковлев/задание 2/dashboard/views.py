@@ -92,42 +92,23 @@ def generate_automatic_tasks(user, city, weather_data):
     
     return created_tasks
 
-def get_city_icon(city_name):
+def get_city_by_icon(icon_class):
     city_icons = {
-        'Moscow': 'fas fa-landmark',
-        'London': 'fas fa-crown',
-        'Paris': 'fas fa-monument',
-        'Berlin': 'fas fa-landmark',
-        'Rome': 'fas fa-monument',
-        'Madrid': 'fas fa-landmark',
-        'Washington': 'fas fa-landmark',
-        'Tokyo': 'fas fa-landmark',
-        'Beijing': 'fas fa-landmark',
-        'New Delhi': 'fas fa-landmark',
-        'New York': 'fas fa-city',
-        'Los Angeles': 'fas fa-city',
-        'Chicago': 'fas fa-city',
-        'Houston': 'fas fa-city',
-        'Phoenix': 'fas fa-city',
-        'Philadelphia': 'fas fa-city',
-        'San Antonio': 'fas fa-city',
-        'San Diego': 'fas fa-city',
-        'Dallas': 'fas fa-city',
-        'San Jose': 'fas fa-city',
-        'Sochi': 'fas fa-umbrella-beach',
-        'Nice': 'fas fa-umbrella-beach',
-        'Barcelona': 'fas fa-umbrella-beach',
-        'Miami': 'fas fa-umbrella-beach',
-        'Venice': 'fas fa-water',
-        'Amsterdam': 'fas fa-water',
-        'Hamburg': 'fas fa-water',
-        'Las Vegas': 'fas fa-dice',
-        'Orlando': 'fas fa-magic',
-        'Disneyland': 'fas fa-magic',
+        'fas fa-landmark': [
+            'Moscow', 'Berlin', 'Madrid', 'Washington', 'Tokyo', 'Beijing', 'New Delhi',
+            'Sochi', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 
+            'San Antonio', 'San Diego', 'Dallas', 'San Jose',
+        ],
+        'fas fa-crown': ['London'],
+        'fas fa-monument': ['Paris', 'Rome', 'Barcelona'],
+        'fas fa-umbrella-beach': ['Nice', 'Miami'],
+        'fas fa-water': ['Venice', 'Amsterdam', 'Hamburg'],
+        'fas fa-dice': ['Las Vegas'],
+        'fas fa-magic': ['Orlando', 'Disneyland'],
     }
 
-    return city_icons.get(city_name.title()) 
-    
+    cities = city_icons.get(icon_class)
+    return cities if cities else None
     if any(word in city_lower for word in ['beach', 'coast', 'sea', 'ocean', 'port']):
         return 'fas fa-umbrella-beach'
     elif any(word in city_lower for word in ['mountain', 'alps', 'peak', 'hill']):
@@ -391,6 +372,7 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+
 
 
 

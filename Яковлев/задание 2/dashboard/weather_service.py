@@ -40,27 +40,34 @@ class ServerError(WeatherAPIError):
     pass
 
 def _process_weather_response(response, city):
-    try:
-        response.raise_for_status()
-    except Exception as e:
-        handle_http_error(response, city, e)
-
+    _check_http_response(response, city)
     data = response.json()
-
-    if 'main' not in data or 'weather' not in data:
-        raise WeatherAPIError("Некорректный ответ от сервиса погоды")
+    _validate_weather_data(data)
 
     return _build_weather_data(data)
 
-def handle_http_error(response, city, original_exception):"
-    if response.status_code == 404:
-        raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from original_exception
-    elif response.status_code == 429:
-        raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from original_exception
+def _check_http_response(response, city):
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        _handle_http_error(response, city, e)
+
+def _validate_weather_data(data):
+    if 'main' not in data or 'weather' not in data:
+        raise WeatherAPIError("Некорректный ответ от сервиса погоды")
+
+def _handle_http_error(response, city, original_exception):
+    error_map = {
+        404: CityNotFoundError("Город не найден. Пожалуйста, проверьте название."),
+        429: RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap."),
+    }
+    
+    if response.status_code in error_map:
+        raise error_map[response.status_code] from original_exception
     elif response.status_code >= 500:
         raise ServerError("Ошибка сервера, попробуйте позже.") from original_exception
-    else:
-        raise WeatherAPIError(f"Произошла ошибка: {response.status_code}") from original_exception
+    
+    raise WeatherAPIError(f"Произошла ошибка: {response.status_code}") from original_exception
 
 def _handle_api_server_error(city):
     old_cache_key = f"weather_{city.lower().strip()}_old"
@@ -124,6 +131,7 @@ def _process_timezone(data):
 def _cache_weather_data(cache_key, weather_data):"
     cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 
 

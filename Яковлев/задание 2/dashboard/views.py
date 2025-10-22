@@ -109,6 +109,7 @@ def get_city_by_icon(icon_class):
 
     cities = city_icons.get(icon_class)
     return cities if cities else None
+   
     if any(word in city_lower for word in ['beach', 'coast', 'sea', 'ocean', 'port']):
         return 'fas fa-umbrella-beach'
     elif any(word in city_lower for word in ['mountain', 'alps', 'peak', 'hill']):
@@ -372,6 +373,7 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+
 
 
 

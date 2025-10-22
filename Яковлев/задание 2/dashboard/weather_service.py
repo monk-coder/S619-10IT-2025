@@ -32,18 +32,33 @@ def get_weather_data(city):
 
 
 
+class WeatherAPIError(Exception):
+    pass
+
+class CityNotFoundError(WeatherAPIError):
+    pass
+
+class RateLimitExceededError(WeatherAPIError):
+    pass
+
+class ServerError(WeatherAPIError):
+    pass
+
 def _process_weather_response(response, city):
-    """Обрабатывает ответ от API и возвращает структурированные данные погоды"""
-    if response.status_code == 404:
-        raise Exception("Город не найден. Пожалуйста, проверьте название.")
-    elif response.status_code == 429:
-        raise Exception("Превышен лимит запросов к OpenWeatherMap")
-    elif response.status_code >= 500:
-        return _handle_api_server_error(city)
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        if response.status_code == 404:
+            raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from e
+        elif response.status_code == 429:
+            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap") from e
+        elif response.status_code >= 500:
+            return _handle_api_server_error(city)
+        else:
+            raise WeatherAPIError(f"Произошла ошибка: {response.status_code}") from e
 
-    response.raise_for_status()
     data = response.json()
-
+    return data
     if 'main' not in data or 'weather' not in data:
         raise Exception("Некорректный ответ от сервиса погоды")
 
@@ -51,7 +66,6 @@ def _process_weather_response(response, city):
 
 
 def _handle_api_server_error(city):
-    """Обработка ошибок сервера OpenWeatherMap с возвратом кэшированных данных"""
     old_cache_key = f"weather_{city.lower().strip()}_old"
     if old_data := cache.get(old_cache_key):
         logger.warning(f"OpenWeatherMap недоступен, возвращаем старые данные для: {city}")
@@ -61,7 +75,6 @@ def _handle_api_server_error(city):
 
 
 def _build_weather_data(data):
-    """Создает структурированный словарь данных погоды из ответа API"""
     rain_probability = _calculate_rain_probability(data)
 
     timezone_info, current_time_in_city = _process_timezone(data)
@@ -101,7 +114,6 @@ def _calculate_rain_probability(data):
 
 
 def _process_timezone(data):
-    """Обрабатывает информацию о часовом поясе из данных API"""
     tz_offset_seconds = data.get('timezone', 0)
     city_tz = dt_timezone(timedelta(seconds=tz_offset_seconds))
     current_time_in_city = datetime.now(city_tz)
@@ -112,9 +124,9 @@ def _process_timezone(data):
     return timezone_str, current_time_in_city
 
 
-def _cache_weather_data(cache_key, weather_data):
-    """Кэширует данные погоды с основным и резервным ключами"""
+def _cache_weather_data(cache_key, weather_data):"
     cache.set(cache_key, weather_data, 7200)  # 2 часа
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 

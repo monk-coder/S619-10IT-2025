@@ -3,19 +3,13 @@ from django.conf import settings
 from django.utils import timezone
 from .models import WeatherCache
 
-
 def get_weather_data(city_name):
     if not city_name or not city_name.strip():
         return None
 
-    try:
-        cached_weather = WeatherCache.objects.filter(city_name__iexact=city_name).first()
-        if cached_weather and cached_weather.is_valid():
-            data = cached_weather.weather_data
-            data['cached'] = True
-            return data
-    except Exception:
-        pass
+    cached_data = get_cached_weather_data(city_name)
+    if cached_data:
+        return cached_data
 
     api_key = settings.OPENWEATHER_API_KEY
     if not api_key:
@@ -31,21 +25,16 @@ def get_weather_data(city_name):
 
     try:
         response = requests.get(base_url, params=params, timeout=10)
-
-        if response.status_code == 401:
+        
+        if response.status_code != 200:
             return None
-        elif response.status_code == 404:
-            return None
-        elif response.status_code == 429:
-            return None
-        elif response.status_code != 200:
-            return None
-
+            
         data = response.json()
-
-        if 'name' not in data or 'main' not in data or 'weather' not in data:
+        
+        required_fields = ['name', 'main', 'weather']
+        if not all(field in data for field in required_fields):
             return None
-
+            
         weather_info = {
             'city': data['name'],
             'temperature': round(data['main']['temp']),
@@ -56,26 +45,12 @@ def get_weather_data(city_name):
             'wind_speed': data['wind']['speed'],
             'cached': False
         }
-
-        try:
-            WeatherCache.objects.update_or_create(
-                city_name=city_name,
-                defaults={'weather_data': weather_info, 'cached_at': timezone.now()}
-            )
-        except Exception:
-            pass
-
+        
+        save_to_cache(city_name, weather_info)
         return weather_info
-
-    except requests.exceptions.Timeout:
+        
+    except (requests.exceptions.RequestException, KeyError, ValueError):
         return None
-    except requests.exceptions.ConnectionError:
-        return None
-    except requests.exceptions.RequestException:
-        return None
-    except (KeyError, IndexError, ValueError):
-        return None
-
 
 def get_cached_weather_data(city_name):
     try:
@@ -87,3 +62,15 @@ def get_cached_weather_data(city_name):
     except Exception:
         pass
     return None
+
+def save_to_cache(city_name, weather_info):
+    try:
+        WeatherCache.objects.update_or_create(
+            city_name=city_name,
+            defaults={
+                'weather_data': weather_info,
+                'cached_at': timezone.now()
+            }
+        )
+    except Exception:
+        pass

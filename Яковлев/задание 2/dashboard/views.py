@@ -94,7 +94,6 @@ def generate_automatic_tasks(user, city, weather_data):
 
 def get_city_icon(city_name):
     city_icons = {
-      
         'Moscow': 'fas fa-landmark',
         'London': 'fas fa-crown',
         'Paris': 'fas fa-monument',
@@ -105,8 +104,6 @@ def get_city_icon(city_name):
         'Tokyo': 'fas fa-landmark',
         'Beijing': 'fas fa-landmark',
         'New Delhi': 'fas fa-landmark',
-        
-
         'New York': 'fas fa-city',
         'Los Angeles': 'fas fa-city',
         'Chicago': 'fas fa-city',
@@ -117,7 +114,6 @@ def get_city_icon(city_name):
         'San Diego': 'fas fa-city',
         'Dallas': 'fas fa-city',
         'San Jose': 'fas fa-city',
-        
         'Sochi': 'fas fa-umbrella-beach',
         'Nice': 'fas fa-umbrella-beach',
         'Barcelona': 'fas fa-umbrella-beach',
@@ -125,16 +121,12 @@ def get_city_icon(city_name):
         'Venice': 'fas fa-water',
         'Amsterdam': 'fas fa-water',
         'Hamburg': 'fas fa-water',
-        
         'Las Vegas': 'fas fa-dice',
         'Orlando': 'fas fa-magic',
         'Disneyland': 'fas fa-magic',
     }
-    
-    city_lower = city_name.lower()
-    for city, icon in city_icons.items():
-        if city.lower() == city_lower:
-            return icon
+
+    return city_icons.get(city_name.title()) 
     
     if any(word in city_lower for word in ['beach', 'coast', 'sea', 'ocean', 'port']):
         return 'fas fa-umbrella-beach'
@@ -399,5 +391,6 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+
 
 

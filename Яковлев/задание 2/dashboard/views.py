@@ -11,83 +11,44 @@ from .weather_service import get_weather_data
 import json
 
 
+def create_weather_task(user, city, task_desc, weather_condition):
+    if not WeatherTask.objects.filter(
+        user=user, city=city, description=task_desc, completed=False
+    ).exists():
+        return WeatherTask.objects.create(
+            user=user,
+            city=city,
+            description=task_desc,
+            is_automatic=True,
+            weather_condition=weather_condition
+        )
+    return None
+
 def generate_automatic_tasks(user, city, weather_data):
     created_tasks = []
     
     rain_prob = weather_data.get('rain_probability', 0)
-    weather_main = weather_data.get('weather_main', '')
     temperature = weather_data.get('temperature', 0)
     humidity = weather_data.get('humidity', 0)
     
-    if rain_prob >= 70:
-        task_desc = "Взять зонт — возможен дождь"
-        if not WeatherTask.objects.filter(
-            user=user, city=city, description=task_desc, completed=False
-        ).exists():
-            task = WeatherTask.objects.create(
-                user=user,
-                city=city,
-                description=task_desc,
-                is_automatic=True,
-                weather_condition='rain_high'
-            )
-            created_tasks.append(task)
+    tasks_conditions = [
+        (rain_prob >= 70, "Взять зонт — возможен дождь", 'rain_high'),
+        (temperature < -5, "Надеть тёплую куртку и перчатки", 'cold_extreme'),
+        (temperature > 30, "Нанести солнцезащитный крем и взять воду", 'hot_extreme'),
+        (humidity > 90 and temperature > 25, "Возможна духота — проветрить помещение", 'humidity_high'),
+    ]
     
-    if temperature < -5:
-        task_desc = "Надеть тёплую куртку и перчатки"
-        if not WeatherTask.objects.filter(
-            user=user, city=city, description=task_desc, completed=False
-        ).exists():
-            task = WeatherTask.objects.create(
-                user=user,
-                city=city,
-                description=task_desc,
-                is_automatic=True,
-                weather_condition='cold_extreme'
-            )
-            created_tasks.append(task)
+    for condition, description, weather_condition in tasks_conditions:
+        if condition:
+            task = create_weather_task(user, city, description, weather_condition)
+            if task:
+                created_tasks.append(task)
     
-    if temperature > 30:
-        task_desc = "Нанести солнцезащитный крем и взять воду"
-        if not WeatherTask.objects.filter(
-            user=user, city=city, description=task_desc, completed=False
-        ).exists():
-            task = WeatherTask.objects.create(
-                user=user,
-                city=city,
-                description=task_desc,
-                is_automatic=True,
-                weather_condition='hot_extreme'
-            )
-            created_tasks.append(task)
-    
-    if humidity > 90 and temperature > 25:
-        task_desc = "Возможна духота — проветрить помещение"
-        if not WeatherTask.objects.filter(
-            user=user, city=city, description=task_desc, completed=False
-        ).exists():
-            task = WeatherTask.objects.create(
-                user=user,
-                city=city,
-                description=task_desc,
-                is_automatic=True,
-                weather_condition='humidity_high'
-            )
-            created_tasks.append(task)
-
     user_rules = WeatherRule.objects.filter(user=user, is_active=True)
     for rule in user_rules:
         if rule.check_condition(weather_data):
-            if not WeatherTask.objects.filter(
-                user=user, city=city, description=rule.task_description, completed=False
-            ).exists():
-                task = WeatherTask.objects.create(
-                    user=user,
-                    city=city,
-                    description=rule.task_description,
-                    is_automatic=True,
-                    weather_condition=f'user_rule_{rule.id}'
-                )
+            task = create_weather_task(user, city, rule.task_description, f'user_rule_{rule.id}')
+            if task:
                 created_tasks.append(task)
     
     return created_tasks
@@ -373,6 +334,7 @@ def delete_rule(request, rule_id):
     rule.delete()
     messages.success(request, f'Правило "{rule_name}" удалено!')
     return redirect('weather_rules')
+
 
 
 

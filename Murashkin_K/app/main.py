@@ -1,7 +1,6 @@
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -10,61 +9,37 @@ import csv
 import io
 from typing import List
 import os
-from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_db, engine
 import models
 import schemas
-import crud
+from crud import UserCRUD, ContactCRUD, NoteCRUD
 from auth import (
     authenticate_user, create_access_token,
-    get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES,
-    get_password_hash
+    get_current_user, get_password_hash
 )
+from config import settings, app
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Contact Manager API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],  # Разрешаем фронтенд
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Получаем путь к текущей директории
-current_dir = os.path.dirname(os.path.abspath(__file__))
-static_dir = os.path.join(current_dir, "static")
-
-# Создаем папку static если она не существует
-os.makedirs(static_dir, exist_ok=True)
-
-# Mount static files с абсолютным путем
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-
 @app.get("/")
 async def read_index():
-    index_path = os.path.join(static_dir, "index.html")
+    index_path = os.path.join(settings.STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
     else:
         return {"message": "Frontend files not found. Please check if static files are properly installed."}
 
 
-# Authentication endpoints
 @app.post("/api/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_username(db, username=user.username)
+    db_user = UserCRUD.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(
             status_code=400,
             detail="Username already registered"
         )
 
-    # Проверяем email
     db_user_email = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user_email:
         raise HTTPException(
@@ -72,10 +47,10 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
-    return crud.create_user(db=db, user=user)
+    return UserCRUD.create_user(db=db, user=user)
 
 
-@app.post("/api/token", response_model=schemas.Token)  # Изменил на /api/token
+@app.post("/api/token", response_model=schemas.Token)
 async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)
@@ -87,14 +62,13 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# Random Users API
 @app.get("/api/random-users")
 async def get_random_users():
     async with aiohttp.ClientSession() as session:
@@ -112,7 +86,6 @@ async def get_random_users():
             return users
 
 
-# Contacts endpoints
 @app.get("/api/contacts", response_model=List[schemas.Contact])
 async def read_contacts(
         skip: int = 0,
@@ -120,18 +93,18 @@ async def read_contacts(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contacts = crud.get_contacts(db, user_id=current_user.id, skip=skip, limit=limit)
+    contacts = ContactCRUD.get_contacts(db, user_id=current_user.id, skip=skip, limit=limit)
     return contacts
 
 
 @app.post("/api/contacts", response_model=schemas.Contact)
 async def create_contact(
-    contact: schemas.ContactCreate,
+    contact: schemas.Contact,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     try:
-        return crud.create_contact(db=db, contact=contact, user_id=current_user.id)
+        return ContactCRUD.create_contact(db=db, contact=contact, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -145,7 +118,7 @@ async def delete_contact(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contact = crud.delete_contact(db, contact_id=contact_id, user_id=current_user.id)
+    contact = ContactCRUD.delete_contact(db, contact_id=contact_id, user_id=current_user.id)
     if contact is None:
         raise HTTPException(status_code=404, detail="Contact not found")
     return {"message": "Contact deleted successfully"}
@@ -158,27 +131,27 @@ async def read_notes(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    return crud.get_notes(db, contact_id=contact_id, user_id=current_user.id)
+    return NoteCRUD.get_notes(db, contact_id=contact_id, user_id=current_user.id)
 
 
 @app.post("/api/contacts/{contact_id}/notes", response_model=schemas.Note)
 async def create_note(
         contact_id: int,
-        note: schemas.NoteCreate,
+        note: schemas.Note,
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    return crud.create_note(db=db, note=note, contact_id=contact_id, user_id=current_user.id)
+    return NoteCRUD.create_note(db=db, note=note, contact_id=contact_id, user_id=current_user.id)
 
 
 @app.put("/api/notes/{note_id}", response_model=schemas.Note)
 async def update_note(
         note_id: int,
-        note: schemas.NoteUpdate,
+        note: schemas.Note,
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    db_note = crud.update_note(db, note_id=note_id, note=note, user_id=current_user.id)
+    db_note = NoteCRUD.update_note(db, note_id=note_id, note=note, user_id=current_user.id)
     if db_note is None:
         raise HTTPException(status_code=404, detail="Note not found")
     return db_note
@@ -190,7 +163,7 @@ async def delete_note(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    note = crud.delete_note(db, note_id=note_id, user_id=current_user.id)
+    note = NoteCRUD.delete_note(db, note_id=note_id, user_id=current_user.id)
     if note is None:
         raise HTTPException(status_code=404, detail="Note not found")
     return {"message": "Note deleted successfully"}
@@ -202,7 +175,7 @@ async def export_contacts_csv(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contacts = crud.get_contacts(db, user_id=current_user.id)
+    contacts = ContactCRUD.get_contacts(db, user_id=current_user.id)
 
     output = io.StringIO()
     writer = csv.writer(output)

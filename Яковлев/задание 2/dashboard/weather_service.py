@@ -9,10 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 def get_weather_data(city):
-    """
-    Получает данные о погоде с кэшированием на 2 часа.
-    Возвращает словарь с данными или raise Exception.
-    """
     cache_key = f"weather_{city.lower().strip()}"
     if cached_data := cache.get(cache_key):
         logger.info(f"Кэш найден для города: {city}")
@@ -127,6 +123,7 @@ def _process_timezone(data):
 def _cache_weather_data(cache_key, weather_data):"
     cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 
 

@@ -89,4 +89,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
+OPENWEATHER_API_URL = "http://api.openweathermap.org/data/2.5/weather"
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')

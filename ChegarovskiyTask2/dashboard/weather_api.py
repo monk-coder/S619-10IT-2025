@@ -15,18 +15,19 @@ def get_weather_data(city_name):
     if not api_key:
         return None
 
-    base_url = "http://api.openweathermap.org/data/2.5/weather"
-    params = {
-        'q': city_name,
-        'appid': api_key,
-        'units': 'metric',
-        'lang': 'ru'
-    }
-
     try:
-        response = requests.get(base_url, params=params, timeout=10)
+        response = requests.get(
+            settings.OPENWEATHER_API_URL,
+            params={
+                'q': city_name,
+                'appid': api_key,
+                'units': 'metric',
+                'lang': 'ru'
+            },
+            timeout=10
+        )
         
-        if response.status_code != 200:
+        if not response.ok:
             return None
             
         data = response.json()
@@ -49,7 +50,9 @@ def get_weather_data(city_name):
         save_to_cache(city_name, weather_info)
         return weather_info
         
-    except (requests.exceptions.RequestException, KeyError, ValueError):
+    except requests.exceptions.RequestException:
+        return None
+    except (KeyError, ValueError):
         return None
 
 def get_cached_weather_data(city_name):
@@ -60,7 +63,7 @@ def get_cached_weather_data(city_name):
             data['cached'] = True
             return data
     except Exception:
-        pass
+        print(f"Ошибка при получении кэша для города: {city_name}")
     return None
 
 def save_to_cache(city_name, weather_info):
@@ -73,4 +76,4 @@ def save_to_cache(city_name, weather_info):
             }
         )
     except Exception:
-        pass
+        print(f"Ошибка при сохранении кэша для города: {city_name}")

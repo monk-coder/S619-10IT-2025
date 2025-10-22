@@ -9,10 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 def get_weather_data(city):
-    """
-    Получает данные о погоде с кэшированием на 2 часа.
-    Возвращает словарь с данными или raise Exception.
-    """
     cache_key = f"weather_{city.lower().strip()}"
     if cached_data := cache.get(cache_key):
         logger.info(f"Кэш найден для города: {city}")
@@ -31,7 +27,6 @@ def get_weather_data(city):
     return weather_data
 
 
-
 class WeatherAPIError(Exception):
     pass
 
@@ -44,25 +39,29 @@ class RateLimitExceededError(WeatherAPIError):
 class ServerError(WeatherAPIError):
     pass
 
-def _process_weather_response(response, city):
+def _check_and_handle_http_response(response):
     try:
         response.raise_for_status()
-    except Exception as e:
-        if response.status_code == 404:
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
             raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from e
-        elif response.status_code == 429:
-            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap") from e
-        elif response.status_code >= 500:
-            return _handle_api_server_error(city)
-        else:
-            raise WeatherAPIError(f"Произошла ошибка: {response.status_code}") from e
+        elif e.response.status_code == 429:
+            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from e
+        elif e.response.status_code >= 500:
+            raise ServerError("Ошибка сервера, попробуйте позже.") from e
+        
+        raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробujte позже.") from e
 
+def _process_weather_response(response):
+    _check_and_handle_http_response(response)
     data = response.json()
-    return data
-    if 'main' not in data or 'weather' not in data:
-        raise Exception("Некорректный ответ от сервиса погоды")
+    _validate_weather_data(data)
 
     return _build_weather_data(data)
+
+def _validate_weather_data(data):
+    if 'main' not in data or 'weather' not in data:
+        raise WeatherAPIError("Некорректный ответ от сервиса погоды")
 
 
 def _handle_api_server_error(city):
@@ -103,13 +102,13 @@ def _calculate_rain_probability(data):
     humidity = data['main']['humidity']
 
     if 'rain' in weather_main or 'drizzle' in weather_main:
-        return 100  # Идёт дождь
+        return 100
     elif 'shower' in weather_description:
-        return 80  # Ливень возможен
+        return 80  
     elif 'cloud' in weather_description and humidity > 80:
-        return 60  # Высокая влажность + облачно
+        return 60 
     elif 'cloud' in weather_description:
-        return 30  # Облачно, возможен дождь
+        return 30  
     return 0
 
 
@@ -125,8 +124,15 @@ def _process_timezone(data):
 
 
 def _cache_weather_data(cache_key, weather_data):"
-    cache.set(cache_key, weather_data, 7200)  # 2 часа
+    cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
+
+
+
+
+
+
 
 
 

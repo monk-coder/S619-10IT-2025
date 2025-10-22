@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.utils import timezone
+from django.shortcuts import render, redirect, get_object_or_404
+
 from .forms import CustomUserCreationForm, WeatherTaskForm, CitySearchForm
 from .models import WeatherTask, CitySearchHistory
 from .utils import WeatherService
@@ -54,63 +54,110 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    weather_data = None
-    search_form = CitySearchForm()
-    task_form = WeatherTaskForm()
+    """Основной view дашборда с улучшенной структурой"""
+    # Обрабатываем POST запросы
+    if request.method == 'POST':
+        response = handle_post_request(request)
+        if response:
+            return response
 
-    tasks = WeatherTask.objects.filter(user=request.user)
-    search_history = CitySearchHistory.objects.filter(user=request.user)[:5]
+    # Рендерим страницу с контекстом
+    return render_dashboard(request)
 
-    if request.method == 'POST' and 'search_city' in request.POST:
-        search_form = CitySearchForm(request.POST)
-        if search_form.is_valid():
-            city_name = search_form.cleaned_data['city']
-            weather_service = WeatherService()
 
-            api_result = weather_service.get_weather(city_name)
+def handle_post_request(request):
+    """Обработка всех POST запросов дашборда"""
+    if 'search_city' in request.POST:
+        handle_city_search(request)
+    elif 'create_task' in request.POST:
+        return handle_task_creation(request)
+    return None
 
-            if 'error' in api_result:
-                messages.error(request, f'❌ {api_result["error"]}')
-            else:
-                formatted_weather = weather_service.format_weather_display(api_result)
-                if 'error' in formatted_weather:
-                    messages.error(request, f'❌ {formatted_weather["error"]}')
-                else:
-                    weather_data = formatted_weather
-                    CitySearchHistory.objects.create(
-                        user=request.user,
-                        city_name=formatted_weather['city'],
-                        country=formatted_weather['country']
-                    )
-                    messages.success(
-                        request,
-                        f'✅ Погода для {formatted_weather["city"]} загружена! '
-                        f'Температура: {formatted_weather["temperature"]}°C'
-                    )
 
-    if request.method == 'POST' and 'create_task' in request.POST:
-        task_form = WeatherTaskForm(request.POST)
-        if task_form.is_valid():
-            task = task_form.save(commit=False)
-            task.user = request.user
-            task.save()
-            messages.success(request, '✅ Задача успешно создана!')
-            return redirect('dashboard')
-        else:
-            messages.error(request, '❌ Исправьте ошибки в форме задачи.')
+def handle_city_search(request):
+    """Обработка поиска города"""
+    form = CitySearchForm(request.POST)
+    if not form.is_valid():
+        return
 
+    city_name = form.cleaned_data['city']
+    weather_service = WeatherService()
+
+    # Получаем и валидируем данные погоды
+    weather_data = get_validated_weather_data(weather_service, city_name, request)
+    if not weather_data:
+        return
+
+    # Сохраняем историю и показываем результат
+    save_search_history(request.user, weather_data)
+    show_weather_success(request, weather_data)
+
+    # Сохраняем данные погоды в сессии
+    request.session['last_weather_data'] = weather_data
+
+
+def get_validated_weather_data(weather_service, city_name, request):
+    """Получение и валидация данных погоды"""
+    api_result = weather_service.get_weather(city_name)
+    if 'error' in api_result:
+        messages.error(request, f'❌ {api_result["error"]}')
+        return None
+
+    formatted_weather = weather_service.format_weather_display(api_result)
+    if 'error' in formatted_weather:
+        messages.error(request, f'❌ {formatted_weather["error"]}')
+        return None
+
+    return formatted_weather
+
+
+def save_search_history(user, weather_data):
+    """Сохранение истории поиска"""
+    CitySearchHistory.objects.create(
+        user=user,
+        city_name=weather_data['city'],
+        country=weather_data['country']
+    )
+
+
+def show_weather_success(request, weather_data):
+    """Показать сообщение об успешном получении погоды"""
+    messages.success(
+        request,
+        f'✅ Погода для {weather_data["city"]} загружена! '
+        f'Температура: {weather_data["temperature"]}°C'
+    )
+
+
+def handle_task_creation(request):
+    """Обработка создания задачи"""
+    form = WeatherTaskForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, '❌ Исправьте ошибки в форме задачи.')
+        return None
+
+    task = form.save(commit=False)
+    task.user = request.user
+    task.save()
+    messages.success(request, '✅ Задача успешно создана!')
+    return redirect('dashboard')
+
+
+def render_dashboard(request):
+    """Рендеринг страницы дашборда с контекстом"""
     context = {
-        'weather_data': weather_data,
-        'search_form': search_form,
-        'task_form': task_form,
-        'tasks': tasks,
-        'search_history': search_history,
+        'weather_data': request.session.get('last_weather_data'),
+        'search_form': CitySearchForm(),
+        'task_form': WeatherTaskForm(),
+        'tasks': WeatherTask.objects.filter(user=request.user),
+        'search_history': CitySearchHistory.objects.filter(user=request.user)[:5],
     }
     return render(request, 'dashboard/dashboard.html', context)
 
 
 @login_required
 def delete_task(request, task_id):
+    """Удаление задачи"""
     task = get_object_or_404(WeatherTask, id=task_id, user=request.user)
     if request.method == 'POST':
         task.delete()
@@ -120,6 +167,7 @@ def delete_task(request, task_id):
 
 @login_required
 def toggle_task(request, task_id):
+    """Переключение статуса задачи"""
     task = get_object_or_404(WeatherTask, id=task_id, user=request.user)
     task.is_completed = not task.is_completed
     task.save()
@@ -131,6 +179,7 @@ def toggle_task(request, task_id):
 
 @login_required
 def clear_history(request):
+    """Очистка истории поиска"""
     if request.method == 'POST':
         CitySearchHistory.objects.filter(user=request.user).delete()
         messages.success(request, '🧹 История поиска очищена!')

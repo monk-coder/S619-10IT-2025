@@ -4,6 +4,7 @@ from django.utils import timezone
 
 
 class CitySearchHistory(models.Model):
+    objects = None
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     city_name = models.CharField(max_length=100)
     country = models.CharField(max_length=100, blank=True)
@@ -17,6 +18,7 @@ class CitySearchHistory(models.Model):
 
 
 class WeatherTask(models.Model):
+    objects = None
     TASK_TYPES = [
         ('rain', 'Дождь'),
         ('cold', 'Холод'),
@@ -29,7 +31,7 @@ class WeatherTask(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    task_type = models.CharField(max_length=20, choices=TASK_TYPES, default='general')
+    task_type = models.CharField(max_length=20, choices=TASK_TYPES, default=TASK_TYPES[5][0])
     city = models.CharField(max_length=100)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,6 +45,7 @@ class WeatherTask(models.Model):
 
 
 class WeatherCache(models.Model):
+    objects = None
     city_name = models.CharField(max_length=100, unique=True)
     country = models.CharField(max_length=100)
     temperature = models.FloatField()

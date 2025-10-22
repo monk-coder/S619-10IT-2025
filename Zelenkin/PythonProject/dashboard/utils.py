@@ -6,25 +6,42 @@ from .models import WeatherCache
 
 class WeatherService:
     def __init__(self):
-        self.api_key = settings.OPENWEATHER_API_KEY
-        self.base_url = "https://api.openweathermap.org/data/2.5/weather"
+        config = settings.OPENWEATHER_CONFIG
+        self.api_key = config['API_KEY']
+        self.base_url = config['BASE_URL']
+        self.timeout = config['TIMEOUT']
+        self.units = config['UNITS']
+        self.lang = config['LANG']
+        self.cache_timeout = config['CACHE_TIMEOUT']
 
-    def get_weather(self, city_name):
-        """Получить погоду для города"""
-        # Проверка кэша
-        cached_data = self._get_cached_weather(city_name)
+    def get_weather(self, city, cache=None):
+        cache_key = f"weather_{city.lower()}"
+        cached_data = cache.get(cache_key)
+
         if cached_data:
             return cached_data
 
-        # Запрос к API
-        api_data = self._fetch_from_api(city_name)
-        if api_data and 'error' not in api_data:
-            self._cache_weather_data(api_data)
-            return api_data
-        else:
-            return api_data or {'error': 'Не удалось получить данные о погоде'}
+        try:
+            params = {
+                'q': city,
+                'appid': self.api_key,
+                'units': self.units,
+                'lang': self.lang
+            }
 
-    def _get_cached_weather(self, city_name):
+            response = requests.get(self.base_url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+
+            weather_data = response.json()
+            cache.set(cache_key, weather_data, self.cache_timeout)
+
+            return weather_data
+        except requests.exceptions.RequestException as e:
+            return {'error': f'Ошибка при получении погоды: {str(e)}'}
+
+    # noinspection PyBroadException
+    @staticmethod
+    def _get_cached_weather(city_name):
         """Получить данные из кэша"""
         try:
             cached = WeatherCache.objects.filter(city_name__iexact=city_name).first()
@@ -58,7 +75,8 @@ class WeatherService:
         except requests.exceptions.RequestException:
             return {'error': 'Ошибка соединения с сервисом погоды'}
 
-    def _cache_weather_data(self, weather_data):
+    @staticmethod
+    def _cache_weather_data(weather_data):
         """Кэширование данных погоды"""
         try:
             if 'error' in weather_data:
@@ -84,7 +102,8 @@ class WeatherService:
         except Exception as e:
             print(f"Ошибка кэширования: {e}")
 
-    def format_weather_display(self, weather_data):
+    @staticmethod
+    def format_weather_display(weather_data):
         """Форматирование данных для отображения"""
         if 'error' in weather_data:
             return weather_data

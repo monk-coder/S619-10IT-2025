@@ -1,66 +1,131 @@
+
 class AuthService {
-    static baseURL = 'http://localhost:8000/api';
+    static usersKey = 'travel_app_users';
+    static currentUserKey = 'travel_app_current_user';
 
-    static async register(username, email, password) {
-        try {
-            const response = await fetch(`${this.baseURL}/register`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, email, password })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.error || 'Ошибка регистрации');
-
-            this.setCurrentUser(data.user);
-            return data.user;
-
-        } catch (error) { throw error; }
+    static init() {
+        // Создаем тестового пользователя для демонстрации
+        const users = this.getUsers();
+        if (users.length === 0) {
+            const demoUser = {
+                id: this.generateId(),
+                username: 'demo',
+                email: 'demo@example.com',
+                password: this.hashPassword('demo123'),
+                createdAt: new Date().toISOString()
+            };
+            users.push(demoUser);
+            this.saveUsers(users);
+        }
     }
 
-    static async login(username, password) {
+    static getUsers() {
         try {
-            const response = await fetch(`${this.baseURL}/login`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
+            return JSON.parse(localStorage.getItem(this.usersKey)) || [];
+        } catch (error) {
+            console.error('Ошибка загрузки пользователей:', error);
+            return [];
+        }
+    }
 
-            const data = await response.json();
+    static saveUsers(users) {
+        localStorage.setItem(this.usersKey, JSON.stringify(users));
+    }
 
-            if (!response.ok) throw new Error(data.error || 'Ошибка входа');
+    static getCurrentUser() {
+        try {
+            return JSON.parse(localStorage.getItem(this.currentUserKey));
+        } catch (error) {
+            return null;
+        }
+    }
 
-            this.setCurrentUser(data.user);
-            return data.user;
+    static setCurrentUser(user) {
+        if (user) {
+            localStorage.setItem(this.currentUserKey, JSON.stringify(user));
+        } else {
+            localStorage.removeItem(this.currentUserKey);
+        }
+    }
 
-        } catch (error) { throw error; }
+    static isLoggedIn() {
+        return !!this.getCurrentUser();
+    }
+
+    static register(username, email, password) {
+        const users = this.getUsers();
+        
+        // Проверяем, существует ли пользователь
+        if (users.find(u => u.username === username)) {
+            throw new Error('Пользователь с таким именем уже существует');
+        }
+        
+        if (users.find(u => u.email === email)) {
+            throw new Error('Пользователь с таким email уже существует');
+        }
+
+        // Создаем нового пользователя
+        const newUser = {
+            id: this.generateId(),
+            username,
+            email,
+            password: this.hashPassword(password),
+            createdAt: new Date().toISOString()
+        };
+
+        users.push(newUser);
+        this.saveUsers(users);
+        
+        // Автоматически логиним пользователя после регистрации
+        this.setCurrentUser(newUser);
+        
+        return newUser;
+    }
+
+    static login(username, password) {
+        const users = this.getUsers();
+        const user = users.find(u => u.username === username);
+        
+        if (!user) {
+            throw new Error('Пользователь не найден');
+        }
+
+        if (user.password !== this.hashPassword(password)) {
+            throw new Error('Неверный пароль');
+        }
+
+        this.setCurrentUser(user);
+        return user;
     }
 
     static logout() {
         this.setCurrentUser(null);
-        Wishlist.clearCache();
+        Wishlist.clearCache(); // Очищаем кэш вишлиста
     }
 
-    static getCurrentUser() {
-        try { return JSON.parse(localStorage.getItem('current_user')); }
-        catch (error) { return null; }
+    static hashPassword(password) {
+        // Простое хеширование для демонстрации
+        // В реальном приложении используйте более безопасные методы
+        let hash = 0;
+        for (let i = 0; i < password.length; i++) {
+            const char = password.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash.toString();
     }
 
-    static setCurrentUser(user) {
-        if (user) localStorage.setItem('current_user', JSON.stringify(user));
-        else localStorage.removeItem('current_user');
-    }
-
-    static isLoggedIn() { return !!this.getCurrentUser(); }
-
-    static getApiKey() {
-        const user = this.getCurrentUser();
-        return user ? user.api_key : null;
+    static generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
     static getUserId() {
         const user = this.getCurrentUser();
         return user ? user.id : null;
+    }
+
+    static getUserWishlistKey() {
+        const userId = this.getUserId();
+        return userId ? `wishlist_${userId}` : null;
     }
 }

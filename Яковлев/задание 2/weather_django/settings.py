@@ -5,6 +5,16 @@ load_dotenv()
 
 from pathlib import Path
 
+def _make_weather_api_request(city):
+    """Выполняет HTTP-запрос к OpenWeatherMap API"""
+    url = "http://api.openweathermap.org/data/2.5/weather"
+    params = {
+        'q': city,
+        'appid': settings.OPENWEATHER_API_KEY,
+        'units': 'metric',
+        'lang': 'ru'
+    }
+
 USE_TZ = True  # Включить поддержку часовых поясов
 TIME_ZONE = 'Europe/Moscow'  # Часовой пояс сервера (можно изменить)
 
@@ -135,4 +145,5 @@ USE_TZ = True
 from django.utils.translation import gettext_lazy as _
 LANGUAGES = [
     ('ru', _('Russian')),
+
 ]

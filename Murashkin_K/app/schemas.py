@@ -1,56 +1,109 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
 
+# Base schemas
 class UserBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50, example="john_doe")
-    email: EmailStr = Field(..., example="john@example.com")
+    username: str
+    email: EmailStr
 
 
+class ContactBase(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    picture: Optional[str] = None
+
+
+class NoteBase(BaseModel):
+    content: str
+
+
+# Create schemas (for POST requests)
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=100, example="securepassword123")
+    password: str
 
 
+class ContactCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    picture: Optional[str] = None
+
+class NoteCreate(NoteBase):
+    pass
+
+
+# Update schemas (for PUT/PATCH requests)
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+
+
+class ContactUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    picture: Optional[str] = None
+
+
+class NoteUpdate(BaseModel):
+    content: Optional[str] = None
+
+
+# Response schemas (for GET responses)
 class User(UserBase):
     id: int
+    is_active: bool = True
 
     class Config:
         from_attributes = True
 
 
-class ContactBase(BaseModel):
-    first_name: str = Field(..., example="John")
-    last_name: str = Field(..., example="Doe")
-    email: str = Field(..., example="john@example.com")
-    phone: str = Field(..., example="+1234567890")
-    picture: str = Field(..., example="https://example.com/photo.jpg")
-
+class UserInDB(User):
+    hashed_password: str
 
 
 class Contact(ContactBase):
     id: int
     user_id: int
-
-    class Config:
-        from_attributes = True
-
-
-class NoteBase(BaseModel):
-    content: str = Field(..., min_length=1, max_length=1000, example="This is a note")
-
-
-class Note(NoteBase):
-    id: int
-    contact_id: int
-    user_id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 
+class Note(NoteBase):
+    id: int
+    contact_id: int
+    user_id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Detailed response schemas with relationships
+class ContactWithNotes(Contact):
+    notes: list[Note] = []
+
+
+class UserWithContacts(User):
+    contacts: list[Contact] = []
+
+
+class NoteWithContact(Note):
+    contact: Optional[Contact] = None
+
+
+# Authentication schemas
 class Token(BaseModel):
     access_token: str
     token_type: str

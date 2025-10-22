@@ -10,11 +10,11 @@ import io
 from typing import List
 import os
 
-from database import get_db, engine
+from database import get_db
 import models
 import schemas
-from crud import UserCRUD, ContactCRUD, NoteCRUD
-from config import settings, app, STATIC_DIR
+from crud import user_repository, contact_repository, note_repository
+from config import settings, app, STATIC_DIR, engine
 from auth import authenticate_user, create_access_token, get_current_user
 
 models.Base.metadata.create_all(bind=engine)
@@ -30,21 +30,21 @@ async def read_index():
 
 @app.post("/api/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = UserCRUD.get_user_by_username(db, username=user.username)
+    db_user = contact_repository.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(
             status_code=400,
             detail="Username already registered"
         )
 
-    db_user_email = db.query(models.User).filter(models.User.email == user.email).first()
+    db_user_email = db.query(models.User).filter(models.User.id == 1, models.User.username == "test").first()
     if db_user_email:
         raise HTTPException(
             status_code=400,
             detail="Email already registered"
         )
 
-    return UserCRUD.create_user(db=db, user=user)
+    return contact_repository.create_user(db=db, user=user)
 
 
 @app.post("/api/token", response_model=schemas.Token)
@@ -90,18 +90,22 @@ async def read_contacts(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contacts = ContactCRUD.get_contacts(db, user_id=current_user.id, skip=skip, limit=limit)
+    contacts = contact_repository.get_contacts(db, user_id=current_user.id, skip=skip, limit=limit)
     return contacts
 
 
 @app.post("/api/contacts", response_model=schemas.Contact)
 async def create_contact(
-    contact: schemas.Contact,
+    contact: schemas.ContactCreate,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     try:
-        return ContactCRUD.create_contact(db=db, contact=contact, user_id=current_user.id)
+        return contact_repository.create_contact(
+            db=db,
+            contact=contact,
+            user_id=current_user.id
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -115,7 +119,7 @@ async def delete_contact(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contact = ContactCRUD.delete_contact(db, contact_id=contact_id, user_id=current_user.id)
+    contact = contact_repository.delete_contact(db, contact_id=contact_id, user_id=current_user.id)
     if contact is None:
         raise HTTPException(status_code=404, detail="Contact not found")
     return {"message": "Contact deleted successfully"}
@@ -127,27 +131,48 @@ async def read_notes(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    return NoteCRUD.get_notes(db, contact_id=contact_id, user_id=current_user.id)
+    return note_repository.get_notes(db, contact_id=contact_id, user_id=current_user.id)
 
 
 @app.post("/api/contacts/{contact_id}/notes", response_model=schemas.Note)
 async def create_note(
         contact_id: int,
-        note: schemas.Note,
+        note: schemas.NoteCreate,
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    return NoteCRUD.create_note(db=db, note=note, contact_id=contact_id, user_id=current_user.id)
+    try:
+        return note_repository.create_note(
+            db=db,
+            note=note,
+            contact_id=contact_id,
+            user_id=current_user.id
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
 
 
 @app.put("/api/notes/{note_id}", response_model=schemas.Note)
 async def update_note(
         note_id: int,
-        note: schemas.Note,
+        note: schemas.NoteUpdate,
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    db_note = NoteCRUD.update_note(db, note_id=note_id, note=note, user_id=current_user.id)
+    db_note = note_repository.update_note(
+        db=db,
+        note_id=note_id,
+        note=note,
+        user_id=current_user.id
+    )
     if db_note is None:
         raise HTTPException(status_code=404, detail="Note not found")
     return db_note
@@ -159,7 +184,7 @@ async def delete_note(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    note = NoteCRUD.delete_note(db, note_id=note_id, user_id=current_user.id)
+    note = note_repository.delete_note(db, note_id=note_id, user_id=current_user.id)
     if note is None:
         raise HTTPException(status_code=404, detail="Note not found")
     return {"message": "Note deleted successfully"}
@@ -170,7 +195,7 @@ async def export_contacts_csv(
         current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    contacts = ContactCRUD.get_contacts(db, user_id=current_user.id)
+    contacts = contact_repository.get_contacts(db, user_id=current_user.id)
 
     output = io.StringIO()
     writer = csv.writer(output)

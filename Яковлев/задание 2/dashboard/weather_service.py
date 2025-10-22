@@ -13,23 +13,18 @@ def get_weather_data(city):
     Получает данные о погоде с кэшированием на 2 часа.
     Возвращает словарь с данными или raise Exception.
     """
-    # Проверка кэша
     cache_key = f"weather_{city.lower().strip()}"
     if cached_data := cache.get(cache_key):
         logger.info(f"Кэш найден для города: {city}")
         return cached_data
 
-    # Валидация API ключа
     if not settings.OPENWEATHER_API_KEY:
         raise Exception("OPENWEATHER_API_KEY не установлен")
 
-    # Выполнение запроса к API
     response = _make_weather_api_request(city)
 
-    # Обработка ответа API
     weather_data = _process_weather_response(response, city)
 
-    # Кэширование и возврат
     _cache_weather_data(cache_key, weather_data)
     logger.info(f"Данные сохранены в кэш для города: {city} (Часовой пояс: {weather_data['timezone_info']})")
 
@@ -61,7 +56,6 @@ def _make_weather_api_request(city):
 
 def _process_weather_response(response, city):
     """Обрабатывает ответ от API и возвращает структурированные данные погоды"""
-    # Обработка ошибок HTTP
     if response.status_code == 404:
         raise Exception("Город не найден. Пожалуйста, проверьте название.")
     elif response.status_code == 429:
@@ -72,11 +66,9 @@ def _process_weather_response(response, city):
     response.raise_for_status()
     data = response.json()
 
-    # Валидация структуры ответа
     if 'main' not in data or 'weather' not in data:
         raise Exception("Некорректный ответ от сервиса погоды")
 
-    # Создание структурированных данных погоды
     return _build_weather_data(data)
 
 
@@ -92,10 +84,8 @@ def _handle_api_server_error(city):
 
 def _build_weather_data(data):
     """Создает структурированный словарь данных погоды из ответа API"""
-    # Определение вероятности дождя
     rain_probability = _calculate_rain_probability(data)
 
-    # Обработка часового пояса
     timezone_info, current_time_in_city = _process_timezone(data)
     formatted_time = current_time_in_city.strftime('%d.%m.%Y %H:%M')
 
@@ -148,3 +138,4 @@ def _cache_weather_data(cache_key, weather_data):
     """Кэширует данные погоды с основным и резервным ключами"""
     cache.set(cache_key, weather_data, 7200)  # 2 часа
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+

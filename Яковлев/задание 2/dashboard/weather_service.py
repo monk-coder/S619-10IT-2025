@@ -39,44 +39,29 @@ class RateLimitExceededError(WeatherAPIError):
 class ServerError(WeatherAPIError):
     pass
 
-class DatabaseError(WeatherAPIError):
-    pass
+def _check_and_handle_http_response(response):
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from e
+        elif e.response.status_code == 429:
+            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from e
+        elif e.response.status_code >= 500:
+            raise ServerError("Ошибка сервера, попробуйте позже.") from e
+        
+        raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробujte позже.") from e
 
-def _process_weather_response(response, city):
-    _check_http_response(response, city)
+def _process_weather_response(response):
+    _check_and_handle_http_response(response)
     data = response.json()
     _validate_weather_data(data)
 
     return _build_weather_data(data)
 
-def _check_http_response(response, city):
-    try:
-        response.raise_for_status()
-    except Exception as e:
-        _handle_http_error(e)
-
 def _validate_weather_data(data):
     if 'main' not in data or 'weather' not in data:
         raise WeatherAPIError("Некорректный ответ от сервиса погоды")
-
-def _handle_http_error(original_exception):
-    if _is_request_error(original_exception):
-        handle_specific_errors(original_exception)
-    else:
-        raise DatabaseError("Произошла ошибка в базе данных. Пожалуйста, попробуйте позже.") from original_exception
-
-def _is_request_error(exception):
-    return hasattr(exception, 'response') and isinstance(exception.response, requests.Response)
-
-def handle_specific_errors(exception):
-    if isinstance(exception, requests.HTTPError):
-        if exception.response.status_code == 404:
-            raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from exception
-        elif exception.response.status_code == 429:
-            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from exception
-        elif exception.response.status_code >= 500:
-            raise ServerError("Ошибка сервера, попробуйте позже.") from exception
-    raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробуйте позже.") from exception
 
 
 def _handle_api_server_error(city):
@@ -141,6 +126,7 @@ def _process_timezone(data):
 def _cache_weather_data(cache_key, weather_data):"
     cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
     cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
 
 
 

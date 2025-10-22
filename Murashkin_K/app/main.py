@@ -14,17 +14,14 @@ from database import get_db, engine
 import models
 import schemas
 from crud import UserCRUD, ContactCRUD, NoteCRUD
-from auth import (
-    authenticate_user, create_access_token,
-    get_current_user, get_password_hash
-)
-from config import settings, app
+from config import settings, app, STATIC_DIR
+from auth import authenticate_user, create_access_token, get_current_user
 
 models.Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 async def read_index():
-    index_path = os.path.join(settings.STATIC_DIR, "index.html")
+    index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
     else:
@@ -124,7 +121,6 @@ async def delete_contact(
     return {"message": "Contact deleted successfully"}
 
 
-# Notes endpoints
 @app.get("/api/contacts/{contact_id}/notes", response_model=List[schemas.Note])
 async def read_notes(
         contact_id: int,
@@ -169,7 +165,6 @@ async def delete_note(
     return {"message": "Note deleted successfully"}
 
 
-# CSV Export
 @app.get("/api/contacts/export/csv")
 async def export_contacts_csv(
         current_user: models.User = Depends(get_current_user),
@@ -196,3 +191,4 @@ async def export_contacts_csv(
 if __name__ == "__main__":
 
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+

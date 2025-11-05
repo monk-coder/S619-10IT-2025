@@ -8,7 +8,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = db.get_user(user.id)
 
     keyboard = [
-        ['🎰 Слоты', '🎯 Рулетка'],
+        ['🎰 Слоты', ],
         ['🎲 Кости', '🃏 Блекджек'],
         ['💰 Баланс', '📊 Статистика']
     ]

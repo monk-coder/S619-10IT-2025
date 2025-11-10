@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 
-BOT_TOKEN = '8554901453:AAHYoOLC5eV9CIRkkqb6D5g3GBy65cqe8g'  # Замените на ваш токен
+BOT_TOKEN = 'INSERT_BOT_TOKEN_HERE'  # Замените на ваш токен
 bot = telebot.TeleBot(BOT_TOKEN)
 
 conn = sqlite3.connect('santa_bot.db', check_same_thread=False)
@@ -298,6 +298,7 @@ def help(message):
     /anonymous_question - Отправить анонимный вопрос
     """
     bot.send_message(message.chat.id, help_text)
+
 
 
 

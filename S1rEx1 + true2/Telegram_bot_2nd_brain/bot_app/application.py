@@ -47,7 +47,7 @@ class TelegramBot(
         self.logger = logging.getLogger(self.__class__.__name__)
         self.db_manager_class = DatabaseManager
 
-    async def post_init(self, application: Application) -> None:  # pragma: no cover - startup hook
+    async def post_init(self, application: Application) -> None:
         await init_database()
         self.logger.info("Database initialized")
 

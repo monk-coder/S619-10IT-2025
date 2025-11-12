@@ -46,7 +46,7 @@ class NotesHandlers:
 
     async def _handle_text_material(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         message = update.message
-        assert message is not None  # for type checkers
+        assert message is not None
 
         user_id = update.effective_user.id
         content = message.text or ""

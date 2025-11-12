@@ -1,6 +1,5 @@
 """Centralized prompt templates for AI interactions."""
 
-# commit plz
 from typing import Optional
 
 GENERAL_ASSISTANT_PROMPT = "You are a helpful educational assistant. Format all text to markdown."

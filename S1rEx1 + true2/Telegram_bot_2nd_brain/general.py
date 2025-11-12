@@ -6,8 +6,8 @@ from config import config
 from openrouter_client import openrouter_client
 from prompts import GENERAL_ASSISTANT_PROMPT
 
-from ..responses import general as general_responses
-from ..services import db_session
+from bot_app.responses import general as general_responses
+from bot_app.services import db_session
 
 
 class GeneralHandlers:

@@ -2,7 +2,6 @@
 
 from bot_app import TelegramBot
 
-
 def main() -> None:
     """Run the Telegram bot."""
     TelegramBot().run()

@@ -2,15 +2,16 @@
 Database models and operations for the bot
 """
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, AsyncGenerator
 from sqlalchemy import (
     create_engine, Column, Integer, String, Text, DateTime, 
-    Boolean, JSON, ForeignKey, Float
+    Boolean, JSON, ForeignKey, Float, Index
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from config import config
+from pydantic import BaseModel, Field
 
 Base = declarative_base()
 
@@ -18,6 +19,9 @@ Base = declarative_base()
 class User(Base):
     """User model"""
     __tablename__ = 'users'
+    __table_args__ = (
+        Index('ix_users_telegram_id', 'telegram_id', unique=True),
+    )
     
     id = Column(Integer, primary_key=True)
     telegram_id = Column(Integer, unique=True, nullable=False)
@@ -25,21 +29,17 @@ class User(Base):
     first_name = Column(String(255))
     last_name = Column(String(255))
     
-    # Profile settings
     custom_prompt = Column(Text, default="")
     specific_instructions = Column(Text, default="")
     max_tokens = Column(Integer, default=2000)
     temperature = Column(Float, default=0.7)
     
-    # Statistics
     total_messages = Column(Integer, default=0)
     total_tokens_used = Column(Integer, default=0)
     
-    # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     last_active = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     notes = relationship("Note", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
@@ -47,6 +47,9 @@ class User(Base):
 class Note(Base):
     """Note/Summary model for topic-based notes"""
     __tablename__ = 'notes'
+    __table_args__ = (
+        Index('ix_notes_user_id', 'user_id'),
+    )
     
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
@@ -58,13 +61,15 @@ class Note(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     user = relationship("User", back_populates="notes")
 
 
 class Conversation(Base):
     """Conversation history model"""
     __tablename__ = 'conversations'
+    __table_args__ = (
+        Index('ix_conversations_user_id', 'user_id'),
+    )
     
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
@@ -73,7 +78,6 @@ class Conversation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_message_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
 
@@ -84,21 +88,18 @@ class Message(Base):
     
     id = Column(Integer, primary_key=True)
     conversation_id = Column(Integer, ForeignKey('conversations.id'))
-    role = Column(String(20))  # 'user', 'assistant', 'system'
+    role = Column(String(20))
     content = Column(Text, nullable=False)
     tokens_used = Column(Integer, default=0)
     
-    # For file attachments
-    file_type = Column(String(20))  # 'photo', 'pdf', etc.
+    file_type = Column(String(20))
     file_path = Column(String(500))
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     conversation = relationship("Conversation", back_populates="messages")
 
 
-# Database session management
 engine = None
 AsyncSessionLocal = None
 
@@ -110,18 +111,16 @@ async def init_database():
     engine = create_async_engine(config.database_url, echo=False)
     AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
-    # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get database session"""
     async with AsyncSessionLocal() as session:
         yield session
 
 
-# Database operations
 class DatabaseManager:
     """Manager class for database operations"""
     
@@ -142,7 +141,6 @@ class DatabaseManager:
             await self.session.commit()
             await self.session.refresh(user)
         else:
-            # Update last_active
             user.last_active = datetime.utcnow()
             await self.session.commit()
         
@@ -216,26 +214,23 @@ class DatabaseManager:
         
         result = await self.session.execute(stmt)
         messages = result.scalars().all()
-        return list(reversed(messages))  # Return in chronological order
+        return list(reversed(messages))
     
     async def get_user_statistics(self, user_id: int) -> Dict[str, Any]:
         """Get user statistics"""
         from sqlalchemy import select, func
         
-        # Get user
         stmt = select(User).where(User.id == user_id)
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
         
         if not user:
             return {}
-        
-        # Count notes
+
         notes_stmt = select(func.count(Note.id)).where(Note.user_id == user_id)
         notes_result = await self.session.execute(notes_stmt)
         notes_count = notes_result.scalar()
         
-        # Count conversations
         conv_stmt = select(func.count(Conversation.id)).where(Conversation.user_id == user_id)
         conv_result = await self.session.execute(conv_stmt)
         conv_count = conv_result.scalar()
@@ -248,3 +243,16 @@ class DatabaseManager:
             'member_since': user.created_at,
             'last_active': user.last_active
         }
+
+
+class NoteInput(BaseModel):
+    topic: str = Field(..., max_length=500)
+    content: str = Field(...)
+    summary: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+
+class UserProfileUpdate(BaseModel):
+    custom_prompt: Optional[str] = None
+    specific_instructions: Optional[str] = None
+    max_tokens: Optional[int] = Field(default=2000, ge=1, le=4000)
+    temperature: Optional[float] = Field(default=0.7, ge=0.0, le=1.0)

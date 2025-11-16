@@ -1,0 +1,19 @@
+2025-10-16 23:39:42,218 - __main__ - INFO - ✅ Окружение проверено успешно
+2025-10-16 23:39:42,227 - __main__ - ERROR - ❌ Критическая ошибка: No module named 'telegram'
+2025-10-16 23:40:58,492 - __main__ - INFO - ✅ Окружение проверено успешно
+2025-10-16 23:40:59,230 - __main__ - INFO - ✅ Инициализируем бота...
+2025-10-16 23:40:59,232 - core.database - INFO - ✅ База данных инициализирована
+2025-10-16 23:40:59,826 - __main__ - ERROR - ❌ Критическая ошибка: 'Updater' object has no attribute '_Updater__polling_cleanup_cb' and no __dict__ for setting new attributes
+2025-10-16 23:42:38,880 - __main__ - INFO - ✅ Окружение проверено успешно
+2025-10-16 23:42:39,641 - __main__ - INFO - ✅ Инициализируем бота...
+2025-10-16 23:42:39,643 - core.database - INFO - ✅ База данных инициализирована
+2025-10-16 23:42:40,626 - __main__ - ERROR - ❌ Критическая ошибка: 'Updater' object has no attribute '_Updater__polling_cleanup_cb' and no __dict__ for setting new attributes
+2025-10-16 23:46:03,490 - __main__ - INFO - ✅ Окружение проверено успешно
+2025-10-16 23:46:04,506 - __main__ - INFO - ✅ Инициализируем бота...
+2025-10-16 23:46:04,510 - core.database - INFO - ✅ База данных инициализирована
+2025-10-16 23:46:05,722 - core.bot - INFO - 🎅 Secret Santa Bot запускается...
+2025-10-16 23:48:00,958 - __main__ - INFO - ✅ Окружение проверено успешно
+2025-10-16 23:48:01,702 - __main__ - INFO - ✅ Инициализируем бота...
+2025-10-16 23:48:01,704 - core.database - INFO - ✅ База данных инициализирована
+2025-10-16 23:48:02,931 - core.bot - INFO - 🎅 Secret Santa Bot запускается...
+2025-10-16 23:48:02,931 - __main__ - ERROR - ❌ Критическая ошибка: There is no current event loop in thread 'MainThread'.

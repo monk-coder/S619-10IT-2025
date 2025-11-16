@@ -2,8 +2,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import ContextTypes
 
-import database as db_module
 from openrouter_client import openrouter_client
+
+from ..responses import instructor as instructor_responses
+from ..services import db_session
 
 
 class InstructorHandlers:
@@ -13,8 +15,7 @@ class InstructorHandlers:
         query = update.callback_query
 
         await query.edit_message_text(
-            "👨‍🏫 **Режим Инструктора**\n\n"
-            "Введите тему, которую хотите изучить:",
+            instructor_responses.instructor_intro(),
             parse_mode="Markdown",
         )
 
@@ -27,8 +28,7 @@ class InstructorHandlers:
         keyboard = [[KeyboardButton("Начальный")], [KeyboardButton("Средний")], [KeyboardButton("Продвинутый")]]
 
         await update.message.reply_text(
-            f"📚 Тема: **{topic}**\n\n"
-            "Выберите уровень сложности:",
+            instructor_responses.instructor_level_prompt(topic),
             reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True),
             parse_mode="Markdown",
         )
@@ -56,8 +56,7 @@ class InstructorHandlers:
         topic = context.user_data.get('instructor_topic', 'General')
         level = context.user_data.get('instructor_level', 'intermediate')
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             user = await db.get_or_create_user(telegram_id=user_id)
             custom_instructions = user.specific_instructions
 
@@ -79,7 +78,7 @@ class InstructorHandlers:
         ]
 
         await update.message.reply_text(
-            "Что дальше?",
+            instructor_responses.instructor_followup_prompt(),
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 

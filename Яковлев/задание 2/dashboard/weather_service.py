@@ -7,110 +7,132 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def get_weather_data(city):
-    """
-    Получает данные о погоде с кэшированием на 2 часа.
-    Возвращает словарь с данными или raise Exception.
-    """
     cache_key = f"weather_{city.lower().strip()}"
-    
-    cached_data = cache.get(cache_key)
-    if cached_data:
+    if cached_data := cache.get(cache_key):
         logger.info(f"Кэш найден для города: {city}")
         return cached_data
 
-    api_key = settings.OPENWEATHER_API_KEY
-    if not api_key:
+    if not settings.OPENWEATHER_API_KEY:
         raise Exception("OPENWEATHER_API_KEY не установлен")
 
-    url = "http://api.openweathermap.org/data/2.5/weather"
-    params = {
-        'q': city,
-        'appid': api_key,
-        'units': 'metric',
-        'lang': 'ru'
+    response = _make_weather_api_request(city)
+
+    weather_data = _process_weather_response(response, city)
+
+    _cache_weather_data(cache_key, weather_data)
+    logger.info(f"Данные сохранены в кэш для города: {city} (Часовой пояс: {weather_data['timezone_info']})")
+
+    return weather_data
+
+
+class WeatherAPIError(Exception):
+    pass
+
+class CityNotFoundError(WeatherAPIError):
+    pass
+
+class RateLimitExceededError(WeatherAPIError):
+    pass
+
+class ServerError(WeatherAPIError):
+    pass
+
+def _check_and_handle_http_response(response):
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise CityNotFoundError("Город не найден. Пожалуйста, проверьте название.") from e
+        elif e.response.status_code == 429:
+            raise RateLimitExceededError("Превышен лимит запросов к OpenWeatherMap.") from e
+        elif e.response.status_code >= 500:
+            raise ServerError("Ошибка сервера, попробуйте позже.") from e
+        
+        raise WeatherAPIError("Произошла ошибка с запросом. Пожалуйста, попробujte позже.") from e
+
+def _process_weather_response(response):
+    _check_and_handle_http_response(response)
+    data = response.json()
+    _validate_weather_data(data)
+
+    return _build_weather_data(data)
+
+def _validate_weather_data(data):
+    if 'main' not in data or 'weather' not in data:
+        raise WeatherAPIError("Некорректный ответ от сервиса погоды")
+
+
+def _handle_api_server_error(city):
+    old_cache_key = f"weather_{city.lower().strip()}_old"
+    if old_data := cache.get(old_cache_key):
+        logger.warning(f"OpenWeatherMap недоступен, возвращаем старые данные для: {city}")
+        return old_data
+    else:
+        raise Exception("Сервис погоды временно недоступен")
+
+
+def _build_weather_data(data):
+    rain_probability = _calculate_rain_probability(data)
+
+    timezone_info, current_time_in_city = _process_timezone(data)
+    formatted_time = current_time_in_city.strftime('%d.%m.%Y %H:%M')
+
+    return {
+        'city': data['name'],
+        'temperature': round(data['main']['temp']),
+        'humidity': data['main']['humidity'],
+        'condition': data['weather'][0]['description'].capitalize(),
+        'icon_code': data['weather'][0]['icon'],
+        'timestamp': current_time_in_city.isoformat(),
+        'formatted_time': formatted_time,
+        'timezone_info': timezone_info,
+        'source': 'openweathermap',
+        'rain_probability': rain_probability,
+        'weather_main': data['weather'][0]['main'].lower(),
+        'wind_speed': data['wind']['speed'] if 'wind' in data else 0,
     }
 
-    try:
-        logger.info(f"Запрос к OpenWeatherMap для города: {city}")
-        response = requests.get(url, params=params, timeout=10)
-        
-        if response.status_code == 404:
-            raise Exception("Город не найден. Пожалуйста, проверьте название.")
-        elif response.status_code == 429:
-            raise Exception("Превышен лимит запросов к OpenWeatherMap")
-        elif response.status_code >= 500:
-            old_cache_key = f"weather_{city.lower().strip()}_old"
-            old_data = cache.get(old_cache_key)
-            if old_data:
-                logger.warning(f"OpenWeatherMap недоступен, возвращаем старые данные для: {city}")
-                return old_data
-            else:
-                raise Exception("Сервис погоды временно недоступен")
-        
-        response.raise_for_status()
-        data = response.json()
 
-        if 'main' not in data or 'weather' not in data:
-            raise Exception("Некорректный ответ от сервиса погоды")
+def _calculate_rain_probability(data):
+    """Рассчитывает вероятность дождя на основе погодных условий"""
+    weather_main = data['weather'][0]['main'].lower()
+    weather_description = data['weather'][0]['description'].lower()
+    humidity = data['main']['humidity']
 
-        # === ОПРЕДЕЛЕНИЕ ПОГОДНЫХ УСЛОВИЙ ===
-        weather_main = data['weather'][0]['main'].lower()
-        weather_description = data['weather'][0]['description'].lower()
-    
-        # Определяем вероятность дождя (условно)
-        rain_probability = 0
-        if 'rain' in weather_main or 'drizzle' in weather_main:
-            rain_probability = 100  # Идёт дождь
-        elif 'shower' in weather_description:
-            rain_probability = 80   # Ливень возможен
-        elif 'cloud' in weather_description and data['main']['humidity'] > 80:
-            rain_probability = 60   # Высокая влажность + облачно
-        elif 'cloud' in weather_description:
-            rain_probability = 30   # Облачно, возможен дождь
-            
-        # === КЛЮЧЕВАЯ ЧАСТЬ: ПРАВИЛЬНАЯ ОБРАБОТКА ЧАСОВОГО ПОЯСА ===
-        # OpenWeatherMap возвращает timezone в секундах от UTC
-        tz_offset_seconds = data.get('timezone', 0)  # Например: 10800 для Москвы (UTC+3)
-        
-        # Создаём объект часового пояса
-        city_tz = dt_timezone(timedelta(seconds=tz_offset_seconds))
-        
-        # Получаем текущее время в часовом поясе города
-        current_time_in_city = datetime.now(city_tz)
-        
-        # Форматируем для отображения
-        formatted_time = current_time_in_city.strftime('%d.%m.%Y %H:%M')
-        
-        # Также можно показать смещение
-        tz_hours = tz_offset_seconds // 3600
-        timezone_str = f"UTC{tz_hours:+d}" if tz_hours != 0 else "UTC"
-        
-        weather = {
-            'city': data['name'],
-            'temperature': round(data['main']['temp']),
-            'humidity': data['main']['humidity'],
-            'condition': data['weather'][0]['description'].capitalize(),
-            'icon_code': data['weather'][0]['icon'],
-            'timestamp': current_time_in_city.isoformat(),
-            'formatted_time': formatted_time,
-            'timezone_info': timezone_str,
-            'source': 'openweathermap',
-            'rain_probability': rain_probability,  # ← НОВОЕ ПОЛЕ
-            'weather_main': weather_main,          # ← НОВОЕ ПОЛЕ
-            'wind_speed': data['wind']['speed'] if 'wind' in data else 0,
-        }
-        
-        cache.set(cache_key, weather, 7200)
-        cache.set(f"{cache_key}_old", weather, 21600)
-        
-        logger.info(f"Данные сохранены в кэш для города: {city} (Часовой пояс: {timezone_str})")
-        return weather
-        
-    except requests.exceptions.Timeout:
-        raise Exception("Тайм-аут запроса к сервису погоды")
-    except requests.exceptions.ConnectionError:
-        raise Exception("Ошибка подключения к сервису погоды")
-    except Exception as e:
-        logger.error(f"Ошибка при получении погоды для {city}: {str(e)}")
-        raise e
+    if 'rain' in weather_main or 'drizzle' in weather_main:
+        return 100
+    elif 'shower' in weather_description:
+        return 80  
+    elif 'cloud' in weather_description and humidity > 80:
+        return 60 
+    elif 'cloud' in weather_description:
+        return 30  
+    return 0
+
+
+def _process_timezone(data):
+    tz_offset_seconds = data.get('timezone', 0)
+    city_tz = dt_timezone(timedelta(seconds=tz_offset_seconds))
+    current_time_in_city = datetime.now(city_tz)
+
+    tz_hours = tz_offset_seconds // 3600
+    timezone_str = f"UTC{tz_hours:+d}" if tz_hours != 0 else "UTC"
+
+    return timezone_str, current_time_in_city
+
+
+def _cache_weather_data(cache_key, weather_data):"
+    cache.set(cache_key, weather_data, 7200)  # 2 часа обновляются данные погоды
+    cache.set(f"{cache_key}_old", weather_data, 21600)  # 6 часов
+
+
+
+
+
+
+
+
+
+

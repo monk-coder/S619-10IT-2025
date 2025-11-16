@@ -12,7 +12,6 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
-# Configure Tesseract if path is specified
 if config.tesseract_cmd:
     pytesseract.pytesseract.tesseract_cmd = config.tesseract_cmd
 
@@ -31,6 +30,9 @@ class DocumentProcessor:
         Returns:
             Tuple of (extracted_text, page_count)
         """
+        if len(pdf_bytes) > 10 * 1024 * 1024:
+            raise ValueError("PDF file size exceeds the 10 MB limit.")
+        
         try:
             pdf_file = io.BytesIO(pdf_bytes)
             pdf_reader = PyPDF2.PdfReader(pdf_file)
@@ -69,15 +71,15 @@ class DocumentProcessor:
         Returns:
             Extracted text from the image
         """
+        if len(image_bytes) > 5 * 1024 * 1024:
+            raise ValueError("Image file size exceeds the 5 MB limit.")
+        
         try:
-            # Open image
             image = Image.open(io.BytesIO(image_bytes))
             
-            # Convert to RGB if necessary
             if image.mode != 'RGB':
                 image = image.convert('RGB')
             
-            # Perform OCR
             extracted_text = pytesseract.image_to_string(image, lang='eng+rus')
             
             if not extracted_text.strip():
@@ -88,7 +90,6 @@ class DocumentProcessor:
         except Exception as e:
             logger.error(f"Error processing image: {e}")
             
-            # Check if Tesseract is installed
             if "tesseract is not installed" in str(e).lower():
                 return ("OCR is not available. Please install Tesseract OCR to extract text from images.\n"
                        "Linux/Mac: apt-get install tesseract-ocr\n"
@@ -111,7 +112,6 @@ class DocumentProcessor:
         if len(text) <= max_length:
             return text
         
-        # Simple truncation with word boundary
         truncated = text[:max_length]
         last_space = truncated.rfind(' ')
         if last_space > 0:
@@ -131,18 +131,16 @@ class DocumentProcessor:
         Returns:
             List of key points
         """
-        # Simple extraction based on paragraphs and sentences
         lines = text.split('\n')
         key_points = []
         
         for line in lines:
             line = line.strip()
-            if line and len(line) > 30:  # Skip very short lines
-                # Look for lines that might be headers or important points
+            if line and len(line) > 30:
                 if any(char in line for char in ['•', '●', '○', '■', '□', '-', '*']) or \
                    line[0].isupper() or \
                    any(word in line.lower() for word in ['important', 'key', 'note', 'summary']):
-                    key_points.append(line[:200])  # Limit length of each point
+                    key_points.append(line[:200])
                     if len(key_points) >= max_points:
                         break
         

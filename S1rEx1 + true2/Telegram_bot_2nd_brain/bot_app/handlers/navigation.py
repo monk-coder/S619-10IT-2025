@@ -2,17 +2,17 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
+from ..responses import main_menu as main_menu_responses
+
 
 class NavigationMixin:
     """Provide shared navigation helpers for the bot."""
 
     def build_main_menu_keyboard(self) -> InlineKeyboardMarkup:
         keyboard = [
-            [InlineKeyboardButton("👤 Профиль", callback_data="profile")],
-            [InlineKeyboardButton("📝 Ведение конспектов", callback_data="notes")],
-            [InlineKeyboardButton("📄 Выжимка с фото/PDF", callback_data="extract")],
+            [InlineKeyboardButton("📝 Создание конспекта", callback_data="notes")],
             [InlineKeyboardButton("👨‍🏫 Инструктор", callback_data="instructor")],
-            [InlineKeyboardButton("🔍 Поиск", callback_data="search")],
+            [InlineKeyboardButton("👤 Профиль", callback_data="profile")],
         ]
         return InlineKeyboardMarkup(keyboard)
 
@@ -28,7 +28,7 @@ class NavigationMixin:
         query = update.callback_query
 
         await query.edit_message_text(
-            "🏠 **Главное меню**\n\nВыберите режим работы:",
+            main_menu_responses.main_menu_prompt(),
             reply_markup=self.build_main_menu_keyboard(),
             parse_mode="Markdown",
         )

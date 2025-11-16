@@ -2,7 +2,8 @@
 from telegram import InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-import database as db_module
+from ..responses import main_menu as main_menu_responses
+from ..services import db_session
 
 
 class MainMenuHandlers:
@@ -12,8 +13,7 @@ class MainMenuHandlers:
         user = update.effective_user
         self.logger.info("User %s started the bot", user.id)
 
-        async with db_module.AsyncSessionLocal() as session:
-            db = self.db_manager_class(session)
+        async with db_session(self.db_manager_class) as (_, db):
             await db.get_or_create_user(
                 telegram_id=user.id,
                 username=user.username,
@@ -21,11 +21,7 @@ class MainMenuHandlers:
                 last_name=user.last_name,
             )
 
-        welcome_text = (
-            f"👋 Привет, {user.first_name}!\n\n"
-            "Я - образовательный бот с AI от DeepSeek V3.\n"
-            "Выберите режим работы:"
-        )
+        welcome_text = main_menu_responses.welcome_message(user.first_name)
 
         await update.message.reply_text(welcome_text, reply_markup=self.build_main_menu_keyboard())
         return self.MAIN_MENU
@@ -39,12 +35,8 @@ class MainMenuHandlers:
         if query.data == "profile":
             return await self.show_profile_menu(update, context)
         if query.data == "notes":
-            return await self.start_notes_mode(update, context)
-        if query.data == "extract":
-            return await self.start_extract_mode(update, context)
+            return await self.start_note_creation(update, context)
         if query.data == "instructor":
             return await self.start_instructor_mode(update, context)
-        if query.data == "search":
-            return await self.start_search_mode(update, context)
 
         return self.MAIN_MENU

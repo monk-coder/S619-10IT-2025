@@ -1,7 +1,11 @@
 class Country {
+<<<<<<< HEAD
     constructor(data) {
         this.data = data;
     }
+=======
+    constructor(data) { this.data = data; }
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
     
     render() {
         const safeData = this.escapeHtml(JSON.stringify(this.data));
@@ -49,7 +53,10 @@ class Country {
                         <p><strong>Описание:</strong> ${this.data.description}</p>
                     </div>
 
+<<<<<<< HEAD
                     <!-- AI Guide Section -->
+=======
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
                     <div class="ai-guide-section">
                         <button class="ai-guide-btn" onclick="Country.getAIGuide('${this.escapeHtml(this.data.name)}')">
                             <i class="fas fa-robot"></i> Получить AI-гид по стране
@@ -57,7 +64,11 @@ class Country {
                         <div id="ai-guide-${this.data.name.replace(/\s+/g, '-')}" class="ai-guide-content"></div>
                     </div>
                     
+<<<<<<< HEAD
                     <button class="add-to-wishlist" onclick="Wishlist.addFromSearch(${safeData})">
+=======
+                    <button class="add-to-wishlist" onclick="Wishlist.add(${safeData})">
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
                         <i class="fas fa-heart"></i> Добавить в вишлист
                     </button>
                 </div>
@@ -66,9 +77,18 @@ class Country {
     }
 
     static async getAIGuide(countryName) {
+<<<<<<< HEAD
         console.log('Получение AI-гида для:', countryName);
         
         const wishlist = Wishlist.get();
+=======
+        if (!AuthService.isLoggedIn()) {
+            Notification.show('Войдите в систему для получения AI-гида', 'error');
+            return;
+        }
+
+        const wishlist = await Wishlist.get();
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
         const country = wishlist.find(item => item.name === countryName);
         
         if (!country) {
@@ -126,4 +146,10 @@ class Country {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+window.Country = Country;
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8

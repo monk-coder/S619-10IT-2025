@@ -1,6 +1,54 @@
 from django.contrib import admin
+from django.contrib.admin.sites import NotRegistered
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .models import CitySearchHistory, PlayerState, PlayerUpgrade, WeatherSnapshot, WeatherTask
+
+
+User = get_user_model()
+
+
+class PlayerStateInline(admin.StackedInline):
+    model = PlayerState
+    can_delete = False
+    extra = 1
+    fk_name = "user"
+    max_num = 1
+
+
+class PlayerUpgradeInline(admin.TabularInline):
+    model = PlayerUpgrade
+    extra = 1
+    fk_name = "user"
+
+
+class WeatherTaskInline(admin.TabularInline):
+    model = WeatherTask
+    extra = 1
+    fk_name = "user"
+
+
+class CitySearchHistoryInline(admin.TabularInline):
+    model = CitySearchHistory
+    extra = 1
+    fk_name = "user"
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    inlines = [
+        PlayerStateInline,
+        PlayerUpgradeInline,
+        WeatherTaskInline,
+        CitySearchHistoryInline,
+    ]
 
 
 @admin.register(PlayerState)
@@ -15,6 +63,7 @@ class PlayerStateAdmin(admin.ModelAdmin):
     )
     search_fields = ("user__username", "user__email", "last_weather_city")
     list_select_related = ("user",)
+    autocomplete_fields = ("user",)
     ordering = ("-updated_at",)
 
 
@@ -24,7 +73,7 @@ class PlayerUpgradeAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email", "upgrade_key")
     list_filter = ("upgrade_key",)
     list_select_related = ("user",)
-    raw_id_fields = ("user",)
+    autocomplete_fields = ("user",)
     ordering = ("-updated_at",)
 
 
@@ -41,7 +90,7 @@ class CitySearchHistoryAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email", "city")
     list_filter = ("city",)
     list_select_related = ("user",)
-    raw_id_fields = ("user",)
+    autocomplete_fields = ("user",)
     ordering = ("-searched_at",)
 
 
@@ -51,5 +100,5 @@ class WeatherTaskAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email", "city", "title")
     list_filter = ("status", "city")
     list_select_related = ("user",)
-    raw_id_fields = ("user",)
+    autocomplete_fields = ("user",)
     ordering = ("-updated_at",)

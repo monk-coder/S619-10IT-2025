@@ -10,7 +10,11 @@
 <body>
     <header>
         <h1><i class="fas fa-globe-americas"></i> Путешествие по миру</h1>
+<<<<<<< HEAD
         <p>Откройте для себя новые страны и сохраните их</p> 
+=======
+        <p>Откройте для себя новые страны и сохраните их</p>
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
     </header>
 
     <div class="container">
@@ -45,9 +49,13 @@
             <section id="wishlist-section" class="card">
                 <h2><i class="fas fa-heart"></i> Мой вишлист путешествий</h2>
                 <p>Здесь хранятся страны, которые вам понравились</p>
+<<<<<<< HEAD
                 <div id="wishlist-list">
                     <!-- Wishlist items will be loaded here -->
                 </div>
+=======
+                <div id="wishlist-list"></div>
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
             </section>
         </div>
 
@@ -68,21 +76,86 @@
         </div>
     </div>
 
+<<<<<<< HEAD
+=======
+    <div id="authModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="authModalTitle">Вход в систему</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="authTabs" class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Вход</button>
+                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                </div>
+                
+                <form id="loginForm" class="auth-form active">
+                    <div class="form-group">
+                        <label for="loginUsername">Имя пользователя:</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Пароль:</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">
+                        <i class="fas fa-sign-in-alt"></i> Войти
+                    </button>
+                </form>
+
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="registerUsername">Имя пользователя:</label>
+                        <input type="text" id="registerUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Пароль:</label>
+                        <input type="password" id="registerPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerConfirmPassword">Подтвердите пароль:</label>
+                        <input type="password" id="registerConfirmPassword" required>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">
+                        <i class="fas fa-user-plus"></i> Зарегистрироваться
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
     <div id="notification" class="notification">
         <span id="notification-text"></span>
     </div>
 
+<<<<<<< HEAD
     <footer>
     </footer>
 
     <!-- JavaScript файлы -->
     <script src="js/data.js"></script>
     <script src="js/Notification.js"></script>
+=======
+    <footer></footer>
+
+    <script src="js/Notification.js"></script>
+    <script src="js/auth.js"></script>
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
     <script src="js/Wishlist.js"></script>
     <script src="js/CountryService.js"></script>
     <script src="js/CountrySearch.js"></script>
     <script src="js/Country.js"></script>
     <script src="js/AIService.js"></script>
+<<<<<<< HEAD
+=======
+    <script src="js/AuthUI.js"></script>
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
     <script src="js/app.js"></script>
 </body>
 </html>

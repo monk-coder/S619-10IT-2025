@@ -1,5 +1,9 @@
 from django import forms
+<<<<<<< HEAD
 from .models import WeatherTask, UserProfile
+=======
+from .models import WeatherTask
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8
 
 class WeatherTaskForm(forms.ModelForm):
     city_name = forms.CharField(
@@ -22,6 +26,7 @@ class WeatherTaskForm(forms.ModelForm):
     class Meta:
         model = WeatherTask
         fields = ['city_name', 'task_text']
+<<<<<<< HEAD
 
 class LanguageForm(forms.ModelForm):
     class Meta:
@@ -35,3 +40,5 @@ class LanguageForm(forms.ModelForm):
             'language': 'Язык интерфейса',
             'theme': 'Тема оформления',
         }
+=======
+>>>>>>> 858ccdf72c9072d46fc79832eb8653ed7fc0daa8

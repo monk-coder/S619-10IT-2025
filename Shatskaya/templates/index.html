@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaBooks — Поиск книг и личная библиотека</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+<header class="header">
+    <div class="header-inner">
+        <div class="brand">
+            <h1>DaBooks</h1>
+            <p class="tagline">Удобный способ находить, сохранять и перечитывать любимые книги.</p>
+            <div class="cta-buttons">
+                <a href="#search-section" class="btn primary">Найти книгу</a>
+                <a href="#reading-list-section" class="btn ghost">Моя библиотека</a>
+            </div>
+        </div>
+        <div class="user-card">
+            <div id="user-info" class="user-info" data-authenticated="{{ request.user.is_authenticated|yesno:'true,false' }}">
+                {% if request.user.is_authenticated %}
+                    <span>Здравствуйте, {{ request.user.username }}!</span>
+                    <p class="user-subtitle muted">Продолжайте пополнять коллекцию и делиться заметками.</p>
+                {% else %}
+                    <span>Войдите или зарегистрируйтесь, чтобы вести библиотеку.</span>
+                    <p class="user-subtitle muted">Синхронизируйте прогресс чтения и сохраняйте свои рецензии.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <section id="messages" class="messages" aria-live="polite"></section>
+
+    <section class="card info-card">
+        <div class="info-card__header">
+            <h2>Ваш личный библиотекарь</h2>
+            <p>Создавайте идеальную библиотеку: находите новые книги, систематизируйте прочитанное и фиксируйте впечатления.</p>
+        </div>
+        <div class="features-grid">
+            <article class="feature">
+                <h3>Поиск без границ</h3>
+                <p>Используйте Open Library, чтобы находить редкие издания по названию, автору или ISBN.</p>
+            </article>
+            <article class="feature">
+                <h3>Удобная систематизация</h3>
+                <p>Присваивайте статус чтения, оценки и теги, чтобы быстро ориентироваться в коллекции.</p>
+            </article>
+            <article class="feature">
+                <h3>Заметки и рецензии</h3>
+                <p>Сохраняйте заметки к каждому произведению и возвращайтесь к ним, когда захотите освежить память.</p>
+            </article>
+        </div>
+    </section>
+
+    <section id="auth-section" class="card auth">
+        <h2><span id="auth-heading-text">Аутентификация</span></h2>
+        <div class="auth-forms">
+            <form id="login-form" class="form-block">
+                <h3>Вход</h3>
+                <label>
+                    Логин
+                    <input type="text" name="username" required />
+                </label>
+                <label>
+                    Пароль
+                    <input type="password" name="password" required />
+                </label>
+                <button type="submit">Войти</button>
+            </form>
+
+            <form id="register-form" class="form-block">
+                <h3>Регистрация</h3>
+                <label>
+                    Логин
+                    <input type="text" name="username" required />
+                </label>
+                <label>
+                    Email
+                    <input type="email" name="email" />
+                </label>
+                <label>
+                    Пароль
+                    <input type="password" name="password" required />
+                    <span class="input-hint">Минимум 6 символов, используйте буквы и цифры.</span>
+                </label>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+        </div>
+        <button id="logout-button" class="hidden">Выйти</button>
+    </section>
+
+    <section class="card" id="search-section">
+        <h2>Поиск по Open Library</h2>
+        <form id="search-form" class="search-form">
+            <input type="text" id="search-query" placeholder="Название, автор или ISBN" required />
+            <button type="submit">Искать</button>
+        </form>
+        <div id="search-results" class="book-results"></div>
+    </section>
+
+    <section class="card" id="reading-list-section">
+        <h2>Моя библиотека</h2>
+        <div class="filters">
+            <input type="text" id="entry-search" placeholder="Поиск по своей библиотеке" />
+            <select id="status-filter">
+                <option value="">Все статусы</option>
+            </select>
+            <input type="text" id="tag-filter" placeholder="Фильтр по тегу" />
+            <button id="apply-filters">Применить</button>
+        </div>
+        <div id="entries-list" class="entries"></div>
+        <div class="pagination">
+            <button id="prev-page" disabled>Назад</button>
+            <span id="pagination-info"></span>
+            <button id="next-page" disabled>Вперед</button>
+        </div>
+    </section>
+</main>
+
+<template id="entry-template">
+    <article class="entry" data-entry-id="">
+        <div class="entry-header">
+            <h3 class="entry-title"></h3>
+            <p class="entry-authors"></p>
+        </div>
+        <div class="entry-controls">
+            <label>
+                Статус
+                <select class="entry-status"></select>
+            </label>
+            <label>
+                Оценка
+                <input class="entry-rating" type="number" min="1" max="5" />
+            </label>
+            <label>
+                Теги (через запятую)
+                <input class="entry-tags" type="text" />
+            </label>
+        </div>
+        <label>
+            Заметки / рецензия
+            <textarea class="entry-review" rows="3"></textarea>
+        </label>
+        <div class="entry-actions">
+            <button class="save-entry">Сохранить</button>
+        </div>
+        <div class="entry-notes">
+            <h4>Дополнительные заметки</h4>
+            <ul class="notes-list"></ul>
+            <textarea class="note-content" rows="2" placeholder="Новая заметка"></textarea>
+            <button class="add-note">Добавить заметку</button>
+        </div>
+    </article>
+</template>
+
+<template id="search-result-template">
+    <article class="book-result">
+        <div>
+            <h3 class="book-title"></h3>
+            <p class="book-authors"></p>
+            <p class="book-isbn"></p>
+        </div>
+        <div class="book-actions">
+            <label>
+                Статус
+                <select class="book-status"></select>
+            </label>
+            <button class="add-to-library">Добавить</button>
+        </div>
+    </article>
+</template>
+
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

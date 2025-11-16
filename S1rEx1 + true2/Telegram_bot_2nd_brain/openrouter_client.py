@@ -11,9 +11,11 @@ from prompts import (
     contextual_answer_system_prompt,
     instructor_system_prompt,
 )
+from aiolimiter import AsyncLimiter
 
 logger = logging.getLogger(__name__)
 
+rate_limiter = AsyncLimiter(max_rate=10, time_period=60)
 
 class OpenRouterClient:
     """Client for OpenRouter API"""
@@ -24,8 +26,8 @@ class OpenRouterClient:
             api_key=config.openrouter_api_key,
             base_url=config.openrouter_base_url,
             default_headers={
-                "HTTP-Referer": "https://github.com/yourusername/telegram-bot",  # Optional
-                "X-Title": "Telegram Educational Bot",  # Optional
+                "HTTP-Referer": "https://github.com/yourusername/telegram-bot",
+                "X-Title": "Telegram Educational Bot",
             }
         )
         self.model = config.model_name
@@ -51,65 +53,58 @@ class OpenRouterClient:
         Returns:
             Tuple of (response_text, tokens_used)
         """
-        try:
-            # Prepare messages
-            formatted_messages = []
-            
-            # Add system prompt if provided
-            if system_prompt:
-                formatted_messages.append({
-                    "role": "system",
-                    "content": system_prompt
-                })
-            
-            # Add conversation messages
-            formatted_messages.extend(messages)
-            
-            # Log the request (without sensitive data)
-            logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages")
-            
-            # Make the API call
-            if stream:
-                # For streaming responses
-                response_text = ""
-                total_tokens = 0
+        async with rate_limiter:
+            try:
+                formatted_messages = []
                 
-                stream = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=formatted_messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    stream=True
-                )
+                if system_prompt:
+                    formatted_messages.append({
+                        "role": "system",
+                        "content": system_prompt
+                    })
                 
-                async for chunk in stream:
-                    if chunk.choices[0].delta.content:
-                        response_text += chunk.choices[0].delta.content
+                formatted_messages.extend(messages)
                 
-                # Estimate tokens for streaming (rough estimate)
-                total_tokens = len(response_text.split()) * 1.3  # Rough token estimate
+                logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages")
                 
-                return response_text, int(total_tokens)
-            else:
-                # Non-streaming response
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=formatted_messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    stream=False
-                )
-                
-                response_text = response.choices[0].message.content
-                tokens_used = response.usage.total_tokens if response.usage else 0
-                
-                logger.info(f"Received response from OpenRouter, tokens used: {tokens_used}")
-                
-                return response_text, tokens_used
-                
-        except Exception as e:
-            logger.error(f"Error generating response from OpenRouter: {e}")
-            raise
+                if stream:
+                    response_text = ""
+                    total_tokens = 0
+                    
+                    stream = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=formatted_messages,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        stream=True
+                    )
+                    
+                    async for chunk in stream:
+                        if chunk.choices[0].delta.content:
+                            response_text += chunk.choices[0].delta.content
+                    
+                    total_tokens = len(response_text.split()) * 1.3
+                    
+                    return response_text, int(total_tokens)
+                else:
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=formatted_messages,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        stream=False
+                    )
+                    
+                    response_text = response.choices[0].message.content
+                    tokens_used = response.usage.total_tokens if response.usage else 0
+                    
+                    logger.info(f"Received response from OpenRouter, tokens used: {tokens_used}")
+                    
+                    return response_text, tokens_used
+                    
+            except Exception as e:
+                logger.error(f"Error generating response from OpenRouter: {e}")
+                raise
     
     async def generate_summary(self, text: str, max_length: int = 500) -> str:
         """
@@ -132,8 +127,8 @@ class OpenRouterClient:
             response, _ = await self.generate_response(
                 messages=messages,
                 system_prompt=system_prompt,
-                max_tokens=max_length // 2,  # Rough estimate
-                temperature=0.5  # Lower temperature for more focused summaries
+                max_tokens=max_length // 2,
+                temperature=0.5
             )
             
             return response
@@ -162,7 +157,7 @@ class OpenRouterClient:
             response, _ = await self.generate_response(
                 messages=messages,
                 system_prompt=system_prompt,
-                temperature=0.3  # Low temperature for accurate extraction
+                temperature=0.3
             )
             
             return response
@@ -226,6 +221,7 @@ class OpenRouterClient:
         Returns:
             Educational response
         """
+
         try:
             system_prompt = instructor_system_prompt(topic, level, custom_instructions)
             
@@ -246,5 +242,4 @@ class OpenRouterClient:
             return "Error generating educational content"
 
 
-# Global client instance
 openrouter_client = OpenRouterClient()

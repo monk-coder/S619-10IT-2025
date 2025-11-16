@@ -1,0 +1,60 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-5">
+                <h2 class="text-center mb-4">🔑 Вход в систему</h2>
+
+                {% if user.is_authenticated %}
+                <div class="alert alert-info text-center">
+                    <p>Вы уже вошли как: <strong>{{ user.username }}</strong></p>
+                    <p>Хотите войти под другим пользователем?</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'logout' %}" class="btn btn-warning">🚪 Выйти и войти заново</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">📊 Вернуться в дашборд</a>
+                    </div>
+                </div>
+                {% else %}
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if message.tags == 'error' %}
+                            <div class="alert alert-danger">
+                                {{ message }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Имя пользователя:</label>
+                        <label>
+                            <input type="text" name="username" class="form-control" placeholder="Введите имя пользователя" required autofocus>
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Пароль:</label>
+                        <label>
+                            <input type="password" name="password" class="form-control" placeholder="Введите пароль" required>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">🔑 Войти</button>
+
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь</a>
+                        </small>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,4 @@
 
-"""Secret Santa & Wishlists bot implemented with telebot in a single file."""
-
 from __future__ import annotations
 
 import logging
@@ -973,4 +971,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+
     main()

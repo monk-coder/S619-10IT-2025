@@ -45,6 +45,7 @@ class TelegramBot(
     INSTRUCTOR_QUESTION = BotState.INSTRUCTOR_QUESTION
     PROMPT_SETTING = BotState.PROMPT_SETTING
     INSTRUCTIONS_SETTING = BotState.INSTRUCTIONS_SETTING
+    MODEL_SELECTION = BotState.MODEL_SELECTION
 
     def __init__(self) -> None:
         self.app: Application | None = None
@@ -87,7 +88,6 @@ class TelegramBot(
                 CommandHandler("cancel", self.cancel),
                 CallbackQueryHandler(self.back_to_main_menu, pattern="^back_to_main$"),
             ],
-            per_message=False,
         )
 
         assert self.app is not None  # for type checkers

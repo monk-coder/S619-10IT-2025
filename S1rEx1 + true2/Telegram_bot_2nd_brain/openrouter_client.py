@@ -35,7 +35,8 @@ class OpenRouterClient:
         max_tokens: int = 2000,
         temperature: float = 0.7,
         stream: bool = False,
-        user_id: Optional[int] = None
+        user_id: Optional[int] = None,
+        model: Optional[str] = None
     ) -> tuple[str, int]:
         user_limiter = self.user_limiters[user_id] if user_id else self.global_limiter
 
@@ -52,14 +53,15 @@ class OpenRouterClient:
 
                     formatted_messages.extend(messages)
 
-                    logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages")
+                    model_to_use = model or self.model
+                    logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages using model {model_to_use}")
 
                     if stream:
                         response_text = ""
                         total_tokens = 0
 
                         stream = await self.client.chat.completions.create(
-                            model=self.model,
+                            model=model_to_use,
                             messages=formatted_messages,
                             max_tokens=max_tokens,
                             temperature=temperature,
@@ -75,7 +77,7 @@ class OpenRouterClient:
                         return response_text, int(total_tokens)
                     else:
                         response = await self.client.chat.completions.create(
-                            model=self.model,
+                            model=model_to_use,
                             messages=formatted_messages,
                             max_tokens=max_tokens,
                             temperature=temperature,
@@ -93,7 +95,7 @@ class OpenRouterClient:
                     logger.error(f"Error generating response from OpenRouter: {e}")
                     raise
     
-    async def generate_summary(self, text: str, max_length: int = 500) -> str:
+    async def generate_summary(self, text: str, max_length: int = 500, model: Optional[str] = None) -> str:
         """
         Generate a summary of the given text
         
@@ -115,7 +117,8 @@ class OpenRouterClient:
                 messages=messages,
                 system_prompt=system_prompt,
                 max_tokens=max_length // 2,
-                temperature=0.5
+                temperature=0.5,
+                model=model
             )
             
             return response
@@ -124,7 +127,7 @@ class OpenRouterClient:
             logger.error(f"Error generating summary: {e}")
             return "Error generating summary"
     
-    async def extract_from_image_description(self, image_description: str) -> str:
+    async def extract_from_image_description(self, image_description: str, model: Optional[str] = None) -> str:
         """
         Extract and structure information from an image description
         
@@ -144,7 +147,8 @@ class OpenRouterClient:
             response, _ = await self.generate_response(
                 messages=messages,
                 system_prompt=system_prompt,
-                temperature=0.3
+                temperature=0.3,
+                model=model
             )
             
             return response
@@ -157,7 +161,8 @@ class OpenRouterClient:
         self,
         question: str,
         context: str,
-        custom_instructions: Optional[str] = None
+        custom_instructions: Optional[str] = None,
+        model: Optional[str] = None
     ) -> str:
         """
         Answer a question based on provided context
@@ -180,7 +185,8 @@ class OpenRouterClient:
             response, _ = await self.generate_response(
                 messages=messages,
                 system_prompt=system_prompt,
-                temperature=0.5
+                temperature=0.5,
+                model=model
             )
             
             return response
@@ -194,7 +200,8 @@ class OpenRouterClient:
         topic: str,
         question: str,
         level: str = "intermediate",
-        custom_instructions: Optional[str] = None
+        custom_instructions: Optional[str] = None,
+        model: Optional[str] = None
     ) -> str:
         """
         Generate educational content in instructor mode
@@ -219,7 +226,8 @@ class OpenRouterClient:
             response, _ = await self.generate_response(
                 messages=messages,
                 system_prompt=system_prompt,
-                temperature=0.6
+                temperature=0.6,
+                model=model
             )
             
             return response

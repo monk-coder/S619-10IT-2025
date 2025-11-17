@@ -27,6 +27,7 @@ class User(Base):
 
     custom_prompt = Column(Text, default="")
     specific_instructions = Column(Text, default="")
+    preferred_model = Column(String(255), default="")
     max_tokens = Column(Integer, default=2000)
     temperature = Column(Float, default=0.7)
 

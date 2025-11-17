@@ -5,6 +5,8 @@ from __future__ import annotations
 from html import escape
 from typing import Any, Mapping
 
+from ..models_config import get_model_name_by_id
+
 
 def profile_menu_intro() -> str:
     return "👤 **Профиль**\n\nВыберите действие:"
@@ -28,18 +30,35 @@ def instructions_setting_message() -> str:
     )
 
 
+def model_selection_message() -> str:
+    return (
+        "🤖 **Выбор модели**\n\n"
+        "Выберите предпочитаемую модель из списка бесплатных моделей OpenRouter:\n\n"
+        "_Нажмите на кнопку с моделью для выбора_\n\n"
+        "∆ признана какойто таам плохой организациией в сверхддержаве(кстати русский язык вошел в топ 3 популярных языков в москве)"
+    )
+
+
 def current_settings_text(
     custom_prompt: str | None,
     instructions: str | None,
+    preferred_model: str | None,
     max_tokens: int,
     temperature: float,
 ) -> str:
     prompt_value = custom_prompt or "Стандартный"
     instructions_value = instructions or "Не заданы"
+    
+    if preferred_model:
+        model_value = get_model_name_by_id(preferred_model)
+    else:
+        model_value = "По умолчанию (DeepSeek Chat)"
+    
     return (
         "👁 **Текущие настройки**\n\n"
         f"**Промпт:** {prompt_value}\n\n"
         f"**Инструкции:** {instructions_value}\n\n"
+        f"**Модель:** {model_value}\n\n"
         f"**Max токенов:** {max_tokens}\n"
         f"**Temperature:** {temperature}"
     )

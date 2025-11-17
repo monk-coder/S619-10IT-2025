@@ -2,6 +2,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import ContextTypes
 
+from config import config
 from openrouter_client import openrouter_client
 
 from ..responses import instructor as instructor_responses
@@ -59,6 +60,7 @@ class InstructorHandlers:
         async with db_session(self.db_manager_class) as (_, db):
             user = await db.get_or_create_user(telegram_id=user_id)
             custom_instructions = user.specific_instructions
+            user_model = user.preferred_model or config.model_name
 
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
 
@@ -67,6 +69,7 @@ class InstructorHandlers:
             question=text,
             level=level,
             custom_instructions=custom_instructions,
+            model=user_model,
         )
 
         await update.message.reply_text(response, parse_mode="Markdown")

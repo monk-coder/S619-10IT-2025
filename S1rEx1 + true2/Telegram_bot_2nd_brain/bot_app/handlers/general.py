@@ -45,11 +45,14 @@ class GeneralHandlers:
             if user.specific_instructions:
                 system_prompt += f"\n\n{user.specific_instructions}"
 
+            user_model = user.preferred_model or config.model_name
+
             response_text, tokens_used = await openrouter_client.generate_response(
                 messages=ai_messages,
                 system_prompt=system_prompt,
                 max_tokens=user.max_tokens,
                 temperature=user.temperature,
+                model=user_model,
             )
 
             await db.add_message(

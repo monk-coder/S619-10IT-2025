@@ -7,6 +7,7 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from config import config
 from document_processor import DocumentProcessor
 from openrouter_client import openrouter_client
 
@@ -51,11 +52,14 @@ class NotesHandlers:
         user_id = update.effective_user.id
         content = message.text or ""
 
-        summary = await openrouter_client.generate_summary(content)
+        async with db_session(self.db_manager_class) as (_, db):
+            user = await db.get_or_create_user(telegram_id=user_id)
+            user_model = user.preferred_model or config.model_name
+
+        summary = await openrouter_client.generate_summary(content, model=user_model)
         topic = self._derive_topic(summary)
 
         async with db_session(self.db_manager_class) as (_, db):
-            user = await db.get_or_create_user(telegram_id=user_id)
             await db.create_note(
                 user_id=user.id,
                 topic=topic,
@@ -112,7 +116,15 @@ class NotesHandlers:
                 return self.NOTE_MATERIAL
 
             extracted_text = result.get("text", "")
-            summary = await openrouter_client.generate_summary(extracted_text[:2000] or extracted_text)
+
+            async with db_session(self.db_manager_class) as (session, db):
+                user = await db.get_or_create_user(telegram_id=user_id)
+                user_model = user.preferred_model or config.model_name
+
+            summary = await openrouter_client.generate_summary(
+                extracted_text[:2000] or extracted_text,
+                model=user_model
+            )
 
             topic = self._derive_topic(
                 summary,
@@ -121,7 +133,6 @@ class NotesHandlers:
             key_points = (result.get("key_points") or [])[:5]
 
             async with db_session(self.db_manager_class) as (session, db):
-                user = await db.get_or_create_user(telegram_id=user_id)
                 await db.create_note(
                     user_id=user.id,
                     topic=topic,

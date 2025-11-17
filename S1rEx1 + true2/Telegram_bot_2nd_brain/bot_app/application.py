@@ -1,4 +1,3 @@
-"""Main Telegram bot application assembly."""
 import logging
 
 from telegram import Update
@@ -14,6 +13,7 @@ from telegram.ext import (
 
 from config import config, validate_config
 from database import DatabaseManager, init_database
+from .constants import BotState
 from .handlers import (
     GeneralHandlers,
     InstructorHandlers,
@@ -38,9 +38,13 @@ class TelegramBot(
     InstructorHandlers,
     GeneralHandlers,
 ):
-    """Assembled Telegram bot with modular handlers."""
-
-    (MAIN_MENU, PROFILE_MENU, NOTE_MATERIAL, INSTRUCTOR_TOPIC, INSTRUCTOR_QUESTION, PROMPT_SETTING, INSTRUCTIONS_SETTING) = range(7)
+    MAIN_MENU = BotState.MAIN_MENU
+    PROFILE_MENU = BotState.PROFILE_MENU
+    NOTE_MATERIAL = BotState.NOTE_MATERIAL
+    INSTRUCTOR_TOPIC = BotState.INSTRUCTOR_TOPIC
+    INSTRUCTOR_QUESTION = BotState.INSTRUCTOR_QUESTION
+    PROMPT_SETTING = BotState.PROMPT_SETTING
+    INSTRUCTIONS_SETTING = BotState.INSTRUCTIONS_SETTING
 
     def __init__(self) -> None:
         self.app: Application | None = None
@@ -83,6 +87,7 @@ class TelegramBot(
                 CommandHandler("cancel", self.cancel),
                 CallbackQueryHandler(self.back_to_main_menu, pattern="^back_to_main$"),
             ],
+            per_message=False,
         )
 
         assert self.app is not None  # for type checkers

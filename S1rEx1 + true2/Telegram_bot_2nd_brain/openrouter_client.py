@@ -1,8 +1,6 @@
-"""
-OpenRouter API client for DeepSeek V3 integration
-"""
 import logging
 from typing import List, Dict, Any, Optional
+from collections import defaultdict
 from openai import AsyncOpenAI
 from config import config
 from prompts import (
@@ -15,13 +13,9 @@ from aiolimiter import AsyncLimiter
 
 logger = logging.getLogger(__name__)
 
-rate_limiter = AsyncLimiter(max_rate=10, time_period=60)
 
 class OpenRouterClient:
-    """Client for OpenRouter API"""
-    
     def __init__(self):
-        """Initialize OpenRouter client"""
         self.client = AsyncOpenAI(
             api_key=config.openrouter_api_key,
             base_url=config.openrouter_base_url,
@@ -31,6 +25,8 @@ class OpenRouterClient:
             }
         )
         self.model = config.model_name
+        self.user_limiters = defaultdict(lambda: AsyncLimiter(max_rate=10, time_period=60))
+        self.global_limiter = AsyncLimiter(max_rate=100, time_period=60)
     
     async def generate_response(
         self,
@@ -38,73 +34,64 @@ class OpenRouterClient:
         system_prompt: Optional[str] = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
-        stream: bool = False
+        stream: bool = False,
+        user_id: Optional[int] = None
     ) -> tuple[str, int]:
-        """
-        Generate a response using DeepSeek via OpenRouter
-        
-        Args:
-            messages: List of message dictionaries with 'role' and 'content'
-            system_prompt: Optional system prompt to prepend
-            max_tokens: Maximum tokens for the response
-            temperature: Temperature for generation
-            stream: Whether to stream the response
-        
-        Returns:
-            Tuple of (response_text, tokens_used)
-        """
-        async with rate_limiter:
-            try:
-                formatted_messages = []
-                
-                if system_prompt:
-                    formatted_messages.append({
-                        "role": "system",
-                        "content": system_prompt
-                    })
-                
-                formatted_messages.extend(messages)
-                
-                logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages")
-                
-                if stream:
-                    response_text = ""
-                    total_tokens = 0
-                    
-                    stream = await self.client.chat.completions.create(
-                        model=self.model,
-                        messages=formatted_messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stream=True
-                    )
-                    
-                    async for chunk in stream:
-                        if chunk.choices[0].delta.content:
-                            response_text += chunk.choices[0].delta.content
-                    
-                    total_tokens = len(response_text.split()) * 1.3
-                    
-                    return response_text, int(total_tokens)
-                else:
-                    response = await self.client.chat.completions.create(
-                        model=self.model,
-                        messages=formatted_messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stream=False
-                    )
-                    
-                    response_text = response.choices[0].message.content
-                    tokens_used = response.usage.total_tokens if response.usage else 0
-                    
-                    logger.info(f"Received response from OpenRouter, tokens used: {tokens_used}")
-                    
-                    return response_text, tokens_used
-                    
-            except Exception as e:
-                logger.error(f"Error generating response from OpenRouter: {e}")
-                raise
+        user_limiter = self.user_limiters[user_id] if user_id else self.global_limiter
+
+        async with user_limiter:
+            async with self.global_limiter:
+                try:
+                    formatted_messages = []
+
+                    if system_prompt:
+                        formatted_messages.append({
+                            "role": "system",
+                            "content": system_prompt
+                        })
+
+                    formatted_messages.extend(messages)
+
+                    logger.info(f"Sending request to OpenRouter with {len(formatted_messages)} messages")
+
+                    if stream:
+                        response_text = ""
+                        total_tokens = 0
+
+                        stream = await self.client.chat.completions.create(
+                            model=self.model,
+                            messages=formatted_messages,
+                            max_tokens=max_tokens,
+                            temperature=temperature,
+                            stream=True
+                        )
+
+                        async for chunk in stream:
+                            if chunk.choices[0].delta.content:
+                                response_text += chunk.choices[0].delta.content
+
+                        total_tokens = len(response_text.split()) * 1.3
+
+                        return response_text, int(total_tokens)
+                    else:
+                        response = await self.client.chat.completions.create(
+                            model=self.model,
+                            messages=formatted_messages,
+                            max_tokens=max_tokens,
+                            temperature=temperature,
+                            stream=False
+                        )
+
+                        response_text = response.choices[0].message.content
+                        tokens_used = response.usage.total_tokens if response.usage else 0
+
+                        logger.info(f"Received response from OpenRouter, tokens used: {tokens_used}")
+
+                        return response_text, tokens_used
+
+                except Exception as e:
+                    logger.error(f"Error generating response from OpenRouter: {e}")
+                    raise
     
     async def generate_summary(self, text: str, max_length: int = 500) -> str:
         """

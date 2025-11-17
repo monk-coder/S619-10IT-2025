@@ -19,3 +19,5 @@ aiohttp==3.9.5
 pydantic==2.7.0
 # Logging
 colorlog==6.8.2
+# Rate limiting
+aiolimiter==1.1.0

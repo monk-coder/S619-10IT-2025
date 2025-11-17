@@ -1,60 +1,50 @@
-"""Centralized prompt templates for AI interactions."""
-
 from typing import Optional
 
-GENERAL_ASSISTANT_PROMPT = "You are a helpful educational assistant. Format all text to markdown."
+MARKDOWN_INSTRUCTIONS = """
+Format all text to markdown. Be concise and honest.
+For code snippets, use: ```language\ncode\n```
+"""
+
+GENERAL_ASSISTANT_PROMPT = f"You are a helpful educational assistant.{MARKDOWN_INSTRUCTIONS}"
 
 
 def summary_system_prompt(max_length: int | None = None) -> str:
-    """Prompt for generating concise summaries."""
-    length_hint = f"Keep the summary under {max_length} characters." if max_length else ""
+    length_hint = f"\nKeep the summary under {max_length} characters." if max_length else ""
     return (
         "You are a helpful assistant that creates concise summaries.\n"
-        "Create a summary of the following text.\n"
-        "Focus on the key points and main ideas.\n"
-        f"{length_hint}\n"
-        "Don't write too much text. Format all text to markdown. Brevity is the soul of wit. Answer as \n"
-        "honestly as possible. If you write snippets of code, \n"
-        "put them in this MD template: ```(programming language)    ```"
+        "Focus on the key points and main ideas."
+        f"{length_hint}"
+        f"{MARKDOWN_INSTRUCTIONS}"
     ).strip()
 
 
 def image_extraction_system_prompt() -> str:
-    """Prompt for extracting structured data from images."""
     return (
         "You are a helpful assistant that extracts and structures information.\n"
-        "When given a description of an image, extract the key information and present it in a clear, structured format.\n"
-        "Don't write too much text. Format all text to markdown. Brevity is the soul of wit. Answer as \n"
-        "honestly as possible. If you write snippets of code, \n"
-        "put them in this MD template: ```(programming language)    ```"
+        "When given a description of an image, extract the key information and present it in a clear, structured format."
+        f"{MARKDOWN_INSTRUCTIONS}"
     )
 
 
 def contextual_answer_system_prompt(custom_instructions: Optional[str]) -> str:
-    """Prompt for answering questions with given context."""
-    base_prompt = (
+    base = (
         "You are a knowledgeable educational assistant.\n"
-        "Answer questions based on the provided context. Be accurate and helpful.\n"
-        "Don't write too much text. Format all text to markdown. Brevity is the soul of wit. Answer as \n"
-        "honestly as possible. If you write snippets of code, \n"
-        "put them in this MD template: ```(programming language)    ```"
+        "Answer questions based on the provided context. Be accurate and helpful."
+        f"{MARKDOWN_INSTRUCTIONS}"
     )
     if custom_instructions:
-        base_prompt += f"\n\nAdditional instructions: {custom_instructions}"
-    return base_prompt
+        base += f"\n\nAdditional instructions: {custom_instructions}"
+    return base
 
 
 def instructor_system_prompt(topic: str, level: str, custom_instructions: Optional[str]) -> str:
-    """Prompt for instructor mode explanations."""
-    base_prompt = (
+    base = (
         f"You are an expert instructor teaching about {topic}.\n"
         f"Adapt your explanation to the {level} level.\n"
         "Be clear, provide examples, and check understanding.\n"
-        "Use structured explanations with clear sections.\n"
-        "Don't write too much text. Format all text to markdown. Brevity is the soul of wit. Answer as \n"
-        "honestly as possible. If you write snippets of code, \n"
-        "put them in this MD template: ```(programming language)    ```"
+        "Use structured explanations with clear sections."
+        f"{MARKDOWN_INSTRUCTIONS}"
     )
     if custom_instructions:
-        base_prompt += f"\n\nAdditional instructions: {custom_instructions}"
-    return base_prompt
+        base += f"\n\nAdditional instructions: {custom_instructions}"
+    return base

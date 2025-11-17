@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 load_dotenv()
 
 class BotConfig(BaseModel):
-    """Bot configuration"""
+    model_config = {'protected_namespaces': ()}
 
     telegram_token: str = Field(default=os.getenv("TELEGRAM_BOT_TOKEN", ""))
 

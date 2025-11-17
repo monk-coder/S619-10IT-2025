@@ -1,6 +1,3 @@
-"""
-Document processing utilities for PDF and image extraction
-"""
 import os
 import logging
 import io
@@ -17,29 +14,18 @@ if config.tesseract_cmd:
 
 
 class DocumentProcessor:
-    """Process various document types"""
-    
     @staticmethod
     async def extract_text_from_pdf(pdf_bytes: bytes) -> Tuple[str, int]:
-        """
-        Extract text from PDF bytes
-        
-        Args:
-            pdf_bytes: PDF file content as bytes
-        
-        Returns:
-            Tuple of (extracted_text, page_count)
-        """
         if len(pdf_bytes) > 10 * 1024 * 1024:
             raise ValueError("PDF file size exceeds the 10 MB limit.")
-        
+
         try:
             pdf_file = io.BytesIO(pdf_bytes)
             pdf_reader = PyPDF2.PdfReader(pdf_file)
-            
+
             text_content = []
             page_count = len(pdf_reader.pages)
-            
+
             for page_num, page in enumerate(pdf_reader.pages, 1):
                 try:
                     page_text = page.extract_text() or ""
@@ -48,92 +34,63 @@ class DocumentProcessor:
                 except Exception as e:
                     logger.warning(f"Could not extract text from page {page_num}: {e}")
                     text_content.append(f"--- Page {page_num} ---\n[Could not extract text]")
-            
+
             full_text = "\n\n".join(text_content)
-            
+
             if not full_text.strip():
                 return "No text could be extracted from the PDF. It may contain only images.", page_count
-            
+
             return full_text, page_count
-            
+
         except Exception as e:
             logger.error(f"Error processing PDF: {e}")
             raise Exception(f"Failed to process PDF: {str(e)}")
-    
+
     @staticmethod
     async def extract_text_from_image(image_bytes: bytes) -> str:
-        """
-        Extract text from image using OCR
-        
-        Args:
-            image_bytes: Image file content as bytes
-        
-        Returns:
-            Extracted text from the image
-        """
         if len(image_bytes) > 5 * 1024 * 1024:
             raise ValueError("Image file size exceeds the 5 MB limit.")
-        
+
         try:
             image = Image.open(io.BytesIO(image_bytes))
-            
+
             if image.mode != 'RGB':
                 image = image.convert('RGB')
-            
+
             extracted_text = pytesseract.image_to_string(image, lang='eng+rus')
-            
+
             if not extracted_text.strip():
                 return "No text could be extracted from the image."
-            
+
             return extracted_text
-            
+
         except Exception as e:
             logger.error(f"Error processing image: {e}")
-            
+
             if "tesseract is not installed" in str(e).lower():
                 return ("OCR is not available. Please install Tesseract OCR to extract text from images.\n"
                        "Linux/Mac: apt-get install tesseract-ocr\n"
                        "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki")
-            
+
             raise Exception(f"Failed to process image: {str(e)}")
-    
+
     @staticmethod
-    def summarize_document(text: str, max_length: int = 1000) -> str:
-        """
-        Create a summary of document text
-        
-        Args:
-            text: Document text to summarize
-            max_length: Maximum length of summary
-        
-        Returns:
-            Summary of the document
-        """
+    def truncate_text(text: str, max_length: int = 1000) -> str:
         if len(text) <= max_length:
             return text
-        
+
         truncated = text[:max_length]
         last_space = truncated.rfind(' ')
         if last_space > 0:
             truncated = truncated[:last_space]
-        
+
         return truncated + "..."
-    
+
     @staticmethod
     def extract_key_points(text: str, max_points: int = 10) -> list:
-        """
-        Extract key points from document text
-        
-        Args:
-            text: Document text
-            max_points: Maximum number of key points
-        
-        Returns:
-            List of key points
-        """
         lines = text.split('\n')
         key_points = []
-        
+
         for line in lines:
             line = line.strip()
             if line and len(line) > 30:
@@ -143,21 +100,11 @@ class DocumentProcessor:
                     key_points.append(line[:200])
                     if len(key_points) >= max_points:
                         break
-        
+
         return key_points if key_points else ["No clear key points could be extracted."]
-    
+
     @staticmethod
     async def process_file(file_bytes: bytes, file_type: str) -> dict:
-        """
-        Process a file and extract information
-        
-        Args:
-            file_bytes: File content as bytes
-            file_type: Type of file ('pdf', 'image')
-        
-        Returns:
-            Dictionary with extracted information
-        """
         result = {
             'success': False,
             'text': '',
@@ -165,7 +112,7 @@ class DocumentProcessor:
             'key_points': [],
             'metadata': {}
         }
-        
+
         try:
             if file_type == 'pdf':
                 text, page_count = await DocumentProcessor.extract_text_from_pdf(file_bytes)
@@ -176,14 +123,14 @@ class DocumentProcessor:
                 result['metadata']['type'] = 'Image'
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
-            
+
             result['text'] = text
-            result['summary'] = DocumentProcessor.summarize_document(text, max_length=500)
+            result['summary'] = DocumentProcessor.truncate_text(text, max_length=500)
             result['key_points'] = DocumentProcessor.extract_key_points(text, max_points=5)
             result['success'] = True
-            
+
         except Exception as e:
             logger.error(f"Error processing file: {e}")
             result['error'] = str(e)
-        
+
         return result

@@ -18,9 +18,10 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @asynccontextmanager
-async def db_session() -> AsyncIterator[Tuple[AsyncSession]]:
+async def db_session(db_manager_class: type) -> AsyncIterator[Tuple[AsyncSession, 'DatabaseManager']]:
     if db_module.AsyncSessionLocal is None:
         await db_module.init_database()
 
     async with db_module.AsyncSessionLocal() as session:
-        yield session
+        db = db_manager_class(session)
+        yield session, db

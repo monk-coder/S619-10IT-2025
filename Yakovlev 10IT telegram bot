@@ -1,0 +1,123 @@
+import logging
+import random
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+participants = {}
+assignments = {}
+min_participants = 3
+game_started = False
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🎄 Добро пожаловать в Тайного Санту! Команды:\n"
+        "/join <имя> — присоединиться\n"
+        "/wishlist <список> — задать вишлист\n"
+        "/leave — покинуть игру\n"
+        "/ready — начать распределение (только если участников >= 3)\n"
+        "/whogifts — узнать, кому вы дарите (после распределения)"
+    )
+
+async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global game_started
+    if game_started:
+        await update.message.reply_text("Игра уже началась. Нельзя присоединиться.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Используйте: /join Ваше_Имя")
+        return
+    user_id = update.effective_user.id
+    name = ' '.join(context.args)
+    participants[user_id] = {'name': name, 'wishlist': 'Не указан'}
+    await update.message.reply_text(f"Вы присоединились под именем: {name}")
+
+
+async def wishlist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in participants:
+        await update.message.reply_text("Сначала присоединитесь: /join Имя")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Используйте: /wishlist Ваши желания...")
+        return
+
+    participants[user_id]['wishlist'] = ' '.join(context.args)
+    await update.message.reply_text("Ваш вишлист сохранён!")
+
+
+async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global game_started
+    if game_started:
+        await update.message.reply_text("Игра началась — нельзя выйти.")
+        return
+
+    user_id = update.effective_user.id
+    if user_id in participants:
+        del participants[user_id]
+        await update.message.reply_text("Вы покинули игру.")
+    else:
+        await update.message.reply_text("Вы не участвуете в игре.")
+
+
+async def ready(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global game_started, assignments
+    if game_started:
+        await update.message.reply_text("Игра уже запущена!")
+        return
+    if len(participants) < min_participants:
+        await update.message.reply_text(f"Нужно минимум {min_participants} участника(ов). Сейчас: {len(participants)}")
+        return
+
+    user_ids = list(participants.keys())
+    if len(user_ids) < 2:
+        await update.message.reply_text("Недостаточно участников для распределения.")
+        return
+
+    shuffled = user_ids[:]
+    while any(a == b for a, b in zip(user_ids, shuffled)):
+        random.shuffle(shuffled)
+
+    assignments = dict(zip(user_ids, shuffled))
+    game_started = True
+    await update.message.reply_text(
+        "🎁 Игра началась! Каждому назначен получатель. Используйте /whogifts, чтобы узнать, кому вы дарите.")
+
+
+async def whogifts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global game_started
+    if not game_started:
+        await update.message.reply_text(
+            "Игра ещё не началась. Используйте /ready, когда наберётся достаточно участников.")
+        return
+    user_id = update.effective_user.id
+    if user_id not in assignments:
+        await update.message.reply_text("Вы не участвуете в этой игре.")
+        return
+
+    receiver_id = assignments[user_id]
+    name = participants[receiver_id]['name']
+    wishlist = participants[receiver_id]['wishlist']
+    await update.message.reply_text(f"Вы дарите подарок: {name}\nИх вишлист: {wishlist}")
+
+
+def main():
+    TOKEN = "8474437916:AAEdciclk5WCpDIamtyzp6PGnct4TpIyo8U"
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("join", join))
+    app.add_handler(CommandHandler("wishlist", wishlist))
+    app.add_handler(CommandHandler("leave", leave))
+    app.add_handler(CommandHandler("ready", ready))
+    app.add_handler(CommandHandler("whogifts", whogifts))
+
+    print("Бот запущен...")
+    app.run_polling()
+
+
+if __name__ == '__main__':
+    main()

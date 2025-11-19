@@ -1,0 +1,932 @@
+2025-10-23 22:17:54,127 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-23 22:17:54,127 - __main__ - INFO - 🤖 Бот запущен и готов к работе!
+2025-10-23 22:18:17,511 - TeleBot - ERROR - Infinity polling: polling exited
+2025-10-23 22:18:17,512 - TeleBot - ERROR - Break infinity polling
+2025-10-23 22:51:37,953 - __main__ - INFO - ✅ Токен загружен
+2025-10-23 22:51:37,956 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-23 22:51:37,957 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-23 22:51:37,957 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:01,149 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:02,547 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:03,260 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:03,530 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:03,751 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:03,962 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:07,134 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:07,424 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:22,963 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:23,591 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:23,833 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:52:24,019 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:53:05,904 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:55:24,380 - __main__ - INFO - ✅ Токен загружен
+2025-10-23 22:55:24,384 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-23 22:55:24,385 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-23 22:55:24,386 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:55:27,350 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:57:58,414 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:57:59,211 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:57:59,432 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:57:59,613 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-23 22:57:59,821 - __main__ - INFO - 🔄 Запуск бота...
+2025-10-24 23:11:42,658 - __main__ - INFO - ✅ Токен загружен
+2025-10-24 23:11:43,101 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-24 23:11:43,103 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-24 23:11:43,104 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-24 23:11:43,105 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-24 23:11:43,106 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-24 23:12:11,142 - games.roulette - INFO - 🎯 Проверка выигрыша: type=dozen, value=3, win_num=6, win_color=black
+2025-10-24 23:12:11,143 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 111610
+2025-10-24 23:12:11,153 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=111510
+2025-10-24 23:12:11,155 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 111510
+2025-10-24 23:12:11,156 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=111510
+2025-10-24 23:12:41,113 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=3
+2025-10-24 23:12:41,115 - games.dice - INFO - ✅ PLAYER WINS: bet=500, total_win=1000, net_win=500
+2025-10-24 23:12:41,118 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 111510
+2025-10-24 23:12:41,135 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=111010
+2025-10-24 23:12:41,137 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 111010
+2025-10-24 23:12:41,141 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=112010
+2025-10-24 23:12:41,143 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 112010
+2025-10-24 23:12:41,147 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=113010
+2025-10-24 23:13:12,948 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=1
+2025-10-24 23:13:12,948 - games.dice - INFO - ✅ PLAYER WINS: bet=100, total_win=200, net_win=100
+2025-10-24 23:13:12,950 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113010
+2025-10-24 23:13:12,961 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=112910
+2025-10-24 23:13:12,964 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 112910
+2025-10-24 23:13:12,968 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=200, новый баланс=113110
+2025-10-24 23:13:12,970 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113110
+2025-10-24 23:13:12,974 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=200, новый баланс=113310
+2025-10-24 23:13:27,998 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=1
+2025-10-24 23:13:27,999 - games.dice - INFO - ✅ PLAYER WINS: bet=100, total_win=200, net_win=100
+2025-10-24 23:13:28,001 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113310
+2025-10-24 23:13:28,020 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=113210
+2025-10-24 23:13:28,023 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113210
+2025-10-24 23:13:28,026 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=200, новый баланс=113410
+2025-10-24 23:13:28,029 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113410
+2025-10-24 23:13:28,033 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=200, новый баланс=113610
+2025-10-24 23:13:35,383 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=2, bot=2
+2025-10-24 23:13:35,384 - games.dice - INFO - 🤝 DRAW: bet=100, net_win=0
+2025-10-24 23:13:35,385 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113610
+2025-10-24 23:13:35,395 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=113510
+2025-10-24 23:13:35,398 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113510
+2025-10-24 23:13:35,402 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=100, новый баланс=113610
+2025-10-24 23:13:46,053 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=3, bot=3
+2025-10-24 23:13:46,054 - games.dice - INFO - 🤝 DRAW: bet=100, net_win=0
+2025-10-24 23:13:46,055 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113610
+2025-10-24 23:13:46,073 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=113510
+2025-10-24 23:13:46,076 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113510
+2025-10-24 23:13:46,079 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=100, новый баланс=113610
+2025-10-24 23:13:53,463 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=2, bot=4
+2025-10-24 23:13:53,464 - games.dice - INFO - ❌ PLAYER LOSES: bet=100, net_win=-100
+2025-10-24 23:13:53,466 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113610
+2025-10-24 23:13:53,476 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=113510
+2025-10-24 23:13:53,478 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113510
+2025-10-24 23:13:53,478 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113510
+2025-10-24 23:26:40,964 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-24 23:26:48,978 - __main__ - INFO - ✅ Токен загружен
+2025-10-24 23:26:49,414 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-24 23:26:49,416 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-24 23:26:49,417 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-24 23:26:49,418 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-24 23:26:49,419 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-24 23:27:05,246 - games.roulette - INFO - 🎯 Проверка выигрыша: type=specific, value=4, win_num=0, win_color=green
+2025-10-24 23:27:05,247 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113510
+2025-10-24 23:27:05,280 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=113410
+2025-10-24 23:27:05,282 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113410
+2025-10-24 23:27:05,283 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113410
+2025-10-24 23:27:22,552 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=red, win_num=34, win_color=red
+2025-10-24 23:27:22,553 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113410
+2025-10-24 23:27:22,571 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=50, новый баланс=113460
+2025-10-24 23:27:22,574 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113460
+2025-10-24 23:27:22,578 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=100, новый баланс=113560
+2025-10-24 23:34:49,201 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-24 23:34:56,004 - __main__ - INFO - ✅ Токен загружен
+2025-10-24 23:34:56,474 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-24 23:34:56,476 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-24 23:34:56,477 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-24 23:34:56,477 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-24 23:34:56,478 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-24 23:35:17,734 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=black, win_num=24, win_color=black
+2025-10-24 23:35:17,737 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113560
+2025-10-24 23:35:17,756 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=114060
+2025-10-24 23:35:17,759 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114060
+2025-10-24 23:35:17,764 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=115060
+2025-10-24 23:49:02,219 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-24 23:50:22,653 - __main__ - INFO - ✅ Токен загружен
+2025-10-24 23:50:23,111 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-24 23:50:23,114 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-24 23:50:23,115 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-24 23:50:23,115 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-24 23:50:23,117 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-24 23:51:29,404 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=2, bot=5
+2025-10-24 23:51:29,404 - games.dice - INFO - ❌ PLAYER LOSES: bet=500, win_amount=-500
+2025-10-24 23:51:29,406 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 115060
+2025-10-24 23:51:29,439 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=114560
+2025-10-24 23:51:29,442 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114560
+2025-10-24 23:51:29,443 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=114560
+2025-10-24 23:51:37,619 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=3, bot=5
+2025-10-24 23:51:37,620 - games.dice - INFO - ❌ PLAYER LOSES: bet=500, win_amount=-500
+2025-10-24 23:51:37,621 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114560
+2025-10-24 23:51:37,640 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=114060
+2025-10-24 23:51:37,643 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114060
+2025-10-24 23:51:37,643 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=114060
+2025-10-24 23:51:44,611 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=1, bot=1
+2025-10-24 23:51:44,611 - games.dice - INFO - 🤝 DRAW: bet=10, win_amount=0
+2025-10-24 23:51:44,613 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114060
+2025-10-24 23:51:44,622 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=114060
+2025-10-24 23:51:44,625 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114060
+2025-10-24 23:51:44,625 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=114060
+2025-10-24 23:51:45,624 - handlers.game_handlers - ERROR - Ошибка редактирования сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-10-24 23:51:49,171 - games.slots - INFO - 🎰 SLOTS CALC: bet=200, multiplier=0, win_amount=-200
+2025-10-24 23:51:49,172 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114060
+2025-10-24 23:51:49,177 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-200, новый баланс=113860
+2025-10-24 23:51:49,180 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113860
+2025-10-24 23:51:49,181 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113860
+2025-10-24 23:51:57,318 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=1, bot=2
+2025-10-24 23:51:57,319 - games.dice - INFO - ❌ PLAYER LOSES: bet=500, win_amount=-500
+2025-10-24 23:51:57,321 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113860
+2025-10-24 23:51:57,340 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=113360
+2025-10-24 23:51:57,342 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113360
+2025-10-24 23:51:57,343 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113360
+2025-10-24 23:51:58,821 - handlers.game_handlers - ERROR - Ошибка редактирования сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-10-24 23:52:02,432 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=1, bot=5
+2025-10-24 23:52:02,432 - games.dice - INFO - ❌ PLAYER LOSES: bet=50, win_amount=-50
+2025-10-24 23:52:02,434 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113360
+2025-10-24 23:52:02,443 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-50, новый баланс=113310
+2025-10-24 23:52:02,446 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113310
+2025-10-24 23:52:02,447 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113310
+2025-10-24 23:52:08,461 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=2, bot=4
+2025-10-24 23:52:08,462 - games.dice - INFO - ❌ PLAYER LOSES: bet=500, win_amount=-500
+2025-10-24 23:52:08,463 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113310
+2025-10-24 23:52:08,483 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=112810
+2025-10-24 23:52:08,486 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 112810
+2025-10-24 23:52:08,488 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=112810
+2025-10-24 23:52:17,477 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=3
+2025-10-24 23:52:17,478 - games.dice - INFO - ✅ PLAYER WINS: bet=500, win_amount=500
+2025-10-24 23:52:17,480 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 112810
+2025-10-24 23:52:17,498 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=113310
+2025-10-24 23:52:17,501 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113310
+2025-10-24 23:52:17,505 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=114310
+2025-10-24 23:52:59,492 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=red, win_num=0, win_color=green
+2025-10-24 23:52:59,494 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114310
+2025-10-24 23:52:59,504 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=113810
+2025-10-24 23:52:59,507 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113810
+2025-10-24 23:52:59,508 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=113810
+2025-10-24 23:53:10,765 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=red, win_num=23, win_color=red
+2025-10-24 23:53:10,767 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113810
+2025-10-24 23:53:10,778 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=50, новый баланс=113860
+2025-10-24 23:53:10,780 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113860
+2025-10-24 23:53:10,785 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=100, новый баланс=113960
+2025-10-24 23:57:20,494 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-24 23:57:23,050 - TeleBot - ERROR - Infinity polling: polling exited
+2025-10-24 23:57:23,051 - TeleBot - ERROR - Break infinity polling
+2025-10-24 23:57:27,433 - __main__ - INFO - ✅ Токен загружен
+2025-10-24 23:57:27,906 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-24 23:57:27,909 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-24 23:57:27,910 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-24 23:57:27,910 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-24 23:57:27,911 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-24 23:57:39,324 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=2
+2025-10-24 23:57:39,324 - games.dice - INFO - ✅ PLAYER WINS: bet=500, win_amount=500
+2025-10-24 23:57:39,326 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 113960
+2025-10-24 23:57:39,336 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=114460
+2025-10-24 23:57:39,339 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 114460
+2025-10-24 23:57:39,343 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=115460
+2025-10-24 23:57:40,345 - handlers.game_handlers - ERROR - Ошибка редактирования сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-10-24 23:57:49,228 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=black, win_num=22, win_color=black
+2025-10-24 23:57:49,231 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 115460
+2025-10-24 23:57:49,237 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=115960
+2025-10-24 23:57:49,241 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 115960
+2025-10-24 23:57:49,246 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=116960
+2025-10-24 23:58:04,662 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=0, win_amount=-500
+2025-10-24 23:58:04,664 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116960
+2025-10-24 23:58:04,674 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=116460
+2025-10-24 23:58:04,677 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-24 23:58:04,677 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:03:22,216 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-25 00:03:30,001 - __main__ - INFO - ✅ Токен загружен
+2025-10-25 00:03:30,474 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-25 00:03:30,479 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:03:30,480 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-25 00:03:30,481 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-25 00:03:30,483 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-25 00:03:42,603 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=5, bot=5
+2025-10-25 00:03:42,603 - games.dice - INFO - 🤝 DRAW: bet=50, win_amount=0
+2025-10-25 00:03:42,604 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:03:42,614 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:03:42,617 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:03:42,618 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:03:44,091 - handlers.game_handlers - ERROR - Ошибка редактирования сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-10-25 00:03:47,857 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:03:47,857 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:03:47,863 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:03:47,865 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:03:47,865 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:03:47,865 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:03:50,730 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=6, bot=6
+2025-10-25 00:03:50,730 - games.dice - INFO - 🤝 DRAW: bet=100, win_amount=0
+2025-10-25 00:03:50,731 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:03:50,742 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:03:50,745 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:03:50,745 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:03:57,580 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:03:57,582 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:03:57,584 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:03:57,586 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:03:57,586 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:03:57,586 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:04:06,128 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=6, bot=6
+2025-10-25 00:04:06,129 - games.dice - INFO - 🤝 DRAW: bet=4000, win_amount=0
+2025-10-25 00:04:06,131 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:04:06,145 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:04:06,149 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:04:06,151 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:04:07,163 - handlers.game_handlers - ERROR - Ошибка редактирования сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-10-25 00:04:16,955 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=0, win_amount=-500
+2025-10-25 00:04:16,957 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:04:16,967 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=115960
+2025-10-25 00:04:16,970 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 115960
+2025-10-25 00:04:16,971 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=115960
+2025-10-25 00:19:04,411 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-25 00:30:47,442 - __main__ - INFO - ✅ Токен загружен
+2025-10-25 00:30:47,893 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-25 00:30:47,897 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:30:47,898 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-25 00:30:47,898 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-25 00:30:47,899 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-25 00:30:58,636 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:30:58,639 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:30:58,643 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:30:58,650 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:30:58,663 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:30:58,663 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:00,827 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=2, win_amount=500
+2025-10-25 00:31:00,829 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 1000
+2025-10-25 00:31:00,838 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=500, новый баланс=1500
+2025-10-25 00:31:00,842 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 1500
+2025-10-25 00:31:00,846 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=1000, новый баланс=2500
+2025-10-25 00:31:10,173 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:31:10,175 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:31:10,181 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:31:10,182 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:31:10,182 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:31:10,182 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:12,357 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=2, win_amount=500
+2025-10-25 00:31:12,358 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 2500
+2025-10-25 00:31:12,368 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=500, новый баланс=3000
+2025-10-25 00:31:12,372 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 3000
+2025-10-25 00:31:12,375 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=1000, новый баланс=4000
+2025-10-25 00:31:21,093 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:31:21,094 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:31:21,097 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:31:21,098 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:31:21,098 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:31:21,099 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:23,841 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=0, win_amount=-500
+2025-10-25 00:31:23,843 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 4000
+2025-10-25 00:31:23,853 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-500, новый баланс=3500
+2025-10-25 00:31:23,857 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 3500
+2025-10-25 00:31:23,858 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=3500
+2025-10-25 00:31:34,176 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:31:34,178 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:31:34,184 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:31:34,186 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:31:34,186 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:31:34,186 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:37,001 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:31:37,003 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=5631945112
+2025-10-25 00:31:37,006 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 115960
+2025-10-25 00:31:37,008 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 115960
+2025-10-25 00:31:37,008 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 115960
+2025-10-25 00:31:37,009 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:38,350 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=6, bot=5
+2025-10-25 00:31:38,350 - games.dice - INFO - ✅ PLAYER WINS: bet=200, win_amount=200
+2025-10-25 00:31:38,351 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 115960
+2025-10-25 00:31:38,361 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=200, новый баланс=116160
+2025-10-25 00:31:38,363 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116160
+2025-10-25 00:31:38,367 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=400, новый баланс=116560
+2025-10-25 00:31:41,682 - games.slots - INFO - 🎰 SLOTS CALC: bet=1000, multiplier=0, win_amount=-1000
+2025-10-25 00:31:41,683 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 3500
+2025-10-25 00:31:41,693 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-1000, новый баланс=2500
+2025-10-25 00:31:41,696 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 2500
+2025-10-25 00:31:41,696 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=2500
+2025-10-25 00:31:44,232 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:31:44,233 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:31:44,238 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:31:44,239 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:31:44,240 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:31:44,241 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:49,588 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:31:49,589 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:31:49,590 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:31:49,591 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:31:49,591 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:31:49,591 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:31:54,413 - games.slots - INFO - 🎰 SLOTS CALC: bet=2500, multiplier=2, win_amount=2500
+2025-10-25 00:31:54,415 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 2500
+2025-10-25 00:31:54,420 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=2500, новый баланс=5000
+2025-10-25 00:31:54,424 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 5000
+2025-10-25 00:31:54,427 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=10000
+2025-10-25 00:32:02,742 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:32:02,743 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:32:02,746 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:32:02,746 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:32:02,747 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:32:02,747 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:32:06,954 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:32:06,956 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:32:06,975 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=15000
+2025-10-25 00:32:06,978 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 15000
+2025-10-25 00:32:06,983 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=25000
+2025-10-25 00:32:19,548 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:32:19,552 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:32:19,555 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:32:19,556 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:32:19,556 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:32:19,556 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:32:25,629 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:32:25,630 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 25000
+2025-10-25 00:32:25,649 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=20000
+2025-10-25 00:32:25,654 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 20000
+2025-10-25 00:32:25,655 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=20000
+2025-10-25 00:32:33,371 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:32:33,371 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:32:33,375 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:32:33,377 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:32:33,377 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:32:33,378 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:32:37,324 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:32:37,326 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 20000
+2025-10-25 00:32:37,331 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=15000
+2025-10-25 00:32:37,334 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 15000
+2025-10-25 00:32:37,334 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=15000
+2025-10-25 00:32:45,892 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:32:45,892 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:32:45,895 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:32:45,896 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:32:45,896 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:32:45,896 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:32:53,640 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:32:53,640 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:32:53,642 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 15000
+2025-10-25 00:32:53,644 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 15000
+2025-10-25 00:32:53,645 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 15000
+2025-10-25 00:32:53,645 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:32:59,027 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:32:59,028 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 15000
+2025-10-25 00:32:59,038 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=10000
+2025-10-25 00:32:59,041 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:32:59,043 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=10000
+2025-10-25 00:33:06,921 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:33:06,923 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:33:06,927 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:33:06,928 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:33:06,928 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:33:06,928 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:33:11,976 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:33:11,977 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:33:11,994 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=5000
+2025-10-25 00:33:11,997 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 5000
+2025-10-25 00:33:11,997 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=5000
+2025-10-25 00:33:19,196 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:33:19,197 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:33:19,200 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:33:19,200 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:33:19,201 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:33:19,201 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:33:22,734 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:33:22,736 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 5000
+2025-10-25 00:33:22,746 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=10000
+2025-10-25 00:33:22,749 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:33:22,753 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=20000
+2025-10-25 00:33:29,446 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:33:29,447 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:33:29,449 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:33:29,451 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:33:29,451 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:33:29,451 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:33:33,687 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:33:33,689 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 20000
+2025-10-25 00:33:33,698 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=15000
+2025-10-25 00:33:33,700 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 15000
+2025-10-25 00:33:33,701 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=15000
+2025-10-25 00:33:40,353 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:33:40,353 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:33:40,355 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:33:40,356 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:33:40,357 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:33:40,357 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:33:49,961 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:33:49,966 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:33:49,968 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 15000
+2025-10-25 00:33:49,978 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 15000
+2025-10-25 00:33:49,979 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 15000
+2025-10-25 00:33:49,979 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:00,307 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:00,308 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:34:00,309 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 15000
+2025-10-25 00:34:00,310 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 15000
+2025-10-25 00:34:00,310 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 15000
+2025-10-25 00:34:00,310 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:04,875 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:34:04,876 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 15000
+2025-10-25 00:34:04,885 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=10000
+2025-10-25 00:34:04,888 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:34:04,888 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=10000
+2025-10-25 00:34:11,198 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:11,199 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:34:11,204 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:34:11,205 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:34:11,205 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:34:11,205 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:16,513 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:34:16,515 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:34:16,535 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=5000
+2025-10-25 00:34:16,538 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 5000
+2025-10-25 00:34:16,538 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=5000
+2025-10-25 00:34:22,934 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:22,937 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:34:22,940 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:34:22,947 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:34:22,948 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:34:22,948 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:31,656 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:31,657 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:34:31,658 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 5000
+2025-10-25 00:34:31,659 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 5000
+2025-10-25 00:34:31,659 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 5000
+2025-10-25 00:34:31,659 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:37,711 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:34:37,717 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 5000
+2025-10-25 00:34:37,722 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=10000
+2025-10-25 00:34:37,728 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 10000
+2025-10-25 00:34:37,732 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=20000
+2025-10-25 00:34:43,936 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:43,940 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:34:43,943 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:34:43,944 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:34:43,944 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:34:43,944 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:34:50,156 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:34:50,157 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 20000
+2025-10-25 00:34:50,174 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=25000
+2025-10-25 00:34:50,180 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 25000
+2025-10-25 00:34:50,187 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=35000
+2025-10-25 00:34:57,598 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:34:57,600 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:34:57,607 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:34:57,610 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:34:57,610 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:34:57,610 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:01,200 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:35:01,202 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 35000
+2025-10-25 00:35:01,219 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=40000
+2025-10-25 00:35:01,222 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 40000
+2025-10-25 00:35:01,226 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=50000
+2025-10-25 00:35:07,637 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:07,637 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:35:07,641 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:35:07,642 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:35:07,642 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:35:07,643 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:11,039 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:35:11,041 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 50000
+2025-10-25 00:35:11,052 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=55000
+2025-10-25 00:35:11,079 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 55000
+2025-10-25 00:35:11,091 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=65000
+2025-10-25 00:35:17,432 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:17,432 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:35:17,436 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:35:17,437 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:35:17,437 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:35:17,437 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:23,196 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:23,197 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:35:23,198 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 65000
+2025-10-25 00:35:23,199 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 65000
+2025-10-25 00:35:23,200 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 65000
+2025-10-25 00:35:23,200 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:26,909 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:35:26,911 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 65000
+2025-10-25 00:35:26,928 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=60000
+2025-10-25 00:35:26,931 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 60000
+2025-10-25 00:35:26,931 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=60000
+2025-10-25 00:35:33,404 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:33,405 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:35:33,407 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:35:33,409 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:35:33,409 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:35:33,409 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:38,723 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:38,724 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=7856689256
+2025-10-25 00:35:38,726 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 60000
+2025-10-25 00:35:38,727 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 60000
+2025-10-25 00:35:38,728 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 60000
+2025-10-25 00:35:38,728 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:42,829 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:35:42,831 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 60000
+2025-10-25 00:35:42,849 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=55000
+2025-10-25 00:35:42,852 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 55000
+2025-10-25 00:35:42,853 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=55000
+2025-10-25 00:35:49,643 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:49,644 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:35:49,646 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:35:49,647 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:35:49,647 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:35:49,647 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:35:52,573 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:35:52,575 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 55000
+2025-10-25 00:35:52,593 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=50000
+2025-10-25 00:35:52,597 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 50000
+2025-10-25 00:35:52,598 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=50000
+2025-10-25 00:35:59,080 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:35:59,081 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:35:59,084 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:35:59,085 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:35:59,085 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:35:59,086 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:36:02,671 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:36:02,672 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 50000
+2025-10-25 00:36:02,682 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=55000
+2025-10-25 00:36:02,684 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 55000
+2025-10-25 00:36:02,688 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=65000
+2025-10-25 00:36:10,037 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:36:10,038 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 65000
+2025-10-25 00:36:10,043 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=70000
+2025-10-25 00:36:10,046 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 70000
+2025-10-25 00:36:10,050 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=80000
+2025-10-25 00:36:19,239 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:36:19,241 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:36:19,243 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:36:19,244 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:36:19,244 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:36:19,244 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:36:24,307 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:36:24,314 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 80000
+2025-10-25 00:36:24,324 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=75000
+2025-10-25 00:36:24,328 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 75000
+2025-10-25 00:36:24,329 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=75000
+2025-10-25 00:36:27,029 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:36:27,036 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 75000
+2025-10-25 00:36:27,049 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=80000
+2025-10-25 00:36:27,055 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 80000
+2025-10-25 00:36:27,060 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=90000
+2025-10-25 00:36:33,643 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:36:33,645 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:36:33,653 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:36:33,655 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:36:33,655 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:36:33,655 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:36:39,795 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:36:39,797 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 90000
+2025-10-25 00:36:39,808 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=95000
+2025-10-25 00:36:39,812 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 95000
+2025-10-25 00:36:39,816 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=105000
+2025-10-25 00:36:46,035 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:36:46,037 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 105000
+2025-10-25 00:36:46,057 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=110000
+2025-10-25 00:36:46,060 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 110000
+2025-10-25 00:36:46,063 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=120000
+2025-10-25 00:36:51,536 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:36:51,537 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 120000
+2025-10-25 00:36:51,547 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=115000
+2025-10-25 00:36:51,549 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 115000
+2025-10-25 00:36:51,550 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=115000
+2025-10-25 00:36:54,796 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:36:54,797 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:36:54,799 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:36:54,800 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:36:54,800 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:36:54,801 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:37:02,237 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:02,239 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 115000
+2025-10-25 00:37:02,260 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=110000
+2025-10-25 00:37:02,265 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 110000
+2025-10-25 00:37:02,266 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=110000
+2025-10-25 00:37:06,876 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:06,877 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 110000
+2025-10-25 00:37:06,886 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=105000
+2025-10-25 00:37:06,890 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 105000
+2025-10-25 00:37:06,891 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=105000
+2025-10-25 00:37:12,522 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:12,523 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 105000
+2025-10-25 00:37:12,541 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=100000
+2025-10-25 00:37:12,543 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 100000
+2025-10-25 00:37:12,544 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=100000
+2025-10-25 00:37:14,547 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:37:14,548 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:37:14,552 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:37:14,553 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:37:14,554 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:37:14,554 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:37:19,947 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:19,948 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 100000
+2025-10-25 00:37:19,959 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=95000
+2025-10-25 00:37:19,962 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 95000
+2025-10-25 00:37:19,962 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=95000
+2025-10-25 00:37:24,235 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:24,236 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 95000
+2025-10-25 00:37:24,245 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=90000
+2025-10-25 00:37:24,250 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 90000
+2025-10-25 00:37:24,250 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=90000
+2025-10-25 00:37:26,195 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:37:26,196 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:37:26,199 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:37:26,200 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:37:26,201 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:37:26,201 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:37:31,890 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=2, win_amount=5000
+2025-10-25 00:37:31,892 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 90000
+2025-10-25 00:37:31,910 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=5000, новый баланс=95000
+2025-10-25 00:37:31,913 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 95000
+2025-10-25 00:37:31,917 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=10000, новый баланс=105000
+2025-10-25 00:37:38,682 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:37:38,684 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:37:38,690 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:37:38,692 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:37:38,694 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:37:38,694 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:37:43,977 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:43,979 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 105000
+2025-10-25 00:37:43,984 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=100000
+2025-10-25 00:37:43,987 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 100000
+2025-10-25 00:37:43,987 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=100000
+2025-10-25 00:37:49,419 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=10, win_amount=45000
+2025-10-25 00:37:49,421 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 100000
+2025-10-25 00:37:49,432 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=45000, новый баланс=145000
+2025-10-25 00:37:49,434 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 145000
+2025-10-25 00:37:49,438 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=50000, новый баланс=195000
+2025-10-25 00:37:55,149 - games.slots - INFO - 🎰 SLOTS CALC: bet=5000, multiplier=0, win_amount=-5000
+2025-10-25 00:37:55,151 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 195000
+2025-10-25 00:37:55,162 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=-5000, новый баланс=190000
+2025-10-25 00:37:55,165 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 190000
+2025-10-25 00:37:55,166 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=0, новый баланс=190000
+2025-10-25 00:38:36,087 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-25 00:38:42,195 - __main__ - INFO - ✅ Токен загружен
+2025-10-25 00:38:42,635 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-25 00:38:42,638 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:38:42,639 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-25 00:38:42,639 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-25 00:38:42,640 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-25 00:38:50,645 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=roulette
+2025-10-25 00:38:50,646 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=5631945112
+2025-10-25 00:38:50,648 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 116560
+2025-10-25 00:38:50,650 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 116560
+2025-10-25 00:38:50,651 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 116560
+2025-10-25 00:38:50,651 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:38:54,703 - games.roulette - INFO - 🎯 Проверка выигрыша: type=even, value=odd, win_num=18, win_color=red
+2025-10-25 00:38:54,705 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116560
+2025-10-25 00:38:54,709 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-100, новый баланс=116460
+2025-10-25 00:38:54,712 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:38:54,713 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116460
+2025-10-25 00:39:01,582 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=roulette
+2025-10-25 00:39:01,583 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:39:01,587 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:39:01,588 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:39:01,588 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:39:01,588 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:39:06,600 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=green, win_num=32, win_color=red
+2025-10-25 00:39:06,602 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116460
+2025-10-25 00:39:06,621 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-10, новый баланс=116450
+2025-10-25 00:39:06,623 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116450
+2025-10-25 00:39:06,624 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=116450
+2025-10-25 00:40:46,397 - handlers.admin_handlers - INFO - Admin callback: admin_balance, action: balance
+2025-10-25 00:40:46,403 - handlers.admin_handlers - INFO - Starting balance change process
+2025-10-25 00:42:42,356 - handlers.main_handlers - ERROR - Ошибка отправки сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 95
+2025-10-25 00:43:25,715 - handlers.main_handlers - ERROR - Ошибка отправки сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 95
+2025-10-25 00:44:12,346 - database.db_handler - INFO - ✅ Создан пользователь: 9
+2025-10-25 00:44:12,351 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 9: 1000
+2025-10-25 00:44:12,352 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=9, изменение=0, новый баланс=1000
+2025-10-25 00:45:02,534 - handlers.main_handlers - ERROR - Ошибка отправки сообщения: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 95
+2025-10-25 00:45:16,219 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-25 00:45:23,330 - __main__ - INFO - ✅ Токен загружен
+2025-10-25 00:45:23,764 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-25 00:45:23,767 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:45:23,768 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-25 00:45:23,768 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-25 00:45:23,769 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-25 00:46:14,900 - handlers.admin_handlers - INFO - Admin callback: admin_balance, action: balance
+2025-10-25 00:46:14,902 - handlers.admin_handlers - INFO - Starting balance change process
+2025-10-25 00:46:24,364 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 7856689256: 190000
+2025-10-25 00:46:24,384 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=7856689256, изменение=1000000000000000, новый баланс=1000000000190000
+2025-10-25 00:46:39,223 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:46:39,225 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=5631945112
+2025-10-25 00:46:39,228 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 116450
+2025-10-25 00:46:39,229 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 116450
+2025-10-25 00:46:39,229 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 116450
+2025-10-25 00:46:39,230 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:46:40,905 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=6, bot=5
+2025-10-25 00:46:40,905 - games.dice - INFO - ✅ PLAYER WINS: bet=500, win_amount=500
+2025-10-25 00:46:40,907 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116450
+2025-10-25 00:46:40,912 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=116950
+2025-10-25 00:46:40,915 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 116950
+2025-10-25 00:46:40,919 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=117950
+2025-10-25 00:46:48,742 - handlers.game_handlers - INFO - 🔍 Актуальный баланс для quick_play: 117950
+2025-10-25 00:46:48,742 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:46:48,742 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=8373577468
+2025-10-25 00:46:48,743 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 1000
+2025-10-25 00:46:48,744 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 1000
+2025-10-25 00:46:48,745 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 1000
+2025-10-25 00:46:48,745 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:46:51,961 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=slots
+2025-10-25 00:46:51,962 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=5631945112
+2025-10-25 00:46:51,964 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 117950
+2025-10-25 00:46:51,965 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 117950
+2025-10-25 00:46:51,966 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 117950
+2025-10-25 00:46:51,966 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:46:53,068 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=2, win_amount=500
+2025-10-25 00:46:53,070 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 117950
+2025-10-25 00:46:53,089 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=118450
+2025-10-25 00:46:53,092 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 118450
+2025-10-25 00:46:53,097 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=1000, новый баланс=119450
+2025-10-25 00:47:10,376 - handlers.game_handlers - INFO - 🔄 show_bet_selection вызван: game_type=dice
+2025-10-25 00:47:10,377 - handlers.game_handlers - INFO - 📨 Обычное сообщение от user_id=5631945112
+2025-10-25 00:47:10,379 - handlers.game_handlers - INFO - 🔍 Баланс из БД (первый запрос): 119450
+2025-10-25 00:47:10,382 - handlers.game_handlers - INFO - 🔍 Баланс из БД (второй запрос): 119450
+2025-10-25 00:47:10,382 - handlers.game_handlers - INFO - 📝 Отправляем текст с балансом: 119450
+2025-10-25 00:47:10,382 - handlers.game_handlers - INFO - 📤 Отправляем новое сообщение
+2025-10-25 00:47:11,982 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=6
+2025-10-25 00:47:11,983 - games.dice - INFO - ❌ PLAYER LOSES: bet=50, win_amount=-50
+2025-10-25 00:47:11,985 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119450
+2025-10-25 00:47:11,995 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-50, новый баланс=119400
+2025-10-25 00:47:11,999 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119400
+2025-10-25 00:47:11,999 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=0, новый баланс=119400
+2025-10-25 00:48:40,243 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-10-25 00:48:42,307 - TeleBot - ERROR - Infinity polling: polling exited
+2025-10-25 00:48:42,309 - TeleBot - ERROR - Break infinity polling
+2025-10-25 00:48:49,922 - __main__ - INFO - ✅ Токен загружен
+2025-10-25 00:48:50,353 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-10-25 00:48:50,357 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:48:50,358 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-10-25 00:48:50,358 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-10-25 00:48:50,359 - __main__ - INFO - 🔄 Запуск polling...
+2025-10-25 00:48:59,728 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=5, bot=3
+2025-10-25 00:48:59,728 - games.dice - INFO - ✅ PLAYER WINS: bet=500, total_win=1000, net_win=500
+2025-10-25 00:48:59,729 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=dice, bet=500, win=500
+2025-10-25 00:48:59,730 - utils.transactions - INFO - 💰 Баланс ДО: 119400
+2025-10-25 00:48:59,730 - utils.transactions - INFO - 🔄 Обновляем баланс на: 500
+2025-10-25 00:48:59,731 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119400
+2025-10-25 00:48:59,736 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=119900
+2025-10-25 00:48:59,739 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 119900
+2025-10-25 00:48:59,749 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 119400 на 119900
+2025-10-25 00:49:24,351 - games.slots - INFO - 🎰 SLOTS CALC: bet=15, multiplier=2, total_win=30, net_win=15
+2025-10-25 00:49:24,351 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=slots, bet=15, win=15
+2025-10-25 00:49:24,353 - utils.transactions - INFO - 💰 Баланс ДО: 119900
+2025-10-25 00:49:24,353 - utils.transactions - INFO - 🔄 Обновляем баланс на: 15
+2025-10-25 00:49:24,354 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119900
+2025-10-25 00:49:24,373 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=15, новый баланс=119915
+2025-10-25 00:49:24,376 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 119915
+2025-10-25 00:49:24,386 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 119900 на 119915
+2025-11-05 00:11:49,404 - __main__ - INFO - ✅ Токен загружен
+2025-11-05 00:11:50,686 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-05 00:11:50,713 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-05 00:11:50,715 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-05 00:11:50,715 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-05 00:11:50,720 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-05 00:11:57,357 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-06 23:41:44,809 - __main__ - INFO - ✅ Токен загружен
+2025-11-06 23:41:44,818 - __main__ - ERROR - ❌ Ошибка при создании бота: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot8373577468:AAGfTKzagnuwN8PbxEH9s6lWohEO4BXOp7Y/getMe (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000002338689A900>: Failed to resolve 'api.telegram.org' ([Errno 11001] getaddrinfo failed)"))
+2025-11-06 23:43:06,212 - __main__ - INFO - ✅ Токен загружен
+2025-11-06 23:43:07,570 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-06 23:43:07,594 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-06 23:43:07,596 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-06 23:43:07,596 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-06 23:43:07,599 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-06 23:43:53,278 - games.slots - INFO - 🎰 SLOTS CALC: bet=500, multiplier=0, total_win=0, net_win=-500
+2025-11-06 23:43:53,278 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=slots, bet=500, win=-500
+2025-11-06 23:43:53,280 - utils.transactions - INFO - 💰 Баланс ДО: 119915
+2025-11-06 23:43:53,280 - utils.transactions - INFO - 🔄 Обновляем баланс на: -500
+2025-11-06 23:43:53,282 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119915
+2025-11-06 23:43:53,288 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=119415
+2025-11-06 23:43:53,292 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 119415
+2025-11-06 23:43:53,304 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 119915 на 119415
+2025-11-06 23:55:04,223 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-06 23:55:05,415 - TeleBot - ERROR - Infinity polling: polling exited
+2025-11-06 23:55:05,416 - TeleBot - ERROR - Break infinity polling
+2025-11-06 23:55:13,957 - __main__ - INFO - ✅ Токен загружен
+2025-11-06 23:55:15,037 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-06 23:55:15,045 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-06 23:55:15,047 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-06 23:55:15,048 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-06 23:55:15,053 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-06 23:59:30,636 - database.db_handler - INFO - ✅ Создан пользователь: 1283134945
+2025-11-06 23:59:40,612 - games.slots - INFO - 🎰 SLOTS CALC: bet=50, multiplier=0, total_win=0, net_win=-50
+2025-11-06 23:59:40,614 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=1283134945, game_type=slots, bet=50, win=-50
+2025-11-06 23:59:40,617 - utils.transactions - INFO - 💰 Баланс ДО: 1000
+2025-11-06 23:59:40,618 - utils.transactions - INFO - 🔄 Обновляем баланс на: -50
+2025-11-06 23:59:40,621 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 1283134945: 1000
+2025-11-06 23:59:40,628 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=1283134945, изменение=-50, новый баланс=950
+2025-11-06 23:59:40,633 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 950
+2025-11-06 23:59:40,653 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 1000 на 950
+2025-11-07 00:00:30,815 - games.roulette - INFO - 🎯 Проверка выигрыша: type=color, value=black, win_num=21, win_color=red
+2025-11-07 00:00:30,816 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=1283134945, game_type=roulette, bet=50, win=-50
+2025-11-07 00:00:30,817 - utils.transactions - INFO - 💰 Баланс ДО: 950
+2025-11-07 00:00:30,821 - utils.transactions - INFO - 🔄 Обновляем баланс на: -50
+2025-11-07 00:00:30,825 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 1283134945: 950
+2025-11-07 00:00:30,845 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=1283134945, изменение=-50, новый баланс=900
+2025-11-07 00:00:30,848 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 900
+2025-11-07 00:00:30,858 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 950 на 900
+2025-11-07 00:01:22,106 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:01:29,741 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:01:30,563 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:01:30,569 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:01:30,572 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:01:30,574 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:01:30,596 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:01:41,568 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119415
+2025-11-07 00:01:41,587 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=453, новый баланс=119868
+2025-11-07 00:02:25,800 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=6, bot=3
+2025-11-07 00:02:25,800 - games.dice - INFO - ✅ PLAYER WINS: bet=500, total_win=1000, net_win=500
+2025-11-07 00:02:25,807 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=dice, bet=500, win=500
+2025-11-07 00:02:25,812 - utils.transactions - INFO - 💰 Баланс ДО: 119868
+2025-11-07 00:02:25,824 - utils.transactions - INFO - 🔄 Обновляем баланс на: 500
+2025-11-07 00:02:25,827 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 119868
+2025-11-07 00:02:25,848 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=500, новый баланс=120368
+2025-11-07 00:02:25,853 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 120368
+2025-11-07 00:02:25,868 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 119868 на 120368
+2025-11-07 00:12:57,800 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:13:04,810 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:13:06,283 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:13:06,286 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:13:06,288 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:13:06,288 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:13:06,291 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:14:42,654 - handlers.main_handlers - ERROR - Ошибка отправки сообщения в 5631945112: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 487
+2025-11-07 00:14:52,339 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 120368
+2025-11-07 00:14:52,364 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=322, новый баланс=120690
+2025-11-07 00:15:00,266 - handlers.main_handlers - ERROR - Ошибка в handle_top_players: '<' not supported between instances of 'NoneType' and 'str'
+2025-11-07 00:20:05,276 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:20:12,737 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:20:14,435 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:20:14,438 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:20:14,438 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:20:14,439 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:20:14,440 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:21:09,209 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:21:16,393 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:21:17,723 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:21:17,730 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:21:17,732 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:21:17,733 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:21:17,734 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:22:08,523 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 120690
+2025-11-07 00:22:08,547 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=412, новый баланс=121102
+2025-11-07 00:22:20,750 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=1, bot=3
+2025-11-07 00:22:20,751 - games.dice - INFO - ❌ PLAYER LOSES: bet=50, net_win=-50
+2025-11-07 00:22:20,752 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=dice, bet=50, win=-50
+2025-11-07 00:22:20,756 - utils.transactions - INFO - 💰 Баланс ДО: 121102
+2025-11-07 00:22:20,757 - utils.transactions - INFO - 🔄 Обновляем баланс на: -50
+2025-11-07 00:22:20,760 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 121102
+2025-11-07 00:22:20,782 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-50, новый баланс=121052
+2025-11-07 00:22:20,787 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 121052
+2025-11-07 00:22:20,808 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 121102 на 121052
+2025-11-07 00:30:18,537 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:30:20,538 - TeleBot - ERROR - Infinity polling: polling exited
+2025-11-07 00:30:20,539 - TeleBot - ERROR - Break infinity polling
+2025-11-07 00:30:25,439 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:30:26,251 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:30:26,255 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:30:26,257 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:30:26,257 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:30:26,265 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:30:34,544 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 121052
+2025-11-07 00:30:34,565 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=154, новый баланс=121206
+2025-11-07 00:30:34,581 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 121206
+2025-11-07 00:30:41,553 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 121206
+2025-11-07 00:30:41,555 - handlers.main_handlers - INFO - 🔍 Актуальный баланс из main_handlers для dice: 121206
+2025-11-07 00:30:42,789 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 121206
+2025-11-07 00:30:43,073 - games.dice - INFO - 🎯 DICE ROLL: user_id=5631945112, player=4, bot=5
+2025-11-07 00:30:43,074 - games.dice - INFO - ❌ PLAYER LOSES: bet=500, net_win=-500
+2025-11-07 00:30:43,075 - utils.transactions - INFO - 🎯 TRANSACTION START: user_id=5631945112, game_type=dice, bet=500, win=-500
+2025-11-07 00:30:43,079 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 121206
+2025-11-07 00:30:43,079 - utils.transactions - INFO - 💰 Баланс ДО: 121206
+2025-11-07 00:30:43,080 - utils.transactions - INFO - 🔄 Обновляем баланс на: -500
+2025-11-07 00:30:43,083 - database.db_handler - INFO - 🔍 Текущий баланс пользователя 5631945112: 121206
+2025-11-07 00:30:43,105 - database.db_handler - INFO - ✅ Баланс обновлен: user_id=5631945112, изменение=-500, новый баланс=120706
+2025-11-07 00:30:43,110 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 120706
+2025-11-07 00:30:43,110 - utils.transactions - INFO - 💰 Баланс ПОСЛЕ: 120706
+2025-11-07 00:30:43,131 - utils.transactions - INFO - ✅ TRANSACTION COMPLETE: баланс изменился с 121206 на 120706
+2025-11-07 00:30:43,139 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 120706
+2025-11-07 00:30:53,641 - handlers.game_handlers - INFO - 💰 Change bet для dice
+2025-11-07 00:30:53,647 - database.db_handler - INFO - ✅ Баланс пользователя 8373577468: 1000
+2025-11-07 00:30:53,648 - handlers.game_handlers - INFO - 🔍 Актуальный баланс для dice: 1000
+2025-11-07 00:31:07,444 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 120706
+2025-11-07 00:31:09,311 - handlers.main_handlers - ERROR - Ошибка в handle_top_players: '<' not supported between instances of 'NoneType' and 'str'
+2025-11-07 00:31:11,913 - handlers.main_handlers - ERROR - Ошибка в handle_top_players: '<' not supported between instances of 'NoneType' and 'str'
+2025-11-07 00:35:23,209 - __main__ - INFO - 🛑 Останавливаем polling...
+2025-11-07 00:35:29,932 - __main__ - INFO - ✅ Токен загружен
+2025-11-07 00:35:30,957 - __main__ - INFO - ✅ Бот успешно создан: @DepVodolazBot
+2025-11-07 00:35:30,960 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-11-07 00:35:30,962 - __main__ - INFO - ✅ Все обработчики инициализированы
+2025-11-07 00:35:30,963 - __main__ - INFO - ✅ Все компоненты инициализированы
+2025-11-07 00:35:30,965 - __main__ - INFO - 🔄 Запуск polling...
+2025-11-07 00:35:37,334 - handlers.main_handlers - ERROR - Ошибка в handle_top_players: 'DatabaseHandler' object has no attribute 'get_all_users'
+2025-11-07 00:35:40,089 - handlers.main_handlers - ERROR - Ошибка в handle_stats: 'DatabaseHandler' object has no attribute 'get_user'
+2025-11-07 00:35:42,177 - handlers.main_handlers - ERROR - Ошибка в handle_profile: 'DatabaseHandler' object has no attribute 'get_user'
+2025-11-07 00:35:44,263 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 120706
+2025-11-07 00:35:46,494 - database.db_handler - INFO - ✅ Баланс пользователя 5631945112: 120706
+2025-11-07 00:35:46,496 - handlers.main_handlers - INFO - 🔍 Актуальный баланс из main_handlers для roulette: 120706
+2025-11-19 00:16:17,909 - __main__ - INFO - ✅ Токен загружен
+2025-11-19 00:16:17,931 - __main__ - ERROR - ❌ Ошибка при создании бота: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot8373577468:AAGfTKzagnuwN8PbxEH9s6lWohEO4BXOp7Y/getMe (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x0000024A1628E660>: Failed to resolve 'api.telegram.org' ([Errno 11002] getaddrinfo failed)"))
+2025-11-19 08:34:10,535 - __main__ - INFO - ✅ Токен загружен
+2025-11-19 08:34:20,705 - __main__ - ERROR - ❌ Ошибка при создании бота: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot8373577468:AAGfTKzagnuwN8PbxEH9s6lWohEO4BXOp7Y/getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:997)')))

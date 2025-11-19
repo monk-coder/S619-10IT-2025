@@ -1,0 +1,4 @@
+2025-10-25 00:19:12,083 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:19:49,076 - database.db_handler - INFO - ✅ База данных инициализирована
+2025-10-25 00:19:49,103 - __main__ - INFO - Бот запускается...
+2025-10-25 00:19:49,103 - __main__ - ERROR - Критическая ошибка: 'AdminHandlers' object has no attribute 'set_bot_running'

@@ -19,7 +19,6 @@ user_groups = defaultdict(set)
 active_group = {}
 
 
-
 def get_arg_text(context, min_words=1):
     if not context.args or len(context.args) < min_words:
         return None
@@ -55,7 +54,6 @@ def with_active_group(handler):
 
 async def reply(update: Update, text: str, **kwargs):
     await update.message.reply_text(text, parse_mode="Markdown", **kwargs)
-
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

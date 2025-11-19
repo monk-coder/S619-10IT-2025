@@ -1,122 +1,271 @@
-import logging
+import os
+import re
 import random
+import logging
+from collections import defaultdict
+from datetime import datetime
+from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-participants = {}
-assignments = {}
-min_participants = 3
-game_started = False
+groups = {}
+
+user_groups = defaultdict(set)
+
+active_group = {}
+
+
+
+def get_arg_text(context, min_words=1):
+    if not context.args or len(context.args) < min_words:
+        return None
+    return ' '.join(context.args).strip()
+
+
+def format_wishlist(text):
+    if not text:
+        return "Не указан"
+    items = [x.strip() for x in re.split(r'[,;]+', text) if x.strip()]
+    return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items)) if items else "Не указан"
+
+
+def random_derangement(lst):
+    for _ in range(100):
+        shuffled = lst[:]
+        random.shuffle(shuffled)
+        if all(a != b for a, b in zip(lst, shuffled)):
+            return shuffled
+    raise RuntimeError("Derangement failed")
+
+
+def with_active_group(handler):
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_id = update.effective_user.id
+        gid = active_group.get(user_id)
+        if not gid or gid not in groups:
+            await reply(update, "⚠️ Нет активной группы. Создайте: /create_group или выберите: /my_groups")
+            return
+        return await handler(update, context, groups[gid], gid)
+    return wrapper
+
+
+async def reply(update: Update, text: str, **kwargs):
+    await update.message.reply_text(text, parse_mode="Markdown", **kwargs)
+
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🎄 Добро пожаловать в Тайного Санту! Команды:\n"
-        "/join <имя> — присоединиться\n"
-        "/wishlist <список> — задать вишлист\n"
-        "/leave — покинуть игру\n"
-        "/ready — начать распределение (только если участников >= 3)\n"
-        "/whogifts — узнать, кому вы дарите (после распределения)"
+    await reply(update,
+        "🎅 *Тайный Санта*\n\n"
+        "• `/create_group Имя` — создать игру\n"
+        "• `/my_groups` — ваши группы\n"
+        "• `/switch <ID>` — переключиться\n"
+        "• `/join Имя` — присоединиться\n"
+        "• `/wishlist ж1, ж2` — задать/обновить вишлист\n"
+        "• `/check` — проверить участие\n"
+        "• `/ready` — начать (≥3)\n"
+        "• `/whogifts` — кому дарите"
     )
 
+
+async def create_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    name = get_arg_text(context)
+    if not name:
+        await reply(update, "UsageId: `/create_group Название`")
+        return
+
+    user_id = update.effective_user.id
+    gid = f"g_{user_id}_{int(datetime.now().timestamp())}"
+    groups[gid] = {
+        'name': name,
+        'creator': user_id,
+        'participants': {},
+        'assignments': {},
+        'game_started': False
+    }
+    user_groups[user_id].add(gid)
+    active_group[user_id] = gid
+    await reply(update, f"✅ Группа *«{name}»* создана!\nID: `{gid}`")
+
+
+async def my_groups(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    gids = user_groups[user_id]
+    if not gids:
+        await reply(update, "📭 У вас нет групп.")
+        return
+
+    lines = []
+    current = active_group.get(user_id)
+    for gid in sorted(gids):
+        if gid not in groups:
+            continue
+        g = groups[gid]
+        mark = "🟢" if gid == current else "⚪"
+        creator = " (вы)" if g['creator'] == user_id else ""
+        lines.append(f"{mark} *{g['name']}*{creator}\n   ID: `{gid}`")
+
+    await reply(update, f"📦 Ваши группы ({len(lines)}):\n\n" + "\n\n".join(lines))
+
+
+async def switch(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    gid = get_arg_text(context)
+    if not gid:
+        await reply(update, "UsageId: `/switch <ID_группы>`\nУзнать ID: /my_groups")
+        return
+
+    user_id = update.effective_user.id
+    if gid not in user_groups[user_id]:
+        await reply(update, f"❌ Группа `{gid}` не найдена.")
+        return
+
+    active_group[user_id] = gid
+    group_name = groups[gid]['name']
+    await reply(update, f"🔀 Переключились на *«{group_name}»*.")
+
+
 async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_started
-    if game_started:
-        await update.message.reply_text("Игра уже началась. Нельзя присоединиться.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Используйте: /join Ваше_Имя")
-        return
-    user_id = update.effective_user.id
-    name = ' '.join(context.args)
-    participants[user_id] = {'name': name, 'wishlist': 'Не указан'}
-    await update.message.reply_text(f"Вы присоединились под именем: {name}")
-
-
-async def wishlist(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id not in participants:
-        await update.message.reply_text("Сначала присоединитесь: /join Имя")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Используйте: /wishlist Ваши желания...")
-        return
-
-    participants[user_id]['wishlist'] = ' '.join(context.args)
-    await update.message.reply_text("Ваш вишлист сохранён!")
-
-
-async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_started
-    if game_started:
-        await update.message.reply_text("Игра началась — нельзя выйти.")
+    name = get_arg_text(context)
+    if not name:
+        await reply(update, "UsageId: `/join Имя`")
         return
 
     user_id = update.effective_user.id
-    if user_id in participants:
-        del participants[user_id]
-        await update.message.reply_text("Вы покинули игру.")
+    gid = active_group.get(user_id)
+    if not gid or gid not in groups:
+        await reply(update, "Сначала создайте или выберите группу: /create_group, /my_groups")
+        return
+
+    game = groups[gid]
+    if game['game_started']:
+        await reply(update, "❌ Игра уже идёт.")
+        return
+    if user_id in game['participants']:
+        await reply(update, f"Вы уже участвуете как *{game['participants'][user_id]['name']}*.")
+        return
+
+    game['participants'][user_id] = {'name': name, 'wishlist': 'Не указан'}
+    user_groups[user_id].add(gid)
+    await reply(update, f"✅ Привет, *{name}*!")
+
+
+@with_active_group
+async def update_wishlist(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    text = get_arg_text(context)
+    if not text:
+        await reply(update, "UsageId: `/wishlist Желания через запятую`")
+        return
+
+    user_id = update.effective_user.id
+    if user_id not in game['participants']:
+        await reply(update, "Сначала `/join Имя`.")
+        return
+
+    game['participants'][user_id]['wishlist'] = format_wishlist(text)
+    await reply(update, "✅ Вишлист обновлён:\n" + game['participants'][user_id]['wishlist'])
+
+
+# /wishlist — алиас для update_wishlist
+wishlist = update_wishlist
+
+
+@with_active_group
+async def check(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    user_id = update.effective_user.id
+    if user_id in game['participants']:
+        p = game['participants'][user_id]
+        status = "🎮 Игра идёт" if game['game_started'] else "🟢 Ожидание"
+        await reply(update,
+            f"✅ В *«{game['name']}»*\n"
+            f"🪪 *Имя:* {p['name']}\n"
+            f"🎁 *Вишлист:*\n{p['wishlist']}\n\n{status}"
+        )
     else:
-        await update.message.reply_text("Вы не участвуете в игре.")
+        await reply(update, f"📭 Не участвуете в *«{game['name']}»*.")
 
 
-async def ready(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_started, assignments
-    if game_started:
-        await update.message.reply_text("Игра уже запущена!")
-        return
-    if len(participants) < min_participants:
-        await update.message.reply_text(f"Нужно минимум {min_participants} участника(ов). Сейчас: {len(participants)}")
-        return
-
-    user_ids = list(participants.keys())
-    if len(user_ids) < 2:
-        await update.message.reply_text("Недостаточно участников для распределения.")
-        return
-
-    shuffled = user_ids[:]
-    while any(a == b for a, b in zip(user_ids, shuffled)):
-        random.shuffle(shuffled)
-
-    assignments = dict(zip(user_ids, shuffled))
-    game_started = True
-    await update.message.reply_text(
-        "🎁 Игра началась! Каждому назначен получатель. Используйте /whogifts, чтобы узнать, кому вы дарите.")
-
-
-async def whogifts(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global game_started
-    if not game_started:
-        await update.message.reply_text(
-            "Игра ещё не началась. Используйте /ready, когда наберётся достаточно участников.")
+@with_active_group
+async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    if game['game_started']:
+        await reply(update, "❌ Игра идёт — выход запрещён.")
         return
     user_id = update.effective_user.id
-    if user_id not in assignments:
-        await update.message.reply_text("Вы не участвуете в этой игре.")
+    if user_id in game['participants']:
+        del game['participants'][user_id]
+        await reply(update, f"👋 Вы вышли из *«{game['name']}»*.")
+    else:
+        await reply(update, "Вы не участвуете.")
+
+
+@with_active_group
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    n = len(game['participants'])
+    status = "🎮 Игра идёт" if game['game_started'] else f"⏳ Нужно ≥3 (сейчас {n})"
+    names = "\n".join(f"• {p['name']}" for p in game['participants'].values()) or "—"
+    await reply(update, f"👥 *{game['name']}*\n{status}\n\nУчастники:\n{names}")
+
+
+@with_active_group
+async def ready(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    if game['game_started']:
+        await reply(update, "Уже запущена!")
+        return
+    if len(game['participants']) < 3:
+        await reply(update, f"❌ Нужно ≥3. Сейчас: {len(game['participants'])}")
         return
 
-    receiver_id = assignments[user_id]
-    name = participants[receiver_id]['name']
-    wishlist = participants[receiver_id]['wishlist']
-    await update.message.reply_text(f"Вы дарите подарок: {name}\nИх вишлист: {wishlist}")
+    try:
+        ids = list(game['participants'].keys())
+        game['assignments'] = dict(zip(ids, random_derangement(ids)))
+        game['game_started'] = True
+        await reply(update, "🎉 Игра началась! Используйте `/whogifts`.")
+    except:
+        await reply(update, "⚠️ Ошибка распределения.")
+
+
+@with_active_group
+async def whogifts(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
+    if not game['game_started']:
+        await reply(update, "⏳ Дождитесь `/ready`.")
+        return
+    user_id = update.effective_user.id
+    if user_id not in game['assignments']:
+        await reply(update, "❌ Вы не в игре.")
+        return
+    rid = game['assignments'][user_id]
+    r = game['participants'][rid]
+    msg = f"🤫 Вы — Санта для *{r['name']}*\n\n📝 *Вишлист:*\n{r['wishlist']}"
+    await reply(update, msg)
+
 
 
 def main():
-    TOKEN = "8474437916:AAEdciclk5WCpDIamtyzp6PGnct4TpIyo8U"
-    app = Application.builder().token(TOKEN).build()
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not token:
+        raise ValueError("TELEGRAM_BOT_TOKEN не задан в .env")
+
+    app = Application.builder().token(token).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", start))
+    app.add_handler(CommandHandler("create_group", create_group))
+    app.add_handler(CommandHandler("my_groups", my_groups))
+    app.add_handler(CommandHandler("switch", switch))
     app.add_handler(CommandHandler("join", join))
     app.add_handler(CommandHandler("wishlist", wishlist))
+    app.add_handler(CommandHandler("update_wishlist", update_wishlist))
+    app.add_handler(CommandHandler("check", check))
     app.add_handler(CommandHandler("leave", leave))
+    app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("ready", ready))
     app.add_handler(CommandHandler("whogifts", whogifts))
 
-    print("Бот запущен...")
-    app.run_polling()
+    print("✅ Бот запущен. Ctrl+C — остановить.")
+    app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == '__main__':

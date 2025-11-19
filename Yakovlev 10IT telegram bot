@@ -169,9 +169,6 @@ async def update_wishlist(update: Update, context: ContextTypes.DEFAULT_TYPE, ga
     await reply(update, "✅ Вишлист обновлён:\n" + game['participants'][user_id]['wishlist'])
 
 
-wishlist = update_wishlist
-
-
 @with_active_group
 async def check(update: Update, context: ContextTypes.DEFAULT_TYPE, game, gid):
     user_id = update.effective_user.id
@@ -255,8 +252,7 @@ def main():
     app.add_handler(CommandHandler("my_groups", my_groups))
     app.add_handler(CommandHandler("switch", switch))
     app.add_handler(CommandHandler("join", join))
-    app.add_handler(CommandHandler("wishlist", wishlist))
-    app.add_handler(CommandHandler("update_wishlist", update_wishlist))
+    app.add_handler(CommandHandler(["wishlist", "update_wishlist"], update_wishlist))
     app.add_handler(CommandHandler("check", check))
     app.add_handler(CommandHandler("leave", leave))
     app.add_handler(CommandHandler("status", status))

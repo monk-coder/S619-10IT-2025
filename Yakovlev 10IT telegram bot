@@ -169,7 +169,6 @@ async def update_wishlist(update: Update, context: ContextTypes.DEFAULT_TYPE, ga
     await reply(update, "✅ Вишлист обновлён:\n" + game['participants'][user_id]['wishlist'])
 
 
-# /wishlist — алиас для update_wishlist
 wishlist = update_wishlist
 
 

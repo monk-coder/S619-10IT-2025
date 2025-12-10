@@ -59,6 +59,10 @@ for i in range(len(shuffled)):
     recipient = shuffled[(i + 1) % len(shuffled)]
     pairs[santa] = recipient
 # Удалить строку 114 (дублирование)
+
+
+
+
 Строки 179-184: Исправить отправку фото
 
 python

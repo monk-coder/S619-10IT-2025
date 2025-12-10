@@ -175,3 +175,315 @@
 3. Отсутствие проверки объектов - вызовет ошибки при пустых объектах
 4. HTTP вместо HTTPS для внешних ресурсов - проблемы с mixed content
 5. Дублирование CSRF токенов как отдельных форм - нарушает структуру HTML
+============================================================
+ОШИБКИ И ПРОБЛЕМЫ В ФАЙЛАХ КОНФИГУРАЦИИ DJANGO
+============================================================
+
+ФАЙЛ: settings.py
+============================================================
+СТРОКА 5:     from decouple import config
+ПРОБЛЕМА:     Отсутствует зависимость python-decouple
+РЕШЕНИЕ:      pip install python-decouple или удалить import и использовать os.environ
+
+СТРОКА 10:    SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
+ПРОБЛЕМА:     Небезопасный дефолтный ключ для production
+РЕШЕНИЕ:      Не использовать default для production, только для разработки
+
+СТРОКА 11:    DEBUG = config('DEBUG', default=True, cast=bool)
+ПРОБЛЕМА:     DEBUG=True по умолчанию опасно для production
+РЕШЕНИЕ:      default=False для production или использовать разные настройки
+
+СТРОКА 13:    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ПРОБЛЕМА:     Не настроены для production
+РЕШЕНИЕ:      Добавить условие: if DEBUG: ALLOWED_HOSTS = [...]; else: ALLOWED_HOSTS = ['your-domain.com']
+
+СТРОКА 73:    'NAME': BASE_DIR / 'db.sqlite3',
+ПРОБЛЕМА:     SQLite не подходит для production
+РЕШЕНИЕ:      Использовать PostgreSQL для production
+
+СТРОКА 102-103: STATIC_URL = '/static/'
+               STATICFILES_DIRS = [BASE_DIR / 'static',]
+ПРОБЛЕМА:     Отсутствует STATIC_ROOT для collectstatic
+РЕШЕНИЕ:      Добавить: STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+СТРОКА 116:   OPENWEATHER_API_KEY = config('OPENWEATHER_API_KEY', default='demo_key_for_testing')
+ПРОБЛЕМА:     Демо-ключ может не работать или иметь ограничения
+РЕШЕНИЕ:      Получить реальный API ключ на openweathermap.org
+
+СТРОКА 117:   WEATHER_CACHE_DURATION = 7200  # 2 hours in seconds
+ПРОБЛЕМА:     Нет конфигурации кеша Django
+РЕШЕНИЕ:      Добавить настройки CACHES
+
+ПРОПУЩЕНО:    Отсутствует MEDIA_URL и MEDIA_ROOT
+ПРОБЛЕМА:     Нет настроек для медиафайлов
+РЕШЕНИЕ:      Добавить:
+              MEDIA_URL = '/media/'
+              MEDIA_ROOT = BASE_DIR / 'media'
+
+ПРОПУЩЕНО:    Отсутствует настройка кеша
+ПРОБЛЕМА:     WEATHER_CACHE_DURATION не будет работать без кеша
+РЕШЕНИЕ:      Добавить:
+              CACHES = {
+                  'default': {
+                      'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                      'LOCATION': 'weather-cache',
+                  }
+              }
+
+ПРОПУЩЕНО:    Отсутствуют настройки безопасности для production
+ПРОБЛЕМА:     Нет HTTPS настроек
+РЕШЕНИЕ:      Добавить:
+              if not DEBUG:
+                  SECURE_SSL_REDIRECT = True
+                  SESSION_COOKIE_SECURE = True
+                  CSRF_COOKIE_SECURE = True
+                  SECURE_BROWSER_XSS_FILTER = True
+                  SECURE_CONTENT_TYPE_NOSNIFF = True
+
+ПРОПУЩЕНО:    Отсутствует проверка существования .env файла
+ПРОБЛЕМА:     Если .env нет, будут использованы дефолтные значения
+РЕШЕНИЕ:      Добавить проверку:
+              import os
+              env_path = BASE_DIR / '.env'
+              if not env_path.exists() and DEBUG:
+                  print(f"Внимание: .env файл не найден по пути: {env_path}")
+
+============================================================
+ФАЙЛ: urls.py (главный)
+============================================================
+СТРОКА 1-8:   from django.contrib import admin
+              from django.urls import path, include
+              
+              urlpatterns = [
+                  path('admin/', admin.site.urls),
+                  path('', include('weather_dashboard.urls')),
+              ]
+ПРОБЛЕМА:     Отсутствует обработка статических файлов для разработки
+РЕШЕНИЕ:      Добавить:
+              from django.conf import settings
+              from django.conf.urls.static import static
+              
+              urlpatterns = [
+                  path('admin/', admin.site.urls),
+                  path('', include('weather_dashboard.urls')),
+              ]
+              
+              if settings.DEBUG:
+                  urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+                  urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+ПРОБЛЕМА:     Отсутствует кастомная страница 404 и 500
+РЕШЕНИЕ:      Добавить:
+              handler404 = 'weather_dashboard.views.custom_404'
+              handler500 = 'weather_dashboard.views.custom_500'
+
+============================================================
+ФАЙЛ: wsgi.py
+============================================================
+СТРОКА 13:    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'weather_project.settings')
+ПРОБЛЕМА:     Нет поддержки для разных окружений (development/production)
+РЕШЕНИЕ:      Можно настроить через переменные окружения:
+              os.environ.setdefault('DJANGO_SETTINGS_MODULE', 
+                                   os.environ.get('DJANGO_SETTINGS_MODULE', 'weather_project.settings'))
+
+============================================================
+ФАЙЛ: asgi.py
+============================================================
+СТРОКА 13:    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'weather_project.settings')
+ПРОБЛЕМА:     Та же проблема, что и в wsgi.py
+РЕШЕНИЕ:      Аналогичное решение с переменными окружения
+
+============================================================
+ФАЙЛ: __init__.py
+============================================================
+СТРОКА 1-3:   """ 
+              Django project initialization file.
+              """
+ПРОБЛЕМА:     Нет ошибок, но можно добавить экспорты для лучшей структуры
+РЕШЕНИЕ:      Оставить как есть или добавить:
+              __version__ = '1.0.0'
+              __author__ = 'Your Name'
+
+============================================================
+ОТСУТСТВУЮЩИЕ ФАЙЛЫ:
+============================================================
+1. requirements.txt
+   ПРОБЛЕМА: Нет файла зависимостей
+   РЕШЕНИЕ: Создать requirements.txt:
+   Django==4.2.0
+   python-decouple==3.8
+   crispy-bootstrap5==0.7
+   requests==2.31.0
+
+2. .env файл
+   ПРОБЛЕМА: Нет файла переменных окружения
+   РЕШЕНИЕ: Создать .env:
+   SECRET_KEY=your-secret-key-here
+   DEBUG=True
+   OPENWEATHER_API_KEY=your-real-api-key
+
+3. .gitignore
+   ПРОБЛЕМА: Нет файла для игнорирования чувствительных данных
+   РЕШЕНИЕ: Создать .gitignore:
+   __pycache__/
+   *.pyc
+   db.sqlite3
+   .env
+   media/
+   staticfiles/
+
+4. manage.py
+   ПРОБЛЕМА: Нет в предоставленных файлах (должен быть в корне)
+   РЕШЕНИЕ: Убедиться, что manage.py существует в корне проекта
+
+============================================================
+КРИТИЧЕСКИЕ ОШИБКИ (могут сломать приложение):
+============================================================
+1. Отсутствие python-decouple - импорт упадет
+2. Нет .env файла - будут использованы небезопасные дефолтные значения
+3. Отсутствие STATIC_ROOT - collectstatic не будет работать
+4. Нет конфигурации кеша - кеширование погоды не работает
+5. SQLite для production - проблемы с производительностью и параллелизмом
+6. DEBUG=True для production - угроза безопасности
+7. Отсутствие обработки статики в urls.py - статические файлы не будут работать в разработке
+
+============================================================
+РЕКОМЕНДАЦИИ ПО ИСПРАВЛЕНИЮ:
+============================================================
+1. Установить зависимости: pip install -r requirements.txt
+2. Создать .env файл с реальными значениями
+3. Добавить STATIC_ROOT и MEDIA настройки в settings.py
+4. Настроить кеширование в settings.py
+5. Разделить настройки для development и production
+6. Добавить обработку статики в urls.py для разработки
+7. Использовать PostgreSQL для production базы данных
+8. Добавить настройки безопасности для production (HTTPS и др.)
+============================================================
+ОШИБКИ И ПРОБЛЕМЫ В МИГРАЦИИ 0001_initial.py
+============================================================
+
+ФАЙЛ: 0001_initial.py
+============================================================
+
+СТРОКА 12-25: Модель WeatherCache
+ПРОБЛЕМА 1:     Отсутствует поле feels_like (ощущаемая температура)
+ПРОБЛЕМА 2:     Отсутствует поле weather_data (JSON для хранения полных данных)
+ПРОБЛЕМА 3:     Нет индексов для быстрого поиска по городу
+ПРОБЛЕМА 4:     Нет ограничения уникальности для города
+РЕШЕНИЕ:        Добавить:
+                - feels_like = models.FloatField(null=True, verbose_name='Ощущается')
+                - weather_data = models.JSONField(null=True, blank=True, verbose_name='Данные погоды')
+                - Индекс: indexes = [models.Index(fields=['city', 'cached_at'])]
+                - Уникальность: unique_together = ['city', 'country'] (если нужно)
+
+СТРОКА 28-42:   Модель WeatherTask
+ПРОБЛЕМА 1:     Поле city имеет только CharField без валидации
+ПРОБЛЕМА 2:     Нет связи с SearchHistory для отслеживания поисков по городу
+ПРОБЛЕМА 3:     Поле due_date может быть меньше created_at
+ПРОБЛЕМА 4:     Нет индексов для частых запросов (user, status, priority)
+РЕШЕНИЕ:        Добавить:
+                - Связь: search_history = models.ForeignKey('SearchHistory', null=True, blank=True, on_delete=models.SET_NULL)
+                - Валидацию в моделе или форме для due_date
+                - Индексы: models.Index(fields=['user', 'status']), models.Index(fields=['user', 'priority'])
+                - Проверку: def clean(self): if self.due_date and self.due_date < self.created_at: raise ValidationError()
+
+СТРОКА 46-58:   Модель SearchHistory
+ПРОБЛЕМА 1:     unique_together для user+city может быть слишком строгим
+ПРОБЛЕМА 2:     Отсутствует поле weather_data для хранения результатов поиска
+ПРОБЛЕМА 3:     Нет индекса для частых запросов по пользователю
+ПРОБЛЕМА 4:     Нет ограничения длины для страны
+РЕШЕНИЕ:        Изменить:
+                - Убрать unique_together или сделать его user+city+country
+                - Добавить: weather_data = models.JSONField(null=True, blank=True)
+                - Добавить: indexes = [models.Index(fields=['user', 'searched_at'])]
+                - Использовать CharField с max_length=2 для кода страны
+
+ОБЩИЕ ПРОБЛЕМЫ:
+============================================================
+1. ОТСУТСТВИЕ СВЯЗЕЙ МЕЖДУ МОДЕЛЯМИ
+   ПРОБЛЕМА: WeatherTask и SearchHistory не связаны, хотя обе работают с городами
+   РЕШЕНИЕ: Добавить ForeignKey из WeatherTask в SearchHistory
+
+2. НЕТ ПРОСТРАНСТВЕННЫХ ДАННЫХ
+   ПРОБЛЕМА: Не хранятся координаты городов (широта/долгота)
+   РЕШЕНИЕ: Добавить поля:
+            - latitude = models.FloatField(null=True, verbose_name='Широта')
+            - longitude = models.FloatField(null=True, verbose_name='Долгота')
+
+3. НЕТ ПОЛЯ ДЛЯ ВРЕМЕНИ ВОСХОДА/ЗАХОДА СОЛНЦА
+   ПРОБЛЕМА: В WeatherCache нет sunrise/sunset для отображения в UI
+   РЕШЕНИЕ: Добавить:
+            - sunrise = models.DateTimeField(null=True, verbose_name='Восход')
+            - sunset = models.DateTimeField(null=True, verbose_name='Закат')
+
+4. ОГРАНИЧЕНИЯ ДЛИНЫ ПОЛЕЙ
+   ПРОБЛЕМА: city: max_length=100 может быть недостаточно для длинных названий
+   РЕШЕНИЕ: Увеличить до 200 или использовать TextField
+
+5. ОТСУТСТВИЕ МЕТОДОВ __str__
+   ПРОБЛЕМА: В миграции нет, но в моделях должны быть методы __str__ для админки
+   РЕШЕНИЕ: В файле models.py добавить:
+            def __str__(self):
+                return f"{self.city} - {self.temperature}°C"  # для WeatherCache
+
+КРИТИЧЕСКИЕ ОШИБКИ:
+============================================================
+1. НЕТ ИНДЕКСОВ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
+   - WeatherTask будет часто фильтроваться по user+status
+   - SearchHistory будет часто сортироваться по searched_at
+   - WeatherCache будет искаться по city
+
+2. UNIQUE_TOGETHER МОЖЕТ ВЫЗВАТЬ ПРОБЛЕМЫ
+   - Пользователь не сможет искать один город дважды (даже в разное время)
+   - Лучше хранить всю историю, а unique_together убрать
+
+3. НЕТ ПРОВЕРОК ДАННЫХ
+   - temperature может быть нереальным (-1000 или +1000)
+   - humidity может быть >100%
+   - wind_speed может быть отрицательным
+
+РЕКОМЕНДАЦИИ ДЛЯ НОВОЙ МИГРАЦИИ:
+============================================================
+# Новая миграция должна добавить:
+1. Поле feels_like в WeatherCache
+2. JSON поле weather_data в WeatherCache и SearchHistory
+3. Индексы для всех моделей
+4. Координаты (latitude, longitude) для городов
+5. Связь между WeatherTask и SearchHistory
+6. Валидаторы для числовых полей
+
+# Пример добавления в models.py перед созданием миграции:
+
+class WeatherCache(models.Model):
+    # существующие поля...
+    feels_like = models.FloatField(null=True, verbose_name='Ощущается')
+    weather_data = models.JSONField(null=True, blank=True, verbose_name='Данные погоды')
+    latitude = models.FloatField(null=True, verbose_name='Широта')
+    longitude = models.FloatField(null=True, verbose_name='Долгота')
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['city', 'cached_at']),
+        ]
+
+class WeatherTask(models.Model):
+    # существующие поля...
+    search_history = models.ForeignKey('SearchHistory', null=True, blank=True, 
+                                       on_delete=models.SET_NULL, verbose_name='История поиска')
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['user', 'priority']),
+            models.Index(fields=['due_date']),
+        ]
+
+class SearchHistory(models.Model):
+    # существующие поля...
+    weather_data = models.JSONField(null=True, blank=True, verbose_name='Данные погоды')
+    
+    class Meta:
+        # убрать unique_together или изменить его
+        indexes = [
+            models.Index(fields=['user', 'searched_at']),
+        ]

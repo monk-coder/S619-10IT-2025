@@ -1,0 +1,135 @@
+
+
+
+Строки 1-4: Добавить импорты
+
+python
+from database import (
+    get_profile, list_participants, get_games_for_owner, ensure_user,
+    set_step, find_game_by_code, add_participant, remove_participant,
+    get_match, list_wishlist, get_participating_games, store_matches,
+    log_action, Game
+)
+import random
+from models import now_ts
+from database import DB, DB_LOCK
+Строки 70-71: Исправить отправку в /ask
+
+python
+# Было:
+bot.send_message(recipient, f"<b>Вопрос от Санты ({game.title}):</b>\n{parts[1]}")
+
+# Стало:
+try:
+    bot.send_message(chat_id=recipient, 
+                    text=f"<b>Вопрос от Санты ({game.title}):</b>\n{parts[1]}")
+    sent += 1
+except Exception as e:
+    log_action("ask_send_failed", error=str(e), recipient=recipient)
+
+
+
+Строки 81-82: Исправить SQL запрос
+
+python
+# Было:
+DB.execute("INSERT INTO anonymous_questions VALUES (?, ?, ?, ?, ?)", 
+          (game.id, message.from_user.id, recipient, parts[1], now_ts()))
+
+# Стало:
+DB.execute("""
+    INSERT INTO anonymous_messages 
+    (game_id, santa_id, recipient_id, message, created_at) 
+    VALUES (?, ?, ?, ?, ?)
+""", (game.id, message.from_user.id, recipient, parts[1], now_ts()))
+
+
+Строки 107-115: Исправить жеребьёвку
+
+python
+# Было:
+recipients = shuffled[1:] + shuffled[:1]
+pairs = {santa: recipient for santa, recipient in zip(shuffled, recipients)}
+pairs = dict(zip(shuffled, recipients))
+
+# Стало:
+pairs = {}
+for i in range(len(shuffled)):
+    santa = shuffled[i]
+    recipient = shuffled[(i + 1) % len(shuffled)]
+    pairs[santa] = recipient
+# Удалить строку 114 (дублирование)
+Строки 179-184: Исправить отправку фото
+
+python
+# Было:
+for item in wishlist:
+    if item["photo_file_id"]:
+        bot.send_photo(santa_id, item["photo_file_id"], caption=item["description"])
+
+# Стало:
+for item in wishlist:
+    photo_id = item.get("photo_file_id")
+    if photo_id and photo_id.strip() and photo_id != "None":
+        try:
+            bot.send_photo(santa_id, photo_id, caption=item["description"][:1000])
+        except:
+            pass  # Или log_action
+
+
+
+Строки 40-48: Исправить обработчик команд
+
+python
+# Было:
+handlers = {
+    "join": join_game,
+    "leave": leave_game, 
+    "participants": show_participants,
+    "mix": mix_game,
+    "send": mix_game
+}
+handlers[parts[0][1:]](message, code)
+
+# Стало:
+if parts[0][1:] in ["join", "leave", "participants", "mix", "send"]:
+    handlers = {
+        "join": join_game,
+        "leave": leave_game, 
+        "participants": show_participants,
+        "mix": mix_game,
+        "send": mix_game
+    }
+    handlers[parts[0][1:]](message, code)
+else:
+    # Обработать другие команды отдельно
+    bot.send_message(message.chat.id, "Неизвестная команда")
+
+
+
+Строки 127-133: Разбить длинные сообщения
+
+python
+# Было:
+msg = f"🎅 Вы Тайный Санта в <b>{game.title}</b>!..."
+bot.send_message(santa_id, msg)
+
+# Стало:
+base_msg = f"🎅 Вы Тайный Санта в <b>{game.title}</b>!\n🎁 Получатель:\nФИО: {profile['full_name'] or 'не указано'}\nО себе: {profile['bio'] or 'не указано'}"
+bot.send_message(santa_id, base_msg)
+
+if wishlist:
+    wish_msg = "🎉 Вишлист:\n" + "\n".join(f"• {item['description'][:200]}" for item in wishlist)
+    # Разбить на части по 4000 символов
+    for i in range(0, len(wish_msg), 4000):
+        bot.send_message(santa_id, wish_msg[i:i+4000])
+\
+
+Строка 37: Убрать лишнюю f
+
+python
+# Было:
+bot.send_message(message.chat.id, f"Введите код игры:")
+
+# Стало:
+bot.send_message(message.chat.id, "Введите код игры:")

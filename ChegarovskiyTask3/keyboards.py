@@ -2,15 +2,20 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from config import EMOJI
 
-def get_main_keyboard() -> ReplyKeyboardMarkup:
-    """Главная клавиатура меню"""
-    keyboard = [
+# Константа главной клавиатуры
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    [
         [f"{EMOJI['slot']} Слоты", f"{EMOJI['dice']} Кости"],
         [f"{EMOJI['cards']} Блекджек", f"{EMOJI['roulette']} Рулетка"],
         [f"{EMOJI['money']} Баланс", f"{EMOJI['trophy']} Топ игроков"],
         [f"{EMOJI['bonus']} Бонус"]
-    ]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    ],
+    resize_keyboard=True
+)
+
+def get_main_keyboard() -> ReplyKeyboardMarkup:
+    """Главная клавиатура меню (возвращает константу)"""
+    return MAIN_KEYBOARD
 
 def get_back_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура с кнопкой 'Назад'"""

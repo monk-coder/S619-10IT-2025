@@ -2,23 +2,40 @@
 Класс для валидации пользовательского ввода
 Используется во всех обработчиках для единообразной проверки
 """
+import logging
 from telegram import Update
-from telegram.ext import ContextTypes
+
+logger = logging.getLogger(__name__)
 
 class InputValidator:
     """Класс для проверки и валидации пользовательского ввода"""
     
-    @staticmethod
-    async def validate_number_input(update: Update, text: str) -> int:
-        """Проверить и преобразовать числовой ввод"""
-        try:
-            return int(text)
-        except ValueError:
-            await update.message.reply_text("❌ Введите целое число!")
-            raise ValueError("Invalid number input")
+    def __init__(self):
+        self.validation_rules = {
+            "dice_number": {"min": 2, "max": 12, "message": "❌ Число должно быть от 2 до 12!"},
+            "roulette_number": {"min": 0, "max": 36, "message": "❌ Число должно быть от 0 до 36!"},
+            "bet_amount": {"min": 1, "message": "❌ Ставка должна быть положительным числом!"}
+        }
     
-    @staticmethod
-    async def validate_bet_amount(update: Update, user_balance: int, bet_amount: int) -> bool:
+    async def validate_and_convert(self, update: Update, text: str, field_name: str = "число") -> tuple[int | None, str | None]:
+        """Проверить и преобразовать ввод, вернуть (значение, ошибка)"""
+        try:
+            value = int(text)
+            return value, None
+        except ValueError as e:
+            error_msg = f"❌ Введите целое {field_name}!"
+            logger.warning(f"Ошибка преобразования числа: {text}, ошибка: {e}")
+            await update.message.reply_text(error_msg)
+            return None, error_msg
+    
+    async def validate_number_input(self, update: Update, text: str) -> int:
+        """Проверить и преобразовать числовой ввод"""
+        value, error = await self.validate_and_convert(update, text, "число")
+        if error:
+            raise ValueError(error)
+        return value
+    
+    async def validate_bet_amount(self, update: Update, user_balance: int, bet_amount: int) -> bool:
         """Проверить валидность ставки"""
         if bet_amount <= 0:
             await update.message.reply_text("❌ Ставка должна быть положительным числом!")
@@ -30,33 +47,27 @@ class InputValidator:
         
         return True
     
-    @staticmethod
-    def validate_dice_number(number: int) -> bool:
+    def validate_dice_number(self, number: int) -> bool:
         """Проверить число для ставки в костях"""
         return 2 <= number <= 12
     
-    @staticmethod
-    def validate_roulette_number(number: int) -> bool:
+    def validate_roulette_number(self, number: int) -> bool:
         """Проверить число для ставки в рулетке"""
         return 0 <= number <= 36
     
-    @staticmethod
-    async def validate_game_input(update: Update, input_type: str, value: int) -> bool:
+    async def validate_game_input(self, update: Update, input_type: str, value: int) -> bool:
         """Универсальная проверка игрового ввода"""
-        validators = {
-            "dice_number": lambda x: 2 <= x <= 12,
-            "roulette_number": lambda x: 0 <= x <= 36,
-            "bet_amount": lambda x: x > 0
-        }
+        if input_type not in self.validation_rules:
+            return True
         
-        validator = validators.get(input_type)
-        if not validator or not validator(value):
-            error_messages = {
-                "dice_number": "❌ Число должно быть от 2 до 12!",
-                "roulette_number": "❌ Число должно быть от 0 до 36!",
-                "bet_amount": "❌ Ставка должна быть положительным числом!"
-            }
-            await update.message.reply_text(error_messages.get(input_type, "❌ Неверный ввод!"))
+        rule = self.validation_rules[input_type]
+        
+        if "min" in rule and value < rule["min"]:
+            await update.message.reply_text(rule["message"])
+            return False
+        
+        if "max" in rule and value > rule["max"]:
+            await update.message.reply_text(rule["message"])
             return False
         
         return True

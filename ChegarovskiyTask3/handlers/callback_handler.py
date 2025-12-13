@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from database import Database
-from keyboards import get_back_keyboard
+from keyboards import get_back_keyboard, get_main_keyboard, get_roulette_color_keyboard, get_roulette_even_odd_keyboard, get_blackjack_keyboard
 from games import Blackjack
 from utils.validator import InputValidator
 
@@ -43,7 +43,6 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 async def _handle_back_to_main(query):
     """Обработать возврат в главное меню"""
     await query.edit_message_text("🏠 Главное меню\n\nВыберите игру:", reply_markup=None)
-    from keyboards import get_main_keyboard
     await query.message.reply_text("🎰 Добро пожаловать в казино!", reply_markup=get_main_keyboard())
 
 async def _handle_dice_callback(query, context: ContextTypes.DEFAULT_TYPE, bet_type: str):
@@ -74,13 +73,11 @@ async def _handle_roulette_callback(query, context: ContextTypes.DEFAULT_TYPE, b
             reply_markup=get_back_keyboard()
         )
     elif bet_type == "color":
-        from keyboards import get_roulette_color_keyboard
         await query.edit_message_text(
             "🎡 Рулетка | Ставка на цвет\nВыберите цвет:",
             reply_markup=get_roulette_color_keyboard()
         )
     elif bet_type == "even_odd":
-        from keyboards import get_roulette_even_odd_keyboard
         await query.edit_message_text(
             "🎡 Рулетка | Ставка на чёт/нечёт\nВыберите вариант:",
             reply_markup=get_roulette_even_odd_keyboard()
@@ -187,7 +184,6 @@ async def show_blackjack_state(update, context: ContextTypes.DEFAULT_TYPE, messa
                   f"👤 Ваша рука: {player_hand_str} (очки: {player_value})\n\n"
                   f"{message}")
     
-    from keyboards import get_blackjack_keyboard
     markup = get_blackjack_keyboard()
     
     if hasattr(update, 'callback_query'):

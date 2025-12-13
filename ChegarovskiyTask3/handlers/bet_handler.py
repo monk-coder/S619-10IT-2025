@@ -2,6 +2,7 @@
 Главный обработчик текстовых сообщений для игр
 Использует Validator для проверки ввода и игры для логики
 """
+import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -9,7 +10,9 @@ from database import Database
 from games import SlotMachine, DiceGame, Blackjack, Roulette
 from keyboards import get_back_keyboard
 from utils.validator import InputValidator
+from handlers.callback_handler import show_blackjack_state
 
+logger = logging.getLogger(__name__)
 db = Database()
 validator = InputValidator()
 
@@ -23,8 +26,13 @@ async def handle_bet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
     
     try:
-        number = await validator.validate_number_input(update, update.message.text)
-    except ValueError:
+        number, error = await validator.validate_and_convert(update, update.message.text, "число")
+        if error:
+            logger.warning(f"Ошибка валидации: {error} для пользователя {user.id}")
+            return
+    except Exception as e:
+        logger.error(f"Ошибка в handle_bet: {e}")
+        await update.message.reply_text("❌ Произошла ошибка при обработке запроса")
         return
     
     await _process_game_input(update, context, user.id, number, user_data['balance'])
@@ -138,7 +146,6 @@ async def _start_blackjack_game(update: Update, context: ContextTypes.DEFAULT_TY
         "user_id": user_id
     }
     
-    from handlers.callback_handler import show_blackjack_state
     await show_blackjack_state(update, context, "Ваш ход:")
 
 async def _process_game_result(update: Update, context: ContextTypes.DEFAULT_TYPE,

@@ -74,8 +74,10 @@ class Database:
             referral_code = f"ref_{user_id}_{random.randint(1000, 9999)}"
 
             conn.execute(
-                "INSERT OR IGNORE INTO users (user_id, username, referral_code, referred_by) VALUES (?, ?, ?, ?)",
-                (user_id, username, referral_code, referred_by)
+                """INSERT OR IGNORE INTO users 
+                   (user_id, username, referral_code, referred_by, balance) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (user_id, username, referral_code, referred_by, STARTING_BALANCE)
             )
 
             if referred_by:

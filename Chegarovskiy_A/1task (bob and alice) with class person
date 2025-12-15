@@ -1,13 +1,12 @@
-# Константы
 BOB_SALARY = 80000
 BOB_RENT = 30000
 BOB_FOOD = 4000
 BOB_TRANSPORT = 1500
 BOB_CAT_FOOD = 2000
-BOB_CAT_GROOMING = 1500  # За два месяца
+BOB_CAT_GROOMING = 1500
 
 ALICE_SALARY = 200000
-ALICE_LOAN_PAYMENT = 100000  # Выплата по ипотеке
+ALICE_LOAN_PAYMENT = 100000
 ALICE_FOOD = 4000
 ALICE_TRANSPORT = 1500
 
@@ -32,7 +31,7 @@ class Person:
             interest = self.loan_payment * 0.12
             self.balance -= interest
         
-        self.balance -= (sum(self.expenses) * 12 + self.rent * 12 + self.loan_payment * 12)
+        self.balance -= (sum(self.expenses) * 12 + self.rent * 12)
 
 
 def print_balances(bob, alice, periods, is_months):

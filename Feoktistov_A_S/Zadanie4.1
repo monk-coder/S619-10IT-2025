@@ -2,10 +2,5 @@
  - temperature может быть нереальным (-1000 или +1000)
 3) - humidity может быть >100%
    - wind_speed может быть отрицательным
-2)Нет поля feels_like (ощущаемая температура)
-  feels_like = models.FloatField(null=True, verbose_name='Ощущается')
-  0001_initial.py 
 3) Нет проверок {% if task %}, {% if form %}
 4) Нет кеширования - быстро исчерпает лимиты OpenWeather API.
-5) Хардкод URL в JavaScript - после деплоя все AJAX запросы сломаются.
-6)

@@ -47,13 +47,14 @@ class InputValidator:
         
         return True
     
-    def validate_dice_number(self, number: int) -> bool:
-        """Проверить число для ставки в костях"""
-        return 2 <= number <= 12
+    # УДАЛЯЮ ЭТИ ФУНКЦИИ - ОНИ НЕ ИСПОЛЬЗУЮТСЯ:
+    # def validate_dice_number(self, number: int) -> bool:
+    #     """Проверить число для ставки в костях"""
+    #     return 2 <= number <= 12
     
-    def validate_roulette_number(self, number: int) -> bool:
-        """Проверить число для ставки в рулетке"""
-        return 0 <= number <= 36
+    # def validate_roulette_number(self, number: int) -> bool:
+    #     """Проверить число для ставки в рулетке"""
+    #     return 0 <= number <= 36
     
     async def validate_game_input(self, update: Update, input_type: str, value: int) -> bool:
         """Универсальная проверка игрового ввода"""

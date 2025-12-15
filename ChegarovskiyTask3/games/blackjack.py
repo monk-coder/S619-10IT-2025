@@ -23,12 +23,17 @@ class Blackjack(Game):
         self.dealer_value = 0
         random.shuffle(self.deck)
     
-    def play(self, bet_amount: int) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
-        """Начать новую игру в блекджек"""
+    def play(self, bet_amount: int, **kwargs) -> Tuple[str, int]:
+        """Начать новую игру в блекджек
+        
+        Возвращает: (результат, выигрыш)
+        """
         self.bet_amount = bet_amount
         self.player_hand = [self._deal_card(), self._deal_card()]
         self.dealer_hand = [self._deal_card(), self._deal_card()]
-        return self.player_hand, self.dealer_hand
+        
+        # Возвращаем результат игры (как и другие игры)
+        return self.get_game_result()
     
     def _create_deck(self) -> List[Tuple[str, str]]:
         """Создать новую колоду карт"""
@@ -53,11 +58,10 @@ class Blackjack(Game):
             
         return value
     
-    def player_hit(self) -> Tuple[str, str]:
+    def player_hit(self) -> None:
         """Игрок берет дополнительную карту"""
         card = self._deal_card()
         self.player_hand.append(card)
-        return card
     
     def dealer_play(self):
         """Дилер добирает карты по правилам"""

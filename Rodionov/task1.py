@@ -1,22 +1,24 @@
+from abc import ABC, abstractmethod
+
 # ПАРАМЕТРЫ
-BOB_SALARY = 80_000
-BOB_RENT = 30_000
-BOB_FOOD = 4_000
-BOB_TRANSPORT = 1_500
-BOB_CAT_FOOD = 2_000
-BOB_CAT_GROOMING = 3_000
+BOB_SALARY = 80000
+BOB_RENT = 30000
+BOB_FOOD = 4000
+BOB_TRANSPORT = 1500
+BOB_CAT_FOOD = 2000
+BOB_CAT_GROOMING = 3000
 BOB_RENT_INFLATION = 0.05
 
-ALICE_SALARY = 200_000
-ALICE_APARTMENT_PRICE = 10_000_000
-ALICE_DOWN_PAYMENT = 2_000_000
-ALICE_FOOD = 4_000
-ALICE_TRANSPORT = 1_500
+ALICE_SALARY = 200000
+ALICE_APARTMENT_PRICE = 10000000
+ALICE_DOWN_PAYMENT = 2000000
+ALICE_FOOD = 4000
+ALICE_TRANSPORT = 1500
 ALICE_MORTGAGE_RATE = 0.12
 ALICE_MORTGAGE_YEARS = 20
 
 
-class Person:
+class Person(ABC):
     def __init__(self, name, salary):
         self.name = name
         self.salary = salary
@@ -32,6 +34,16 @@ class Person:
     def pay_expenses(self, amount):
         self.savings -= amount
         self.total_expenses += amount
+
+    @abstractmethod
+    def simulate_month(self):
+        """Абстрактный метод для симуляции одного месяца жизни персонажа"""
+        pass
+
+    @abstractmethod
+    def calculate_expenses(self):
+        """Абстрактный метод для расчета текущих расходов персонажа"""
+        pass
 
 
 class Bob(Person):
@@ -78,6 +90,12 @@ class Alice(Person):
             (self.loan * monthly_rate * (1 + monthly_rate) ** months) /
             ((1 + monthly_rate) ** months - 1)
         )
+
+    def calculate_expenses(self):
+        """Реализация абстрактного метода для Alice"""
+        living_expenses = ALICE_FOOD + ALICE_TRANSPORT
+        mortgage_expense = self.mortgage_payment if not self.mortgage_paid and self.remaining_loan > 0 else 0
+        return living_expenses + mortgage_expense
 
     def calculate_living_expenses(self):
         return ALICE_FOOD + ALICE_TRANSPORT
@@ -184,7 +202,7 @@ def print_results(years, bob, alice):
 def main():
     print("Симуляция финансовых стратегий Боба и Алисы")
     print("=" * 50)
-    
+
     years = get_simulation_years()
 
     bob = Bob()

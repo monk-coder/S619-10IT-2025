@@ -1,3 +1,38 @@
+import math
+INITIAL_BALANCE = 100_000
+
+ALICE_SALARY = 200_000
+ALICE_SPENDING = 75_000
+MORTGAGE_AMOUNT = 10_000_000
+MORTGAGE_ANNUAL_RATE = 0.12
+MORTGAGE_TERM_YEARS = 30
+
+BOB_SALARY = 80_000
+BOB_RENT = 50_000
+BOB_SPENDING = 30_000
+BOB_SAVINGS_RATE = 10_000
+BOB_TRAVEL_EXPENSE = 4_000
+BOB_TRAVEL_PERIOD = 10
+
+
+def is_positive(x, eps=1e-2):
+    return math.isfinite(x) and x > eps
+
+
+def calculate_mortgage_payment(principal, annual_rate, term_years):
+    if principal <= 0 or annual_rate < 0 or term_years <= 0:
+        return 0.0
+
+    monthly_rate = annual_rate / 12
+    num_payments = term_years * 12
+
+    if abs(monthly_rate) < 1e-12:
+        return principal / num_payments
+
+    payment = (principal * monthly_rate) / (1 - (1 + monthly_rate) ** -num_payments)
+    return payment
+
+
 class Person:
     def __init__(self, name, salary, rent, spending, savings_rate, travel_expense, travel_period):
         self.name = name
@@ -7,7 +42,7 @@ class Person:
         self.savings_rate = savings_rate
         self.travel_expense = travel_expense
         self.travel_period = travel_period
-        self.balance = 100000  
+        self.balance = INITIAL_BALANCE
         self.month = 0
 
     def monthly_expense(self):
@@ -28,37 +63,36 @@ class Person:
 
 
 class Alice(Person):
-    def __init__(self, salary, mortgage_debt, monthly_interest_rate):
+    def __init__(self, salary, mortgage_debt, annual_interest_rate, term_years):
         super().__init__(
             name="Alice",
             salary=salary,
             rent=0,
-            spending=75000,
+            spending=ALICE_SPENDING,
             savings_rate=0,
             travel_expense=0,
             travel_period=None
         )
         self.mortgage_debt = mortgage_debt
-        self.monthly_interest_rate = monthly_interest_rate
-        term_months = 30 * 12
-        self.monthly_payment = (
-            mortgage_debt * monthly_interest_rate
-            / (1 - (1 + monthly_interest_rate) ** -term_months)
+        self.annual_interest_rate = annual_interest_rate
+        self.term_years = term_years
+        self.monthly_interest_rate = annual_interest_rate / 12
+        self.monthly_payment = calculate_mortgage_payment(
+            principal=mortgage_debt,
+            annual_rate=annual_interest_rate,
+            term_years=term_years
         )
 
-    def monthly_expense(self):
-        return self.spending  
-
     def month_end(self):
-        net_base = self.monthly_income() - self.monthly_expense()
+        net_base = self.salary - self.spending
         self.balance += net_base
 
-        if self.mortgage_debt > 0.01: 
+        if is_positive(self.mortgage_debt):
             interest = self.mortgage_debt * self.monthly_interest_rate
-            principal = min(self.monthly_payment - interest, self.mortgage_debt) 
-            total_payment = interest + principal
+            principal_repayment = min(self.monthly_payment - interest, self.mortgage_debt)
+            total_payment = interest + principal_repayment
             self.balance -= total_payment
-            self.mortgage_debt -= principal
+            self.mortgage_debt -= principal_repayment
         else:
             self.mortgage_debt = 0.0
 
@@ -72,19 +106,20 @@ class Bob(Person):
             salary=salary,
             rent=rent,
             spending=spending,
-            savings_rate=10000,
-            travel_expense=4000,
-            travel_period=10
+            savings_rate=BOB_SAVINGS_RATE,
+            travel_expense=BOB_TRAVEL_EXPENSE,
+            travel_period=BOB_TRAVEL_PERIOD
         )
 
 
 def calculate_finances(total_months):
-    mortgage_amount = 10_000_000
-    annual_interest_rate = 0.12
-    monthly_interest_rate = annual_interest_rate / 12
-
-    alice = Alice(200_000, mortgage_amount, monthly_interest_rate)
-    bob = Bob(80_000, 50_000, 30_000)
+    alice = Alice(
+        salary=ALICE_SALARY,
+        mortgage_debt=MORTGAGE_AMOUNT,
+        annual_interest_rate=MORTGAGE_ANNUAL_RATE,
+        term_years=MORTGAGE_TERM_YEARS
+    )
+    bob = Bob(BOB_SALARY, BOB_RENT, BOB_SPENDING)
 
     for _ in range(total_months):
         bob.month_end()
@@ -92,27 +127,39 @@ def calculate_finances(total_months):
 
     return bob, alice
 
+
+
 input_time = input("Введите время в годах (например, 2.5 для 2 лет 6 мес): ").strip()
+
 try:
     years_float = float(input_time)
+    if not math.isfinite(years_float) or years_float < 0:
+        raise ValueError
     total_months = int(round(years_float * 12))
     years = int(years_float)
     months = int(round((years_float - years) * 12))
-except ValueError:
-    print("❌ Некорректный ввод. Используется 0 лет.")
-    total_months = 0
-    years = months = 0
+    if total_months > 1200:  # макс. 100 лет
+        print("⚠️  Срок превышает 100 лет — ограничиваем до 100 лет.")
+        total_months, years, months = 1200, 100, 0
+except (ValueError, OverflowError):
+    print("❌ Некорректный ввод. Используется 0 лет 0 месяцев.")
+    total_months = years = months = 0
 
 bob, alice = calculate_finances(total_months)
+net_worth_alice = alice.balance - alice.mortgage_debt
 
-print("\n" + "="*50)
-print(f"Через {years} лет и {months} месяцев ({total_months} мес.):")
-print("="*50)
-print(f"💰 Боб:")
-print(f"  Баланс: {bob.balance:,.2f} ₽")
 
-print(f"\n🏡 Алиса:")
-print(f"  Наличный баланс: {alice.balance:,.2f} ₽")
-print(f"  Остаток ипотеки: {alice.mortgage_debt:,.2f} ₽")
-print(f"  Чистое финансовое положение (баланс - долг): {alice.balance - alice.mortgage_debt:,.2f} ₽")
-print("="*50)
+print(
+    f"\n{'='*60}\n"
+    f"Результат через {years} лет и {months} месяцев ({total_months} мес.):\n"
+    f"{'='*60}\n"
+    f"💰 Боб:\n"
+    f"   Баланс: {bob.balance:,.2f} ₽\n"
+    f"\n"
+    f"🏡 Алиса:\n"
+    f"   Баланс (наличные): {alice.balance:,.2f} ₽\n"
+    f"   Ипотечный долг: {alice.mortgage_debt:,.2f} ₽\n"
+    f"   Чистое финансовое положение: {net_worth_alice:,.2f} ₽\n"
+    f"   Ежемесячный платёж по ипотеке: {alice.monthly_payment:,.2f} ₽\n"
+    f"{'='*60}"
+)

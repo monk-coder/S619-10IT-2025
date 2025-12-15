@@ -133,8 +133,6 @@ input_time = input("Введите время в годах (например, 2
 
 try:
     years_float = float(input_time)
-    if not math.isfinite(years_float) or years_float < 0:
-        raise ValueError
     total_months = int(round(years_float * 12))
     years = int(years_float)
     months = int(round((years_float - years) * 12))

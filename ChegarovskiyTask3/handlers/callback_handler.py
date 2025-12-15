@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 db = Database()
 validator = InputValidator()
 
+def _format_hand(hand):
+    """Форматировать руку карт в строку"""
+    return " ".join(f"{value}{suit}" for value, suit in hand)
+
 async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Главный обработчик callback-запросов"""
     query = update.callback_query
@@ -120,14 +124,15 @@ async def _handle_blackjack_callback(query, context: ContextTypes.DEFAULT_TYPE, 
 async def _handle_blackjack_hit(query, context: ContextTypes.DEFAULT_TYPE, 
                               game: Blackjack, user_id: int, bet: int):
     """Обработать действие 'взять карту' в блекджеке"""
-    card = game.player_hit()
+    game.player_hit()  # Убрали ненужную переменную card
     player_value = game.calculate_hand_value(game.player_hand)
     
+    # Упростили if: проверяем сразу условие выхода
     if player_value > 21:
         db.update_balance(user_id, -bet, "blackjack")
         user_data = db.get_user(user_id)
         
-        player_hand_str = " ".join(f"{value}{suit}" for value, suit in game.player_hand)
+        player_hand_str = _format_hand(game.player_hand)
         await query.edit_message_text(
             f"🃏 Блекджек | Ставка: {bet} монет\n\n"
             f"💼 Дилер: ???\n"
@@ -137,8 +142,10 @@ async def _handle_blackjack_hit(query, context: ContextTypes.DEFAULT_TYPE,
             reply_markup=get_back_keyboard()
         )
         context.user_data.pop("blackjack", None)
-    else:
-        await show_blackjack_state(query, context, "Ваш ход:")
+        return  # Выходим раньше
+    
+    # Если не перебор, продолжаем игру
+    await show_blackjack_state(query, context, "Ваш ход:")
 
 async def _handle_blackjack_stand(query, context: ContextTypes.DEFAULT_TYPE,
                                 game: Blackjack, user_id: int, bet: int):
@@ -149,8 +156,8 @@ async def _handle_blackjack_stand(query, context: ContextTypes.DEFAULT_TYPE,
     db.update_balance(user_id, net_change, "blackjack")
     user_data = db.get_user(user_id)
     
-    player_hand_str = " ".join(f"{value}{suit}" for value, suit in game.player_hand)
-    dealer_hand_str = " ".join(f"{value}{suit}" for value, suit in game.dealer_hand)
+    player_hand_str = _format_hand(game.player_hand)
+    dealer_hand_str = _format_hand(game.dealer_hand)
     
     result_messages = {
         "win": "🎉 Вы выиграли!",
@@ -176,7 +183,7 @@ async def show_blackjack_state(update, context: ContextTypes.DEFAULT_TYPE, messa
     player_value = game.calculate_hand_value(game.player_hand)
     dealer_visible_value = game.calculate_hand_value([game.dealer_hand[0]])
     
-    player_hand_str = " ".join(f"{value}{suit}" for value, suit in game.player_hand)
+    player_hand_str = _format_hand(game.player_hand)
     dealer_hand_str = f"{game.dealer_hand[0][0]}{game.dealer_hand[0][1]} ??"
     
     state_text = (f"🃏 Блекджек | Ставка: {bj_data['bet']} монет\n\n"

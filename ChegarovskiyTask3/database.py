@@ -20,9 +20,10 @@ class Database:
 
     @contextmanager
     def _get_connection(self):
-        """Контекстный менеджер для соединения с БД"""
-        conn = sqlite3.connect(self.db_name)
+        """Контекстный менеджер для соединения с БД с блокировкой"""
+        conn = sqlite3.connect(self.db_name, timeout=30.0)  # Таймаут 30 секунд
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")  # Разрешаем одновременные чтения
         try:
             yield conn
             conn.commit()

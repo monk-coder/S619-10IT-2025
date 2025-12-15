@@ -3,6 +3,7 @@
 Использует Validator для проверки ввода и игры для логики
 """
 import logging
+import datetime  # Добавили для работы с датой
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -77,6 +78,10 @@ async def _process_dice_game(update: Update, context: ContextTypes.DEFAULT_TYPE,
     number = context.user_data.get("dice_number")
     
     game = DiceGame()
+    # Используем текущую дату как seed для случайности
+    seed = int(datetime.datetime.now().timestamp() * 1000) % 1000000
+    random.seed(seed + user_id)  # Добавляем user_id для уникальности
+    
     dice1, dice2, total, win_amount = game.play(bet_amount, bet_type, number)
     net_change = win_amount - bet_amount
     
@@ -109,10 +114,10 @@ async def _process_roulette_game(update: Update, context: ContextTypes.DEFAULT_T
     bet_value = context.user_data.get("roulette_bet_value")
     
     game = Roulette()
-    winning_number, win_amount = game.play(bet_amount, bet_type, bet_value)
+    result, win_amount = game.play(bet_amount, bet_type, bet_value)
     net_change = win_amount - bet_amount
     
-    result_text = _format_roulette_result(bet_amount, bet_type, bet_value, winning_number, win_amount, game)
+    result_text = _format_roulette_result(bet_amount, bet_type, bet_value, game.winning_number, win_amount, game)
     await _process_game_result(update, context, user_id, net_change, "roulette", result_text)
 
 async def _handle_slots_game(update: Update, context: ContextTypes.DEFAULT_TYPE,
@@ -136,12 +141,16 @@ async def _start_blackjack_game(update: Update, context: ContextTypes.DEFAULT_TY
         return
     
     game = Blackjack()
-    player_hand, dealer_hand = game.play(bet)
+    # Теперь play возвращает (результат, выигрыш), но нам нужны карты
+    # Поэтому сначала раздаём карты, а потом сохраняем игру
+    game.bet_amount = bet
+    game.player_hand = [game._deal_card(), game._deal_card()]
+    game.dealer_hand = [game._deal_card(), game._deal_card()]
     
     context.user_data["blackjack"] = {
         "game": game,
-        "player_hand": player_hand,
-        "dealer_hand": dealer_hand,
+        "player_hand": game.player_hand,
+        "dealer_hand": game.dealer_hand,
         "bet": bet,
         "user_id": user_id
     }

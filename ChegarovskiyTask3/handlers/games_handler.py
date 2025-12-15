@@ -1,5 +1,4 @@
 """Обработчики запуска игр"""
-import functools
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -8,24 +7,15 @@ from keyboards import get_back_keyboard, get_dice_bet_keyboard, get_roulette_bet
 
 db = Database()
 
-def require_user(func):
-    """Декоратор для проверки существования пользователя"""
-    @functools.wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
-        user = update.effective_user
-        user_data = db.get_user(user.id)
-        
-        if not user_data:
-            await update.message.reply_text("❌ Сначала используйте /start")
-            return
-        
-        return await func(update, context, user_data, *args, **kwargs)
-    
-    return wrapper
-
-@require_user
-async def start_slots(update: Update, context: ContextTypes.DEFAULT_TYPE, user_data: dict) -> None:
+async def start_slots(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Начать игру в слоты"""
+    user = update.effective_user
+    user_data = db.get_user(user.id)
+    
+    if not user_data:
+        await update.message.reply_text("❌ Сначала используйте /start")
+        return
+    
     await update.message.reply_text(
         "🎰 **ИГРА: СЛОТ-МАШИНА**\n\n"
         "Введите сумму ставки (целое число):",
@@ -33,9 +23,15 @@ async def start_slots(update: Update, context: ContextTypes.DEFAULT_TYPE, user_d
     )
     context.user_data["current_game"] = "slots"
 
-@require_user
-async def start_dice(update: Update, context: ContextTypes.DEFAULT_TYPE, user_data: dict) -> None:
+async def start_dice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Начать игру в кости"""
+    user = update.effective_user
+    user_data = db.get_user(user.id)
+    
+    if not user_data:
+        await update.message.reply_text("❌ Сначала используйте /start")
+        return
+    
     await update.message.reply_text(
         "🎲 **ИГРА: КОСТИ**\n\n"
         "Выберите тип ставки:",
@@ -43,9 +39,15 @@ async def start_dice(update: Update, context: ContextTypes.DEFAULT_TYPE, user_da
     )
     context.user_data["current_game"] = "dice"
 
-@require_user
-async def start_blackjack(update: Update, context: ContextTypes.DEFAULT_TYPE, user_data: dict) -> None:
+async def start_blackjack(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Начать игру в блекджек"""
+    user = update.effective_user
+    user_data = db.get_user(user.id)
+
+    if not user_data:
+        await update.message.reply_text("❌ Сначала используйте /start")
+        return
+
     await update.message.reply_text(
         "🃏 **ИГРА: БЛЕКДЖЕК**\n\n"
         "Введите сумму ставки (целое число):",
@@ -53,11 +55,17 @@ async def start_blackjack(update: Update, context: ContextTypes.DEFAULT_TYPE, us
     )
     context.user_data["current_game"] = "blackjack"
 
-@require_user
-async def start_roulette(update: Update, context: ContextTypes.DEFAULT_TYPE, user_data: dict) -> None:
+async def start_roulette(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Начать игру в рулетку"""
+    user = update.effective_user
+    user_data = db.get_user(user.id)
+    
+    if not user_data:
+        await update.message.reply_text("❌ Сначала используйте /start")
+        return
+    
     await update.message.reply_text(
-        "🎡 **ИГРА: РУЛЕТКУ**\n\n"
+        "🎡 **ИГРА: РУЛЕТКА**\n\n"
         "Выберите тип ставки:",
         reply_markup=get_roulette_bet_keyboard()
     )

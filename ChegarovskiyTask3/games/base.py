@@ -14,7 +14,10 @@ class Game(ABC):
         
     @abstractmethod
     def play(self, bet_amount: int, **kwargs) -> Tuple[Any, int]:
-        """Основной метод игры, должен быть реализован в дочерних классах"""
+        """Основной метод игры, должен быть реализован в дочерних классах
+        
+        Возвращает: (результат_игры, выигрыш)
+        """
         pass
     
     def calculate_win_amount(self, multiplier: int) -> int:

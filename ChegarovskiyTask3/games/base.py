@@ -14,16 +14,10 @@ class Game(ABC):
         
     @abstractmethod
     def play(self, bet_amount: int, **kwargs) -> Tuple[Any, int]:
-        """Основной метод игры, должен быть реализован в дочерних классах
-        
-        Возвращает: (результат_игры, выигрыш)
-        """
         pass
     
     def calculate_win_amount(self, multiplier: int) -> int:
-        """Рассчитать выигрыш на основе множителя"""
         return self.bet_amount * multiplier
     
     def validate_bet(self, user_balance: int, bet_amount: int) -> bool:
-        """Проверить валидность ставки"""
         return 0 < bet_amount <= user_balance

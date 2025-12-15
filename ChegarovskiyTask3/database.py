@@ -20,13 +20,26 @@ class Database:
 
     @contextmanager
     def _get_connection(self):
-        """Контекстный менеджер для соединения с БД с блокировкой"""
-        conn = sqlite3.connect(self.db_name, timeout=30.0)  # Таймаут 30 секунд
+        """Контекстный менеджер для соединения с БД с БЛОКИРОВКОЙ"""
+        conn = sqlite3.connect(
+            self.db_name, 
+            timeout=30.0,  # Увеличил таймаут
+            check_same_thread=False  # Разрешаем доступ из разных потоков
+        )
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")  # Разрешаем одновременные чтения
+        
+        # ВКЛЮЧАЕМ WAL режим для одновременных записей
+        conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
+        conn.execute("PRAGMA synchronous=NORMAL")  # Баланс скорости/надёжности
+        conn.execute("PRAGMA busy_timeout=5000")  # 5 секунд ожидания если БД занята
+        
         try:
             yield conn
             conn.commit()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Ошибка БД: {e}")
+            conn.rollback()
+            raise
         except Exception:
             conn.rollback()
             raise
@@ -62,16 +75,26 @@ class Database:
                     FOREIGN KEY (user_id) REFERENCES users (user_id)
                 )
             """)
+            
+            # СОЗДАЁМ ИНДЕКСЫ для быстрого поиска
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_user_id ON users(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)")
 
     def get_user(self, user_id: int):
-        """Получить данные пользователя по ID"""
+        """Получить данные пользователя по ID с блокировкой чтения"""
         with self._get_connection() as conn:
+            # BEGIN IMMEDIATE - блокируем для чтения/записи
+            conn.execute("BEGIN IMMEDIATE")
             cursor = conn.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
-            return cursor.fetchone()
+            result = cursor.fetchone()
+            return result
 
     def create_user(self, user_id: int, username: str, referred_by: int = None):
-        """Создать нового пользователя"""
+        """Создать нового пользователя с транзакционной безопасностью"""
         with self._get_connection() as conn:
+            # ЯВНАЯ ТРАНЗАКЦИЯ
+            conn.execute("BEGIN IMMEDIATE")
+            
             referral_code = f"ref_{user_id}_{random.randint(1000, 9999)}"
 
             conn.execute(
@@ -83,6 +106,8 @@ class Database:
 
             if referred_by:
                 self._add_referral_bonus(conn, referred_by)
+            
+            # COMMIT здесь не нужен, контекстный менеджер сам сделает
 
     def _add_referral_bonus(self, conn: sqlite3.Connection, referred_by: int):
         """Начислить бонус за реферала"""
@@ -96,15 +121,34 @@ class Database:
         )
 
     def update_balance(self, user_id: int, amount: int, game_type: str = "other"):
-        """Обновить баланс пользователя и записать транзакцию"""
+        """Обновить баланс пользователя и записать транзакцию - АТОМАРНАЯ ОПЕРАЦИЯ"""
         with self._get_connection() as conn:
+            # ЯВНАЯ ТРАНЗАКЦИЯ для атомарности
+            conn.execute("BEGIN IMMEDIATE")
+            
+            # 1. Получаем текущий баланс
+            cursor = conn.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+            current = cursor.fetchone()
+            if not current:
+                conn.rollback()
+                raise ValueError(f"Пользователь {user_id} не найден")
+            
+            # 2. Проверяем достаточно ли средств если это ставка
+            if amount < 0 and abs(amount) > current['balance']:
+                conn.rollback()
+                raise ValueError("Недостаточно средств")
+            
+            # 3. Обновляем баланс
             conn.execute(
                 "UPDATE users SET balance = balance + ?, games_played = games_played + 1 WHERE user_id = ?",
                 (amount, user_id)
             )
 
+            # 4. Записываем транзакцию
             transaction_type = "win" if amount > 0 else "bet"
             self._add_transaction(conn, user_id, transaction_type, abs(amount), game_type)
+            
+            # Коммит сделает контекстный менеджер
 
     def _add_transaction(self, conn: sqlite3.Connection, user_id: int,
                         transaction_type: str, amount: int, game_type: str):
@@ -135,6 +179,7 @@ class Database:
     def update_bonus_time(self, user_id: int) -> None:
         """Обновить время получения бонуса"""
         with self._get_connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 "UPDATE users SET last_bonus_time = ? WHERE user_id = ?",
                 (time.time(), user_id)
@@ -143,6 +188,7 @@ class Database:
     def give_bonus(self, user_id: int, amount: int) -> None:
         """Выдать бонус пользователю"""
         with self._get_connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 "UPDATE users SET balance = balance + ? WHERE user_id = ?",
                 (amount, user_id)

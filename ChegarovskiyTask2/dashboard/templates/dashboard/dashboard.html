@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="weather-card">
+            <h3 class="mb-4">Добавить новую задачу</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label">Город</label>
+                    <input type="text" name="city_name" class="form-control form-control-custom"
+                           placeholder="Введите название города" required autocomplete="off">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Задача</label>
+                    <textarea name="task_text" class="form-control form-control-custom"
+                              placeholder="Опишите задачу..." rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary-custom w-100 py-3">Добавить задачу</button>
+            </form>
+
+            <hr class="my-4">
+
+            <h4 class="mb-3">История поиска</h4>
+            {% if search_history %}
+                <div class="history-list">
+                    {% for search in search_history %}
+                        <div class="history-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-medium">{{ search.city_name }}</span>
+                                <small class="text-muted">{{ search.searched_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">Вы еще не искали погоду.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="weather-card">
+            <h3 class="mb-4">Мои задачи</h3>
+            {% if tasks %}
+                <div class="tasks-list">
+                    {% for task in tasks %}
+                        <div class="task-card {% if task.is_completed %}completed{% endif %}">
+                            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold">{{ task.city_name }}</h5>
+                                <small class="text-muted">{{ task.created_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <p class="mb-3">{{ task.task_text }}</p>
+                            <div class="btn-group w-100">
+                                <a href="{% url 'update_task' task.id %}" class="btn btn-outline-custom">
+                                    {% if task.is_completed %}Вернуть{% else %}Выполнено{% endif %}
+                                </a>
+                                <a href="{% url 'delete_task' task.id %}" class="btn btn-outline-custom">Удалить</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">У вас пока нет задач.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

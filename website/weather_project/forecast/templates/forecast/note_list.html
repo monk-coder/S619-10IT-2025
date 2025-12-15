@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои заметки - WeatherFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notes.css' %}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
+                </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="{% url 'note_list' %}" class="nav-link" style="background: var(--primary); color: white;">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                    <!-- ССЫЛКИ ДЛЯ АДМИНОВ -->
+                    {% if user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                        <i class="fas fa-chart-bar"></i> Статистика
+                    </a>
+                    <a href="{% url 'admin:index' %}" class="nav-link">
+                        <i class="fas fa-cog"></i> Админка
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="user-section">
+                    <span>
+                        {% if user.is_superuser %}
+                            👑 Админ: <strong>{{ user.username }}</strong>
+                        {% else %}
+                            Привет, <strong>{{ user.username }}</strong>!
+                        {% endif %}
+                    </span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </header>
+
+        <main class="notes-main">
+            <!-- Сообщения -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- УВЕДОМЛЕНИЕ ДЛЯ АДМИНОВ -->
+            {% if is_admin %}
+            <div class="admin-notice" style="background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%); color: white; padding: 1rem; border-radius: 10px; margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-crown"></i> Режим администратора
+                        </h4>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Вы видите заметки всех пользователей</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span class="badge" style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px;">
+                            Всего заметок: {{ notes|length }}
+                        </span>
+                        <a href="{% url 'admin:forecast_usernote_changelist' %}" class="btn" style="background: white; color: #f59e0b; padding: 0.5rem 1rem;">
+                            <i class="fas fa-cog"></i> Управление
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Заголовок страницы -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-sticky-note"></i>
+                        {% if is_admin %}
+                            Все заметки
+                        {% else %}
+                            Мои заметки
+                        {% endif %}
+                    </h1>
+                    <div class="notes-stats">
+                        <span><i class="fas fa-file-alt"></i> Всего заметок: {{ notes|length }}</span>
+                        <span><i class="fas fa-clock"></i> Последняя: {% if notes %}{{ notes.0.created_at|date:"d.m.Y" }}{% else %}нет{% endif %}</span>
+                    </div>
+                </div>
+                <a href="{% url 'note_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Новая заметка
+                </a>
+            </div>
+
+            <!-- Сетка заметок -->
+            {% if notes %}
+            <div class="notes-grid">
+                {% for note in notes %}
+                <div class="note-card">
+                    <div class="note-header">
+                        <h3 class="note-title">{{ note.title }}</h3>
+                        <div class="note-actions">
+                            <a href="{% url 'note_edit' note.pk %}" class="action-btn" title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'note_delete' note.pk %}" class="action-btn" title="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="note-content">
+                        {{ note.content|linebreaksbr }}
+                    </div>
+                    <div class="note-meta">
+                        <div class="note-date">
+                            <!-- ИНФОРМАЦИЯ О АВТОРЕ ДЛЯ АДМИНОВ -->
+                            {% if is_admin %}
+                            <span><i class="fas fa-user"></i> Автор: {{ note.user.username }}</span>
+                            {% endif %}
+                            <span><i class="fas fa-calendar-plus"></i> Создано: {{ note.created_at|date:"d.m.Y H:i" }}</span>
+                            {% if note.updated_at != note.created_at %}
+                            <span><i class="fas fa-edit"></i> Обновлено: {{ note.updated_at|date:"d.m.Y H:i" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Состояние пустого списка -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <h2 class="empty-title">
+                    {% if is_admin %}
+                        Заметок пока нет у пользователей
+                    {% else %}
+                        Заметок пока нет
+                    {% endif %}
+                </h2>
+                <p class="empty-description">
+                    {% if is_admin %}
+                        Пользователи еще не создали заметки
+                    {% else %}
+                        Создайте свою первую заметку чтобы сохранять важные мысли и идеи
+                    {% endif %}
+                </p>
+                <a href="{% url 'note_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Создать заметку
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Кнопка возврата -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="{% url 'home' %}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Назад к погоде
+                </a>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 WeatherFlow. Все права защищены.</p>
+            <p>Ваши мысли в безопасности с нами</p>
+        </footer>
+    </div>
+
+    <script>
+        // Подтверждение удаления
+        const deleteButtons = document.querySelectorAll('a[href*="delete"]');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!confirm('Вы уверены, что хотите удалить эту заметку?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Анимация появления карточек
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.note-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,99 +1,192 @@
 import json
 import os
-
-import requests
-from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
-from django.utils import timezone
-from django.utils.timezone import now
-
 from datetime import timedelta
 
-from .models import SearchHistory, WeatherTask, WeatherSnapshot
+import requests
+from requests.exceptions import RequestException
 
-API_KEY_WEATHER = os.getenv("WEATHERBIT_API_KEY")
-API_KEY_AVIA = os.getenv("AVIATIONSTACK_API_KEY")
-API_KEY_CURRENCY = os.getenv("FREECURRENCY_API_KEY")
-API_URL_CURRENCY = os.getenv("FREECURRENCY_API_URL", "https://api.freecurrencyapi.com/v1/latest")
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.db.models import Count
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+
+from .models import SearchHistory, WeatherSnapshot, WeatherTask
+
+
+def _get_config_value(settings_name, env_name, default=None):
+    value = getattr(settings, settings_name, None)
+    if value not in (None, ""):
+        return value
+    return os.getenv(env_name, default)
+
+
+API_KEY_WEATHER = _get_config_value("WEATHERBIT_API_KEY", "WEATHERBIT_API_KEY")
+API_URL_WEATHER = _get_config_value("WEATHERBIT_API_URL", "WEATHERBIT_API_URL")
+API_ICON_BASE_URL = _get_config_value("WEATHERBIT_ICON_BASE_URL", "WEATHERBIT_ICON_BASE_URL")
+API_KEY_AVIA = _get_config_value("AVIATIONSTACK_API_KEY", "AVIATIONSTACK_API_KEY")
+API_URL_AVIA = _get_config_value("AVIATIONSTACK_API_URL", "AVIATIONSTACK_API_URL")
+API_KEY_CURRENCY = _get_config_value("FREECURRENCY_API_KEY", "FREECURRENCY_API_KEY")
+API_URL_CURRENCY = _get_config_value("FREECURRENCY_API_URL", "FREECURRENCY_API_URL")
+API_URL_TIME = _get_config_value("WORLDTIME_API_URL", "WORLDTIME_API_URL")
+
+
+BACKGROUND_KEYWORDS = (
+    ("ясн", "sunny"),
+    ("дожд", "rainy"),
+    ("снег", "snowy"),
+    ("облач", "cloudy"),
+)
+
+TASK_FIELD_LIMITS = {
+    "city": 128,
+    "text": 512,
+}
+
+EMPTY_FIELD_ERRORS = {
+    "city": "Город не может быть пустым",
+    "text": "Текст не может быть пустым",
+}
+
+
+def _normalize_task_fields(payload, *, required=False):
+    normalized = {}
+    for field, limit in TASK_FIELD_LIMITS.items():
+        if field not in payload and not required:
+            continue
+        value = str(payload.get(field) or "").strip()
+        if not value:
+            return None, _json_error(EMPTY_FIELD_ERRORS[field])
+        normalized[field] = value[:limit]
+    return normalized, None
+
+
+def _build_error_message(response, label):
+    return f"Ошибка {label} ({response.status_code})"
+
+
+def _fetch_json_or_error(
+    url,
+    *,
+    params=None,
+    headers=None,
+    timeout=10,
+    label="API",
+    error_builder=None,
+):
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=timeout)
+    except RequestException as exc:  # pragma: no cover - сеть
+        return None, _json_error(f"Ошибка соединения с {label}: {exc}", status=500)
+
+    if response.status_code != 200:
+        builder = error_builder or (lambda resp: _build_error_message(resp, label))
+        return None, _json_error(builder(response), status=500)
+
+    try:
+        return response.json(), None
+    except ValueError:
+        return None, _json_error(f"Некорректный ответ {label}", status=500)
+
+
+def _currency_error_builder(response):
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    message = payload.get("message") or payload.get("error") or response.text
+    return f"Ошибка API валют ({response.status_code}): {message}"
+
+
+def _json_error(message, status=400):
+    return JsonResponse({"error": message}, status=status)
+
+
+def _parse_json_body(request):
+    try:
+        return json.loads(request.body or "{}")
+    except json.JSONDecodeError as exc:
+        raise ValueError("Некорректный JSON") from exc
+
+
+def _determine_background(description):
+    lowered = description.lower()
+    for needle, css_class in BACKGROUND_KEYWORDS:
+        if needle in lowered:
+            return css_class
+    return "default"
 
 
 def index(request):
     return render(request, "weather/index.html")
 
 
+@require_GET
 def get_weather(request):
-    city = request.GET.get("city")
+    if not API_KEY_WEATHER or not API_URL_WEATHER or not API_ICON_BASE_URL:
+        return _json_error("API погоды не настроен", status=500)
+
+    city = (request.GET.get("city") or "").strip()
     if not city:
-        return JsonResponse({"error": "Город не указан"}, status=400)
+        return _json_error("Город не указан")
 
-    city = city.strip()
     normalized = city.lower()
-
     snapshot = WeatherSnapshot.objects.filter(normalized_city=normalized).first()
-    fresh_threshold = now() - timedelta(hours=2)
-    use_cache = snapshot and snapshot.fetched_at >= fresh_threshold
+    fresh_threshold = timezone.now() - timedelta(hours=2)
 
-    payload = None
-    fetched_at = None
     from_cache = False
 
-    if use_cache:
+    if snapshot and snapshot.fetched_at >= fresh_threshold:
         payload = snapshot.payload
         fetched_at = snapshot.fetched_at
         from_cache = True
     else:
-        url = f"https://api.weatherbit.io/v2.0/current?city={city}&key={API_KEY_WEATHER}&lang=ru"
-        try:
-            response = requests.get(url, timeout=10)
-            if response.status_code != 200:
-                return JsonResponse({"error": f"Ошибка API погоды ({response.status_code})"}, status=500)
-            data = response.json()
-        except Exception as e:  # pragma: no cover - network issues
-            return JsonResponse({"error": str(e)}, status=500)
+        params = {"city": city, "key": API_KEY_WEATHER, "lang": "ru"}
+        data, error = _fetch_json_or_error(
+            API_URL_WEATHER,
+            params=params,
+            label="API погоды",
+        )
+        if error:
+            return error
 
-        if "data" not in data or not data["data"]:
-            return JsonResponse({"error": "Нет данных по городу"}, status=404)
+        entries = data.get("data") or []
+        if not entries:
+            return _json_error("Нет данных по городу", status=404)
 
-        info = data["data"][0]
+        info = entries[0]
+        weather_info = info.get("weather") or {}
+        icon_code = weather_info.get("icon")
+        if not icon_code:
+            return _json_error("Ответ API не содержит иконку погоды", status=500)
+
+        icon_base = API_ICON_BASE_URL.rstrip("/")
+
         payload = {
             "city": city,
-            "temperature": info["temp"],
-            "humidity": info["rh"],
-            "description": info["weather"]["description"],
-            "icon": f"https://www.weatherbit.io/static/img/icons/{info['weather']['icon']}.png",
+            "temperature": info.get("temp"),
+            "humidity": info.get("rh"),
+            "description": weather_info.get("description", ""),
+            "icon": f"{icon_base}/{icon_code}.png",
         }
 
-        if snapshot:
-            snapshot.refresh(city, payload)
-            fetched_at = snapshot.fetched_at
-        else:
-            snapshot = WeatherSnapshot.objects.create(
-                city=city[:128],
-                normalized_city=normalized[:128],
-                payload=payload,
-            )
-            fetched_at = snapshot.fetched_at
+        fetched_at = timezone.now()
+        WeatherSnapshot.objects.update_or_create(
+            normalized_city=normalized[:128],
+            defaults={
+                "city": city[:128],
+                "payload": payload,
+                "fetched_at": fetched_at,
+            },
+        )
 
-    description = payload["description"].lower()
-    if "ясн" in description:
-        bg_class = "sunny"
-    elif "дожд" in description:
-        bg_class = "rainy"
-    elif "снег" in description:
-        bg_class = "snowy"
-    elif "облач" in description:
-        bg_class = "cloudy"
-    else:
-        bg_class = "default"
+    bg_class = _determine_background(payload.get("description", ""))
 
     if request.user.is_authenticated:
-        SearchHistory.objects.create(
-            user=request.user,
-            city=city[:128],
-        )
+        SearchHistory.objects.create(user=request.user, city=city[:128])
 
     return JsonResponse({
         **payload,
@@ -103,63 +196,78 @@ def get_weather(request):
     })
 
 
+@require_GET
 def get_time(request):
-    """
-    Получаем мировое время UTC с API (worldtimeapi.org).
-    """
-    try:
-        resp = requests.get("https://worldtimeapi.org/api/timezone/Etc/UTC", timeout=5)
-        data = resp.json()
-        # отдаем только нужные поля
-        return JsonResponse({
-            "utc_datetime": data.get("utc_datetime"),
-            "unixtime": data.get("unixtime"),
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    if not API_URL_TIME:
+        return _json_error("API времени не настроен", status=500)
+
+    data, error = _fetch_json_or_error(
+        API_URL_TIME,
+        timeout=5,
+        label="API времени",
+    )
+    if error:
+        return error
+
+    return JsonResponse({
+        "utc_datetime": data.get("utc_datetime"),
+        "unixtime": data.get("unixtime"),
+    })
 
 
+@require_GET
 def get_flight(request):
-    airport = request.GET.get("airport")
+    if not API_KEY_AVIA or not API_URL_AVIA:
+        return _json_error("API авиации не настроен", status=500)
+
+    airport = (request.GET.get("airport") or "").strip().upper()
     if not airport:
-        return JsonResponse({"error": "Аэропорт не указан"}, status=400)
+        return _json_error("Аэропорт не указан")
 
-    url = f"http://api.aviationstack.com/v1/flights?access_key={API_KEY_AVIA}&dep_iata={airport}&limit=1"
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            flights = data.get("data", [])
-            if flights:
-                f = flights[0]
-                return JsonResponse({
-                    "flight_number": f["flight"]["iata"],
-                    "airline": f["airline"]["name"],
-                    "status": f["flight_status"],
-                    "departure_airport": f["departure"]["airport"],
-                    "arrival_airport": f["arrival"]["airport"],
-                    "departure_time": f["departure"]["scheduled"],
-                    "arrival_time": f["arrival"]["scheduled"],
-                })
-            return JsonResponse({"error": "Нет данных по этому аэропорту"}, status=404)
-        return JsonResponse({"error": f"Ошибка API авиации ({response.status_code})"}, status=500)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    params = {
+        "access_key": API_KEY_AVIA,
+        "dep_iata": airport,
+        "limit": 1,
+    }
+
+    data, error = _fetch_json_or_error(
+        API_URL_AVIA,
+        params=params,
+        label="API авиации",
+    )
+    if error:
+        return error
+
+    flights = data.get("data") or []
+    if not flights:
+        return _json_error("Нет данных по этому аэропорту", status=404)
+
+    flight = flights[0]
+    return JsonResponse({
+        "flight_number": flight.get("flight", {}).get("iata"),
+        "airline": flight.get("airline", {}).get("name"),
+        "status": flight.get("flight_status"),
+        "departure_airport": flight.get("departure", {}).get("airport"),
+        "arrival_airport": flight.get("arrival", {}).get("airport"),
+        "departure_time": flight.get("departure", {}).get("scheduled"),
+        "arrival_time": flight.get("arrival", {}).get("scheduled"),
+    })
 
 
+@require_GET
 def get_currency(request):
-    if not API_KEY_CURRENCY:
-        return JsonResponse({"error": "API ключ валюты не настроен"}, status=500)
+    if not API_KEY_CURRENCY or not API_URL_CURRENCY:
+        return _json_error("API валют не настроен", status=500)
 
     base = (request.GET.get("base") or "").strip().upper()
     symbols_raw = (request.GET.get("symbols") or "").strip().upper()
 
     if not base:
-        return JsonResponse({"error": "Укажите базовую валюту"}, status=400)
+        return _json_error("Укажите базовую валюту")
 
-    symbols = [s for s in symbols_raw.replace(";", ",").split(",") if s]
+    symbols = [symbol for symbol in symbols_raw.replace(";", ",").split(",") if symbol]
     if not symbols:
-        return JsonResponse({"error": "Укажите валюты для конвертации"}, status=400)
+        return _json_error("Укажите валюты для конвертации")
 
     params = {
         "base_currency": base,
@@ -168,23 +276,20 @@ def get_currency(request):
 
     headers = {"apikey": API_KEY_CURRENCY}
 
-    try:
-        response = requests.get(API_URL_CURRENCY, params=params, headers=headers, timeout=10)
-        if response.status_code != 200:
-            try:
-                error_payload = response.json()
-            except ValueError:
-                error_payload = {}
-            message = error_payload.get("message") or error_payload.get("error") or response.text
-            return JsonResponse({"error": f"Ошибка API валют ({response.status_code}): {message}"}, status=500)
-        data = response.json()
-    except Exception as exc:  # pragma: no cover - сеть
-        return JsonResponse({"error": str(exc)}, status=500)
+    data, error = _fetch_json_or_error(
+        API_URL_CURRENCY,
+        params=params,
+        headers=headers,
+        label="API валют",
+        error_builder=_currency_error_builder,
+    )
+    if error:
+        return error
 
     rates = data.get("data") or {}
     result = {code: rates.get(code) for code in symbols if code in rates}
     if not result:
-        return JsonResponse({"error": "Не удалось получить курсы"}, status=404)
+        return _json_error("Не удалось получить курсы", status=404)
 
     return JsonResponse({
         "base": base,
@@ -194,24 +299,22 @@ def get_currency(request):
 
 
 @csrf_exempt
+@require_POST
 def register_user(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
-
     try:
-        payload = json.loads(request.body or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Некорректный JSON"}, status=400)
+        payload = _parse_json_body(request)
+    except ValueError as exc:
+        return _json_error(str(exc))
 
     username = (payload.get("username") or "").strip()
     password = payload.get("password") or ""
 
     if not username or not password:
-        return JsonResponse({"error": "Укажите логин и пароль"}, status=400)
+        return _json_error("Укажите логин и пароль")
 
     User = get_user_model()
     if User.objects.filter(username__iexact=username).exists():
-        return JsonResponse({"error": "Пользователь уже существует"}, status=400)
+        return _json_error("Пользователь уже существует")
 
     user = User.objects.create_user(username=username, password=password)
     login(request, user)
@@ -223,24 +326,22 @@ def register_user(request):
 
 
 @csrf_exempt
+@require_POST
 def login_user(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
-
     try:
-        payload = json.loads(request.body or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Некорректный JSON"}, status=400)
+        payload = _parse_json_body(request)
+    except ValueError as exc:
+        return _json_error(str(exc))
 
     username = (payload.get("username") or "").strip()
     password = payload.get("password") or ""
 
     if not username or not password:
-        return JsonResponse({"error": "Укажите логин и пароль"}, status=400)
+        return _json_error("Укажите логин и пароль")
 
     user = authenticate(request, username=username, password=password)
     if user is None:
-        return JsonResponse({"error": "Неверные учетные данные"}, status=400)
+        return _json_error("Неверные учетные данные")
 
     login(request, user)
     return JsonResponse({
@@ -251,40 +352,38 @@ def login_user(request):
 
 
 @csrf_exempt
+@require_POST
 def logout_user(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Метод не поддерживается"}, status=405)
-
-    if request.user.is_authenticated:
-        logout(request)
-        return JsonResponse({"ok": True, "message": "Вы вышли из системы"})
-
-    return JsonResponse({"ok": True, "message": "Вы и так не авторизованы"})
+    logged_in = request.user.is_authenticated
+    logged_in and logout(request)
+    message = "Вы вышли из системы" if logged_in else "Вы и так не авторизованы"
+    return JsonResponse({"ok": True, "message": message})
 
 
+@require_GET
 def auth_status(request):
-    if request.user.is_authenticated:
-        return JsonResponse({"authenticated": True, "username": request.user.username})
-    return JsonResponse({"authenticated": False})
+    return JsonResponse({
+        "authenticated": request.user.is_authenticated,
+        **({"username": request.user.username} if request.user.is_authenticated else {}),
+    })
 
 
 @require_GET
 def get_history(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"entries": []})
-
-    history = (
+    history_qs = (
         SearchHistory.objects.filter(user=request.user)
-        .order_by("-created_at")[:10]
+        if request.user.is_authenticated
+        else SearchHistory.objects.none()
     )
-    payload = [
+    history = history_qs.order_by("-created_at")[:10]
+    entries = [
         {
             "city": item.city,
             "created_at": item.created_at.isoformat(),
         }
         for item in history
     ]
-    return JsonResponse({"entries": payload})
+    return JsonResponse({"entries": entries})
 
 
 def _serialize_task(task: WeatherTask) -> dict:
@@ -297,84 +396,150 @@ def _serialize_task(task: WeatherTask) -> dict:
     }
 
 
+def _list_tasks(request):
+    tasks = WeatherTask.objects.filter(user=request.user).order_by("-created_at")
+    return JsonResponse({"tasks": [_serialize_task(task) for task in tasks]})
+
+
+def _create_task(request):
+    try:
+        payload = _parse_json_body(request)
+    except ValueError as exc:
+        return _json_error(str(exc))
+
+    normalized, error = _normalize_task_fields(payload, required=True)
+    if error:
+        return error
+
+    task = WeatherTask.objects.create(user=request.user, **normalized)
+    return JsonResponse({"task": _serialize_task(task)}, status=201)
+
+
+def _task_get_handler(request, task):
+    return JsonResponse({"task": _serialize_task(task)})
+
+
+def _task_update_handler(request, task):
+    try:
+        payload = _parse_json_body(request)
+    except ValueError as exc:
+        return _json_error(str(exc))
+
+    updates, error = _normalize_task_fields(payload)
+    if error:
+        return error
+
+    if updates:
+        for field, value in updates.items():
+            setattr(task, field, value)
+        task.save(update_fields=list(updates.keys()) + ["updated_at"])
+        task.refresh_from_db()
+
+    return JsonResponse({"task": _serialize_task(task)})
+
+
+def _task_delete_handler(request, task):
+    task.delete()
+    return JsonResponse({"ok": True})
+
+
+TASK_COLLECTION_HANDLERS = {
+    "GET": _list_tasks,
+    "POST": _create_task,
+}
+
+
+TASK_DETAIL_HANDLERS = {
+    "GET": _task_get_handler,
+    "PUT": _task_update_handler,
+    "PATCH": _task_update_handler,
+    "DELETE": _task_delete_handler,
+}
+
+
 @csrf_exempt
+@require_http_methods(["GET", "POST"])
 def tasks_collection(request):
     if not request.user.is_authenticated:
-        return JsonResponse({"error": "Требуется аутентификация"}, status=401)
+        return _json_error("Требуется аутентификация", status=401)
 
-    if request.method == "GET":
-        tasks = WeatherTask.objects.filter(user=request.user).order_by("-created_at")
-        return JsonResponse({"tasks": [_serialize_task(task) for task in tasks]})
-
-    if request.method == "POST":
-        try:
-            payload = json.loads(request.body or "{}")
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Некорректный JSON"}, status=400)
-
-        city = (payload.get("city") or "").strip()
-        text = (payload.get("text") or "").strip()
-
-        if not city or not text:
-            return JsonResponse({"error": "Укажите город и текст напоминания"}, status=400)
-
-        task = WeatherTask.objects.create(
-            user=request.user,
-            city=city[:128],
-            text=text[:512],
-        )
-        return JsonResponse({"task": _serialize_task(task)}, status=201)
-
-    return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+    handler = TASK_COLLECTION_HANDLERS[request.method]
+    return handler(request)
 
 
 @csrf_exempt
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 def task_detail(request, task_id: int):
     if not request.user.is_authenticated:
-        return JsonResponse({"error": "Требуется аутентификация"}, status=401)
+        return _json_error("Требуется аутентификация", status=401)
 
     try:
         task = WeatherTask.objects.get(id=task_id, user=request.user)
     except WeatherTask.DoesNotExist:
-        return JsonResponse({"error": "Задача не найдена"}, status=404)
+        return _json_error("Задача не найдена", status=404)
 
-    if request.method == "GET":
-        return JsonResponse({"task": _serialize_task(task)})
+    handler = TASK_DETAIL_HANDLERS[request.method]
+    return handler(request, task)
 
-    if request.method in {"PUT", "PATCH"}:
-        try:
-            payload = json.loads(request.body or "{}")
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Некорректный JSON"}, status=400)
 
-        city = payload.get("city")
-        text = payload.get("text")
+@require_GET
+def admin_overview(request):
+    if not request.user.is_authenticated:
+        return _json_error("Требуется аутентификация", status=401)
+    if not request.user.is_staff:
+        return _json_error("Недостаточно прав", status=403)
 
-        fields_to_update = []
+    User = get_user_model()
 
-        if city is not None:
-            city = str(city).strip()
-            if not city:
-                return JsonResponse({"error": "Город не может быть пустым"}, status=400)
-            task.city = city[:128]
-            fields_to_update.append("city")
+    users = (
+        User.objects.annotate(
+            tasks_count=Count("weather_tasks", distinct=True),
+            searches_count=Count("weather_search_history", distinct=True),
+        )
+        .order_by("-date_joined")[:5]
+    )
 
-        if text is not None:
-            text = str(text).strip()
-            if not text:
-                return JsonResponse({"error": "Текст не может быть пустым"}, status=400)
-            task.text = text[:512]
-            fields_to_update.append("text")
+    users_payload = [
+        {
+            "username": user.username,
+            "is_staff": bool(user.is_staff),
+            "date_joined": user.date_joined.isoformat() if user.date_joined else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "tasks_count": user.tasks_count,
+            "searches_count": user.searches_count,
+        }
+        for user in users
+    ]
 
-        if fields_to_update:
-            fields_to_update.append("updated_at")
-            task.save(update_fields=fields_to_update)
-            task.refresh_from_db()
+    recent_tasks = [
+        {
+            "id": task.id,
+            "user": task.user.username,
+            "city": task.city,
+            "text": task.text[:60],
+            "created_at": task.created_at.isoformat(),
+        }
+        for task in WeatherTask.objects.select_related("user").order_by("-created_at")[:5]
+    ]
 
-        return JsonResponse({"task": _serialize_task(task)})
+    recent_searches = [
+        {
+            "user": history.user.username,
+            "city": history.city,
+            "created_at": history.created_at.isoformat(),
+        }
+        for history in SearchHistory.objects.select_related("user").order_by("-created_at")[:5]
+    ]
 
-    if request.method == "DELETE":
-        task.delete()
-        return JsonResponse({"ok": True})
+    totals = {
+        "users_total": User.objects.count(),
+        "tasks_total": WeatherTask.objects.count(),
+        "searches_total": SearchHistory.objects.count(),
+    }
 
-    return JsonResponse({"error": "Метод не поддерживается"}, status=405)
+    return JsonResponse({
+        "users": users_payload,
+        "recent_tasks": recent_tasks,
+        "recent_searches": recent_searches,
+        "totals": totals,
+    })

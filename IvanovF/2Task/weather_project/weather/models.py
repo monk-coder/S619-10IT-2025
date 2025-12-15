@@ -51,9 +51,3 @@ class WeatherSnapshot(models.Model):
 
     class Meta:
         ordering = ["-fetched_at"]
-
-    def refresh(self, city: str, payload: dict) -> None:
-        self.city = city[:128]
-        self.payload = payload
-        self.fetched_at = timezone.now()
-        self.save(update_fields=["city", "payload", "fetched_at"])

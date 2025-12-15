@@ -1,0 +1,23 @@
+# Telegram Bot
+python-telegram-bot==21.1.1
+# OpenRouter/OpenAI API compatibility
+openai==1.12.0
+# Database
+sqlalchemy==2.0.29
+aiosqlite==0.20.0
+greenlet==3.0.3
+# PDF processing
+pypdf2==3.0.1
+# Image processing
+pillow==10.3.0
+pytesseract==0.3.10
+# Environment variables
+python-dotenv==1.0.1
+# Async support
+aiohttp==3.9.5
+# Data validation
+pydantic==2.7.0
+# Logging
+colorlog==6.8.2
+# Rate limiting
+aiolimiter==1.1.0

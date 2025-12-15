@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - WeatherFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'forecast/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'forecast/css/auth.css' %}">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Левая часть с описанием -->
+            <div class="auth-hero">
+                <div class="floating-shapes">
+                    <div class="shape shape-1"></div>
+                    <div class="shape shape-2"></div>
+                    <div class="shape shape-3"></div>
+                </div>
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <i class="fas fa-cloud-sun"></i><br>
+                        Присоединяйтесь к WeatherFlow
+                    </h1>
+                    <p class="hero-subtitle">
+                        Создайте аккаунт для доступа к персонализированному прогнозу погоды и удобным заметкам
+                    </p>
+
+                    <ul class="features-list">
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-cloud-sun-rain"></i>
+                            </div>
+                            <span>Точный прогноз погоды для вашего города</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <span>Персональные заметки о погоде</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <span>История поиска городов</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <span>Удобный интерфейс на всех устройствах</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Правая часть с формой -->
+            <div class="auth-form-section">
+                <div class="form-header">
+                    <h2 class="form-title">Создать аккаунт</h2>
+                    <p class="form-subtitle">Заполните форму ниже для регистрации</p>
+                </div>
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="error-messages">
+                        <ul class="error-list">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        {{ error }}
+                                    </li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ error }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">
+                            <i class="fas fa-user"></i> Имя пользователя
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text"
+                                   name="username"
+                                   id="id_username"
+                                   class="form-input"
+                                   placeholder="Введите имя пользователя"
+                                   value="{{ form.username.value|default:'' }}"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password1" class="form-label">
+                            <i class="fas fa-lock"></i> Пароль
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password"
+                                   name="password1"
+                                   id="id_password1"
+                                   class="form-input"
+                                   placeholder="Введите пароль"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password2" class="form-label">
+                            <i class="fas fa-lock"></i> Подтверждение пароля
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password"
+                                   name="password2"
+                                   id="id_password2"
+                                   class="form-input"
+                                   placeholder="Повторите пароль"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Создать аккаунт
+                        </button>
+                    </div>
+
+                    <div class="auth-link">
+                        Уже есть аккаунт? <a href="{% url 'login' %}">Войдите здесь</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Валидация паролей в реальном времени
+        const password1 = document.getElementById('id_password1');
+        const password2 = document.getElementById('id_password2');
+
+        function validatePasswords() {
+            if (password1.value && password2.value) {
+                if (password1.value !== password2.value) {
+                    password2.style.borderColor = 'var(--danger)';
+                } else {
+                    password2.style.borderColor = 'var(--success)';
+                }
+            }
+        }
+
+        password1.addEventListener('input', validatePasswords);
+        password2.addEventListener('input', validatePasswords);
+    </script>
+</body>
+</html>

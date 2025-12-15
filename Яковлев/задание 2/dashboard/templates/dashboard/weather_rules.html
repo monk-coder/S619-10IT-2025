@@ -1,0 +1,92 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Мои правила погоды{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800">Мои правила погоды</h1>
+        <a href="{% url 'index' %}" class="text-blue-600 hover:text-blue-800">
+            ← Назад к дашборду
+        </a>
+    </div>
+
+    <!-- Форма создания правила -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Создать новое правило</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Название правила</label>
+                    {{ form.name }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Условие</label>
+                    {{ form.condition_type }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Оператор</label>
+                    {{ form.operator }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Пороговое значение</label>
+                    {{ form.threshold_value }}
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Действие при срабатывании</label>
+                {{ form.task_description }}
+            </div>
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                Создать правило
+            </button>
+        </form>
+    </div>
+
+    <!-- Список правил -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Существующие правила</h2>
+        
+        {% if rules %}
+        <div class="space-y-4">
+            {% for rule in rules %}
+            <div class="border rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="font-medium text-gray-900">{{ rule.name }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Если <strong>{{ rule.get_condition_type_display }}</strong> 
+                            {{ rule.get_operator_display }} 
+                            <strong>{{ rule.threshold_value }}</strong>
+                            → {{ rule.task_description }}
+                        </p>
+                        <span class="inline-block mt-2 px-2 py-1 text-xs rounded 
+                            {% if rule.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ rule.is_active|yesno:"Активно,Неактивно" }}
+                        </span>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                        <a href="{% url 'toggle_rule' rule.id %}" 
+                           class="px-3 py-1 text-sm rounded 
+                           {% if rule.is_active %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %}">
+                            {{ rule.is_active|yesno:"Выключить,Включить" }}
+                        </a>
+                        <a href="{% url 'delete_rule' rule.id %}" 
+                           class="px-3 py-1 bg-red-100 text-red-800 text-sm rounded hover:bg-red-200"
+                           onclick="return confirm('Удалить правило?')">
+                            Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-cloud-sun text-4xl mb-2 block"></i>
+            У вас пока нет правил погоды. Создайте первое!
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

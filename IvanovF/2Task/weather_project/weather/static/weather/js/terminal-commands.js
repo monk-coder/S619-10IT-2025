@@ -1,728 +1,457 @@
-(() => {
-  const TerminalApp = window.TerminalApp || (window.TerminalApp = {});
+// Ядро терминала: регистрируем команды, перехватчики, авто-дополнение и справку.
+(function () {
+  var TerminalApp = window.TerminalApp || (window.TerminalApp = {});
 
-  const helpItems = [
-    'help — показать список команд',
-    'fetch — вывести информацию о системе',
-    'login <логин> <пароль> — войти в аккаунт',
-    'signup <логин> <пароль> — зарегистрироваться',
-    'logout — выйти из аккаунта',
-    'weather <город> — узнать погоду',
-    'flight <IATA> — статус рейса',
-    'currency <из> [в] [сумма] — конвертация валют из списка (например: currency usd rub 100)',
-    'taskadd <город>|<текст> — сохранить напоминание по погоде',
-    'tasks — показать сохранённые напоминания',
-    'taskupdate <id>|[город]|[текст] — изменить напоминание',
-    'taskdelete <id> — удалить напоминание',
-    'note <текст> — добавить локальную заметку',
-    'notes — показать локальные заметки',
-    'timer <секунды> — запустить таймер',
-    'timezone <смещение> — сменить пояс, например timezone +3',
-    'clear — очистить экран',
-  ];
+  TerminalApp.commands = TerminalApp.commands || {};
+  TerminalApp.commandNames = TerminalApp.commandNames || [];
+  TerminalApp.aliases = TerminalApp.aliases || {};
+  TerminalApp.interceptors = TerminalApp.interceptors || [];
+  TerminalApp.helpItems = TerminalApp.helpItems || [];
+  TerminalApp.commandsWithArgs = TerminalApp.commandsWithArgs || [];
 
-  const commandsList = Array.from(new Set(helpItems.map((item) => item.split(' ')[0])));
-  const commandsWithArgs = new Set(['login', 'signup', 'weather', 'flight', 'currency', 'note', 'taskadd', 'taskupdate', 'taskdelete', 'timer', 'timezone']);
-
-  const asciiIcons = {
-    sun: '  \\   /  \n   .-.   \n- (   ) -\n   `-’   \n  /   \\  ',
-    cloud: '    .--.   \n .-(    ). \n(___.__)__)',
-    rain: "    .--.   \n .-(    ). \n(___.__)__)\n ' ' ' ' ' ",
-    snow: '    .--.   \n .-(    ). \n(___.__)__)\n  *  *  *  ',
-    plane: '     __|__\n--@--@--(_)--@--@--',
+  // Примитивные псевдо-иконки на случай вывода погоды и рейсов.
+  // Команды просто берут нужную строку по ключу и вставляют в <pre>.
+  TerminalApp.asciiIcons = {
+    sun: [
+      "    \\\\   /",
+      "     .-.",
+      "  ― (   ) ―",
+      "     `-`",
+      "    /   \\\\"
+    ].join("\n"),
+    cloud: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)"
+    ].join("\n"),
+    rain: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)",
+      "   ' ' ' ' '"
+    ].join("\n"),
+    snow: [
+      "      .--.",
+      "   .-(    ).",
+      "  (___.__)__)",
+      "   *  *  *  *"
+    ].join("\n"),
+    plane: [
+      "        __|__",
+      " --@--@--(_)--@--@--"
+    ].join("\n"),
     arch: [
-      '                 /#\\',
-      '                /###\\',
-      '               /#####\\',
-      '              /#######\\',
-      '             _ "=######\\',
-      '            /##=,_\\#####\\',
-      '           /#############\\',
-      '          /###############\\',
-      '         /#################\\',
-      '        /###################\\',
-      '       /########*"""*########\\',
-      '      /#######/       \\#######\\',
-      '     /########         ########\\',
-      '    /#########         ######m=,_',
-      '   /##########         ##########\\',
-      '  /######***             ***######\\',
-      ' /###**                       **###\\',
-      '/**                               **\\',
-    ].join('\n'),
+      "                 /#\\\\",
+      "                /###\\\\",
+      "               /#####\\\\",
+      "              /#######\\\\",
+      "             _ \"=######\\\\",
+      "            /##=,_\\\\#####\\\\",
+      "           /#############\\\\",
+      "          /###############\\\\",
+      "         /#################\\\\",
+      "        /###################\\\\",
+      "       /########*\"\"\"*########\\\\",
+      "      /#######/       \\\\#######\\\\",
+      "     /########         ########\\\\",
+      "    /#########         ######m=,_",
+      "   /##########         ##########\\\\",
+      "  /######***             ***######\\\\",
+      " /###**                       **###\\\\",
+      "/**                               **\\\\"
+    ].join("\n")
   };
 
-  TerminalApp.helpItems = helpItems;
-  TerminalApp.asciiIcons = asciiIcons;
-
-  const escapeHtml = (text) => text.replace(/[&<>"']/g, (ch) => {
-    switch (ch) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      case "'":
-        return '&#39;';
-      default:
-        return ch;
+  // Делает ячейку таблицы аккуратной строкой.
+  function normalizeCellValue(value) {
+    if (value === null || value === undefined) {
+      return "";
     }
-  });
+    return String(value).replace(/\s+/g, " ").trim();
+  }
 
-  const getCommonPrefix = (items) => {
-    if (!items.length) return '';
-    return items.reduce((prefix, item) => {
-      let i = 0;
-      const limit = Math.min(prefix.length, item.length);
-      while (i < limit && prefix[i] === item[i]) i += 1;
-      return prefix.slice(0, i);
+  // Строит простую ASCII-таблицу из заголовков и строк.
+  function buildAsciiTable(headers, rows) {
+    if (!headers || !headers.length) {
+      return "";
+    }
+    // Проходим по строкам и нормализуем каждую ячейку, чтобы избавиться от лишних пробелов.
+    var processedRows = rows.map(function (row) {
+      return headers.map(function (_, idx) {
+        return normalizeCellValue(row[idx]);
+      });
+    });
+
+    // Для каждой колонки вычисляем максимально возможную ширину.
+    var widths = headers.map(function (header, idx) {
+      var length = header.length;
+      processedRows.forEach(function (row) {
+        if (row[idx] && row[idx].length > length) {
+          length = row[idx].length;
+        }
+      });
+      return Math.max(length, 3);
+    });
+
+    // Горизонтальная рамка вокруг таблицы.
+    var border = "+" + widths.map(function (w) {
+      return Array(w + 3).join("-");
+    }).join("+") + "+";
+
+    function formatLine(cells) {
+      return "|" + cells.map(function (cell, idx) {
+        return " " + (cell || "").padEnd(widths[idx], " ") + " ";
+      }).join("|") + "|";
+    }
+
+    var lines = [border, formatLine(headers), border];
+    if (!processedRows.length) {
+      lines.push(formatLine(headers.map(function () {
+        return "\u2014";
+      })));
+    } else {
+      processedRows.forEach(function (row) {
+        lines.push(formatLine(row));
+      });
+    }
+    lines.push(border);
+    return lines.join("\n");
+  }
+
+  // Экранирует HTML, чтобы подсказки не ломали разметку.
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, function (ch) {
+      switch (ch) {
+        case "&": return "&amp;";
+        case "<": return "&lt;";
+        case ">": return "&gt;";
+        case "\"": return "&quot;";
+        case "'": return "&#39;";
+        default: return ch;
+      }
+    });
+  }
+
+  // Простая задержка с использованием Promise.
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  // Проверяем, что ответ похож на "да".
+  function isYesResponse(value) {
+    var entry = (value || "").trim().toLowerCase();
+    return ["y", "yes", "yeah", "да", "д", "угу", "ага"].indexOf(entry) >= 0;
+  }
+
+  // Проверяем, что ответ похож на "нет".
+  function isNoResponse(value) {
+    var entry = (value || "").trim().toLowerCase();
+    return ["n", "no", "нет", "н", "неа"].indexOf(entry) >= 0;
+  }
+
+  // Экспортируем утилиты, чтобы ими могли пользоваться команды (например, admin).
+  TerminalApp.utils = TerminalApp.utils || {};
+  TerminalApp.utils.normalizeCellValue = normalizeCellValue;
+  TerminalApp.utils.buildAsciiTable = buildAsciiTable;
+  TerminalApp.utils.escapeHtml = escapeHtml;
+  TerminalApp.utils.sleep = sleep;
+  TerminalApp.utils.isYesResponse = isYesResponse;
+  TerminalApp.utils.isNoResponse = isNoResponse;
+
+  // Добавляем пункты в раздел помощи.
+  function addHelpEntry(entry) {
+    if (!entry) {
+      return;
+    }
+    if (Array.isArray(entry)) {
+      entry.forEach(addHelpEntry);
+    } else {
+      TerminalApp.helpItems.push(String(entry));
+    }
+  }
+
+  // Регистрируем короткое имя команды.
+  function addAlias(alias, target) {
+    if (!alias || !target) {
+      return;
+    }
+    var name = String(alias).trim().toLowerCase();
+    if (!name || TerminalApp.commands[name]) {
+      return;
+    }
+    TerminalApp.aliases[name] = target;
+  }
+
+  TerminalApp.registerAlias = addAlias;
+
+  // Основной реестр команд терминала.
+  TerminalApp.registerCommand = function (name, options) {
+    options = options || {};
+    var commandName = String(name || "").trim().toLowerCase();
+    if (!commandName) {
+      throw new Error("Command name is required");
+    }
+    if (TerminalApp.commands[commandName]) {
+      throw new Error("Command " + commandName + " already exists");
+    }
+    if (typeof options.execute !== "function") {
+      throw new Error("Command " + commandName + " must have execute function");
+    }
+
+    // Сохраняем основную структуру с обработчиком и метаданными.
+    TerminalApp.commands[commandName] = {
+      name: commandName,
+      execute: options.execute,
+      helpEntry: options.helpEntry || null,
+      requiresArgs: !!options.requiresArgs,
+      aliases: Array.isArray(options.aliases) ? options.aliases.slice() : []
+    };
+
+    // Массива команд используется для автодополнения.
+    TerminalApp.commandNames.push(commandName);
+
+    if (options.helpEntry) {
+      addHelpEntry(options.helpEntry);
+    }
+    if (TerminalApp.commands[commandName].requiresArgs) {
+      TerminalApp.commandsWithArgs.push(commandName);
+    }
+    // Регистрируем синонимы, чтобы их можно было найти до выполнения.
+    TerminalApp.commands[commandName].aliases.forEach(function (alias) {
+      addAlias(alias, commandName);
     });
   };
 
-  const computeAutocompleteSuggestion = () => {
-    const { input } = TerminalApp.elements;
-    if (!input) return null;
+  TerminalApp.registerHelpEntry = addHelpEntry;
 
-    const value = input.value;
-    const caretIndex = input.selectionStart ?? value.length;
-    if (caretIndex !== value.length) return null;
+  // Многошаговые команды могут ставить перехватчики ввода.
+  TerminalApp.registerInterceptor = function (fn) {
+    if (typeof fn !== "function") {
+      throw new Error("Interceptor must be a function");
+    }
+    TerminalApp.interceptors.push(fn);
+    return function () {
+      var index = TerminalApp.interceptors.indexOf(fn);
+      if (index >= 0) {
+        TerminalApp.interceptors.splice(index, 1);
+      }
+    };
+  };
 
-    const beforeCaret = value.slice(0, caretIndex);
-    if (!beforeCaret || beforeCaret.trim().length === 0) return null;
-    if (beforeCaret.includes(' ')) return null;
+  // Подбираем общую часть строк для автодополнения.
+  function getCommonPrefix(items) {
+    if (!items.length) {
+      return "";
+    }
+    var first = items[0];
+    for (var i = 0; i < first.length; i += 1) {
+      var ch = first[i];
+      for (var j = 1; j < items.length; j += 1) {
+        if (items[j][i] !== ch) {
+          return first.slice(0, i);
+        }
+      }
+    }
+    return first;
+  }
 
-    const partial = beforeCaret.trim();
-    const partialLower = partial.toLowerCase();
-    if (!partialLower) return null;
+  // Разбираем введённую строку на команду и аргументы.
+  function createContext(rawValue) {
+    var raw = typeof rawValue === "string" ? rawValue : "";
+    var trimmed = raw.trim();
+    var parts = trimmed ? trimmed.split(/\s+/) : [];
+    return {
+      raw: raw,
+      trimmed: trimmed,
+      parts: parts,
+      command: parts[0] ? parts[0].toLowerCase() : "",
+      args: parts.slice(1).join(" "),
+      handled: false,
+      stop: function () {
+        this.handled = true;
+      }
+    };
+  }
 
-    const matches = commandsList.filter((cmd) => cmd.startsWith(partialLower));
-    if (!matches.length) return null;
+  // Выполняем команду с учётом всех перехватчиков.
+  TerminalApp.executeCommand = async function (rawValue) {
+    var context = createContext(rawValue);
+    if (!context.parts.length) {
+      return;
+    }
 
-    const unique = matches.length === 1;
-    let target = null;
+    // Сначала даём шанс перехватчикам (например, казино) обработать ввод.
+    for (var i = 0; i < TerminalApp.interceptors.length; i += 1) {
+      var interceptor = TerminalApp.interceptors[i];
+      /* eslint-disable no-await-in-loop */
+      var result = await interceptor(context);
+      /* eslint-enable no-await-in-loop */
+      if (context.handled || result === true) {
+        return;
+      }
+    }
 
+    if (!context.parts.length) {
+      return;
+    }
+
+    // Если команда зарегистрирована как алиас, подменяем имя.
+    var name = context.command;
+    if (!TerminalApp.commands[name] && TerminalApp.aliases[name]) {
+      name = TerminalApp.aliases[name];
+      context.command = name;
+    }
+
+    var handler = TerminalApp.commands[name];
+    if (!handler) {
+      TerminalApp.print("Unknown command: " + (context.command || name), "error");
+      return;
+    }
+
+    // Передаём обработчику полные сведения о вводе.
+    await handler.execute({
+      raw: context.raw,
+      trimmed: context.trimmed,
+      parts: context.parts.slice(),
+      args: context.args,
+      command: name,
+      originalCommand: context.parts[0]
+    });
+  };
+
+  // Подсказываем, чем можно дополнить набранную команду.
+  function computeAutocompleteSuggestion() {
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!input) {
+      return null;
+    }
+
+    var value = input.value || "";
+    var caret = input.selectionStart == null ? value.length : input.selectionStart;
+    if (caret !== value.length) {
+      return null;
+    }
+
+    var beforeCaret = value.slice(0, caret);
+    if (!beforeCaret.trim() || beforeCaret.indexOf(" ") >= 0) {
+      return null;
+    }
+
+    var partial = beforeCaret.trim().toLowerCase();
+    // Получаем список команд, которые начинаются с введённого префикса.
+    var matches = TerminalApp.commandNames.filter(function (name) {
+      return name.indexOf(partial) === 0;
+    });
+
+    if (!matches.length) {
+      return null;
+    }
+
+    var unique = matches.length === 1;
+    var target = null;
     if (unique) {
       target = matches[0];
-      if (commandsWithArgs.has(target) && !value.endsWith(' ')) {
-        target += ' ';
+      if (TerminalApp.commandsWithArgs.indexOf(target) >= 0 && !value.endsWith(" ")) {
+        target += " ";
       }
     } else {
-      const prefix = getCommonPrefix(matches);
-      if (prefix.length > partialLower.length) {
-        target = prefix;
+      var common = getCommonPrefix(matches);
+      if (common.length > partial.length) {
+        target = common;
       }
     }
 
     if (!target) {
-      return { beforeCaret, matches, unique, completion: '', target: null };
+      return {
+        beforeCaret: beforeCaret,
+        matches: matches,
+        unique: unique,
+        completion: "",
+        target: null
+      };
     }
 
-    const completion = target.slice(partialLower.length);
-    if (!completion) {
-      return { beforeCaret, matches, unique, completion: '', target: null };
-    }
+    return {
+      beforeCaret: beforeCaret,
+      matches: matches,
+      unique: unique,
+      completion: target.slice(partial.length),
+      target: target
+    };
+  }
 
-    return { beforeCaret, matches, unique, completion, target };
-  };
+  TerminalApp.computeAutocompleteSuggestion = computeAutocompleteSuggestion;
 
-  TerminalApp.refreshAutocompleteHint = () => {
-    const { hint, input } = TerminalApp.elements;
-    if (!hint) return;
-
-    const suggestion = computeAutocompleteSuggestion();
-    if (!suggestion || !suggestion.completion || !suggestion.completion.trim()) {
-      hint.textContent = '';
-      if (hint.style) hint.style.transform = 'translateY(-50%)';
+  // Перерисовываем прозрачную подсказку справа от курсора.
+  TerminalApp.refreshAutocompleteHint = function () {
+    var hint = TerminalApp.elements && TerminalApp.elements.hint;
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!hint || !input) {
       return;
     }
 
-    const scrollLeft = input ? input.scrollLeft : 0;
-    hint.style.transform = `translate(${-scrollLeft}px, -50%)`;
-    hint.innerHTML = `<span class="ghost-hidden">${escapeHtml(suggestion.beforeCaret)}</span>${escapeHtml(suggestion.completion)}`;
-  };
-
-  TerminalApp.CURRENCY_LIST = [
-    ['EUR', 'Euro'],
-    ['USD', 'US Dollar'],
-    ['JPY', 'Japanese Yen'],
-    ['BGN', 'Bulgarian Lev'],
-    ['CZK', 'Czech Republic Koruna'],
-    ['DKK', 'Danish Krone'],
-    ['GBP', 'British Pound Sterling'],
-    ['HUF', 'Hungarian Forint'],
-    ['PLN', 'Polish Zloty'],
-    ['RON', 'Romanian Leu'],
-    ['SEK', 'Swedish Krona'],
-    ['CHF', 'Swiss Franc'],
-    ['ISK', 'Icelandic Króna'],
-    ['NOK', 'Norwegian Krone'],
-    ['HRK', 'Croatian Kuna'],
-    ['RUB', 'Russian Ruble'],
-    ['TRY', 'Turkish Lira'],
-    ['AUD', 'Australian Dollar'],
-    ['BRL', 'Brazilian Real'],
-    ['CAD', 'Canadian Dollar'],
-    ['CNY', 'Chinese Yuan'],
-    ['HKD', 'Hong Kong Dollar'],
-    ['IDR', 'Indonesian Rupiah'],
-    ['ILS', 'Israeli New Sheqel'],
-    ['INR', 'Indian Rupee'],
-    ['KRW', 'South Korean Won'],
-    ['MXN', 'Mexican Peso'],
-    ['MYR', 'Malaysian Ringgit'],
-    ['NZD', 'New Zealand Dollar'],
-    ['PHP', 'Philippine Peso'],
-    ['SGD', 'Singapore Dollar'],
-    ['THB', 'Thai Baht'],
-    ['ZAR', 'South African Rand'],
-  ];
-  TerminalApp.CURRENCY_MAP = Object.fromEntries(TerminalApp.CURRENCY_LIST);
-
-  TerminalApp.showHelp = () => {
-    TerminalApp.print('Добро пожаловать в терминал погоды и рейсов');
-    TerminalApp.printHtml('<span class="big">Терминальный дашборд</span>');
-    TerminalApp.print('Доступные команды:');
-    helpItems.forEach((entry) => TerminalApp.print(`- ${entry}`));
-    TerminalApp.print('Подсказка: команда timezone принимает значения вроде +3 или -5.5');
-  };
-
-  TerminalApp.autocompleteCommand = () => {
-    const { input } = TerminalApp.elements;
-    if (!input) return;
-
-    const suggestion = computeAutocompleteSuggestion();
-    if (!suggestion) return;
-
-    const { target, matches, unique } = suggestion;
-    if (target) {
-      const caretIndex = input.selectionStart ?? input.value.length;
-      const rest = input.value.slice(caretIndex);
-      input.value = target + rest;
-      const pos = target.length;
-      input.setSelectionRange(pos, pos);
-      requestAnimationFrame(() => {
-        TerminalApp.updateCursorPosition();
-        TerminalApp.refreshAutocompleteHint();
-      });
-      if (!unique && matches && matches.length > 1) {
-        TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
+    var suggestion = computeAutocompleteSuggestion();
+    if (!suggestion || !suggestion.completion || !suggestion.completion.trim()) {
+      hint.textContent = "";
+      if (hint.style) {
+        hint.style.transform = "translateY(-50%)";
       }
       return;
     }
 
-    if (matches && matches.length > 1) {
-      TerminalApp.print(`Suggestions: ${matches.join('  ')}`);
+    var scrollLeft = input.scrollLeft || 0;
+    hint.style.transform = "translate(" + (-scrollLeft) + "px, -50%)";
+    // Внутри ghost-hidden отображаем уже введённую часть для правильного выравнивания.
+    hint.innerHTML = "<span class=\"ghost-hidden\">" + escapeHtml(suggestion.beforeCaret) + "</span>" + escapeHtml(suggestion.completion);
+  };
+
+  // Вставляем подсказку в поле ввода.
+  TerminalApp.autocompleteCommand = function () {
+    var input = TerminalApp.elements && TerminalApp.elements.input;
+    if (!input) {
+      return;
+    }
+
+    var suggestion = computeAutocompleteSuggestion();
+    if (!suggestion) {
+      return;
+    }
+
+    if (suggestion.target) {
+      var caret = input.selectionStart == null ? input.value.length : input.selectionStart;
+      var rest = input.value.slice(caret);
+      input.value = suggestion.target + rest;
+      var pos = suggestion.target.length;
+      input.setSelectionRange(pos, pos);
+      setTimeout(function () {
+        if (TerminalApp.updateCursorPosition) {
+          TerminalApp.updateCursorPosition();
+        }
+        TerminalApp.refreshAutocompleteHint();
+      });
+      if (!suggestion.unique && suggestion.matches && suggestion.matches.length > 1) {
+        // Если вариантов несколько, выводим подсказку в консоль терминала.
+        TerminalApp.print("Suggestions: " + suggestion.matches.join("  "));
+      }
+      return;
+    }
+
+    if (suggestion.matches && suggestion.matches.length > 1) {
+      TerminalApp.print("Suggestions: " + suggestion.matches.join("  "));
     }
     TerminalApp.refreshAutocompleteHint();
   };
 
-  TerminalApp.executeCommand = async (raw) => {
-    const parts = raw.split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return;
-    const cmd = parts[0].toLowerCase();
-    const arg = parts.slice(1).join(' ');
-
-    if (cmd === 'help') {
-      TerminalApp.showHelp();
-      return;
-    }
-
-    if (cmd === 'fetch') {
-      TerminalApp.printHtml(`<pre class="ascii">${TerminalApp.asciiIcons.arch}</pre>`);
-      const info = [
-        'User: guest',
-        'Host: nebula-hub',
-        'OS: Arch Linux x86_64 (mock)',
-        'Kernel: 6.8.0-arch1-1',
-        'Uptime: 3h 21m',
-        'Shell: web-terminal 1.0',
-        'Packages: 420 (pacman)',
-        'Resolution: 1920x1080',
-        'WM: Tiling (mock)',
-        'CPU: Virtual Quad-Core @ 3.20GHz',
-        'GPU: Integrated WebGL',
-        'Memory: 4096MiB / 8192MiB',
-      ];
-      info.forEach((line) => TerminalApp.print(line));
-      return;
-    }
-
-    if (cmd === 'clear') {
-      if (TerminalApp.elements.output) TerminalApp.elements.output.innerHTML = '';
-      TerminalApp.print('Подсказка: введите "help" для списка команд.');
-      return;
-    }
-
-    if (cmd === 'signup') {
-      const [username, password] = (arg || '').split(/\s+/);
-      if (!username || !password) {
-        TerminalApp.print('Error: используйте signup <логин> <пароль>', 'error');
-        return;
-      }
-      TerminalApp.print(`Создание аккаунта ${username}...`);
-      try {
-        const resp = await fetch('/api/auth/register/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ username, password }),
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        TerminalApp.setCurrentUser(data.username || username);
-        TerminalApp.updatePrompt();
-        TerminalApp.print(data.message || 'Регистрация завершена');
-        await TerminalApp.fetchHistory();
-        try {
-          await TerminalApp.fetchTasks();
-        } catch (err) {
-          // ignore fetch errors here
-        }
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'login') {
-      const [username, password] = (arg || '').split(/\s+/);
-      if (!username || !password) {
-        TerminalApp.print('Error: используйте login <логин> <пароль>', 'error');
-        return;
-      }
-      TerminalApp.print(`Авторизация ${username}...`);
-      try {
-        const resp = await fetch('/api/auth/login/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ username, password }),
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        TerminalApp.setCurrentUser(data.username || username);
-        TerminalApp.updatePrompt();
-        TerminalApp.print(data.message || 'Авторизация успешна');
-        await TerminalApp.fetchHistory();
-        try {
-          await TerminalApp.fetchTasks();
-        } catch (err) {
-          // ignore fetch errors here
-        }
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'timezone') {
-      if (!arg) {
-        TerminalApp.print('Error: provide offset, e.g. timezone +3 or timezone -5.5', 'error');
-        return;
-      }
-      const val = parseFloat(arg);
-      if (!Number.isFinite(val)) {
-        TerminalApp.print('Error: invalid offset', 'error');
-        return;
-      }
-      TerminalApp.setTimezoneOffset(val);
-      TerminalApp.updateClockDisplay();
-      const sign = val >= 0 ? '+' : '';
-      TerminalApp.print(`Timezone set to UTC${sign}${val}`);
-      return;
-    }
-
-    if (cmd === 'note') {
-      if (!arg) {
-        TerminalApp.print('Error: note text required', 'error');
-        return;
-      }
-      TerminalApp.addNote(arg);
-      const count = TerminalApp.getNotes().length;
-      TerminalApp.print(`Note saved (#${count})`);
-      return;
-    }
-
-    if (cmd === 'notes') {
-      const notes = TerminalApp.getNotes();
-      if (notes.length === 0) {
-        TerminalApp.print('No notes yet.');
-        return;
-      }
-      TerminalApp.print('Notes:');
-      notes.forEach((n, i) => TerminalApp.print(`${i + 1}. ${n}`));
-      return;
-    }
-
-    if (cmd === 'tasks') {
-      if (TerminalApp.getCurrentUser() === 'guest') {
-        TerminalApp.print('Error: требуется авторизация.', 'error');
-        return;
-      }
-      try {
-        const tasks = await TerminalApp.fetchTasks();
-        if (!tasks.length) {
-          TerminalApp.print('Пока задач нет.');
-          return;
-        }
-        TerminalApp.print('Ваши напоминания:');
-        tasks.forEach((task) => {
-          TerminalApp.print(TerminalApp.describeTask(task));
-        });
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'taskadd') {
-      if (TerminalApp.getCurrentUser() === 'guest') {
-        TerminalApp.print('Error: требуется авторизация.', 'error');
-        return;
-      }
-      const rawArg = arg || '';
-      const separatorIndex = rawArg.indexOf('|');
-      if (separatorIndex === -1) {
-        TerminalApp.print('Error: используйте taskadd <город>|<текст>', 'error');
-        return;
-      }
-      const city = rawArg.slice(0, separatorIndex).trim();
-      const text = rawArg.slice(separatorIndex + 1).trim();
-      if (!city || !text) {
-        TerminalApp.print('Error: укажите город и текст напоминания', 'error');
-        return;
-      }
-      TerminalApp.print(`Сохранение задачи для ${city}...`);
-      try {
-        const resp = await fetch('/api/tasks/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ city, text }),
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        if (data.task) {
-          TerminalApp.upsertTask(data.task);
-          TerminalApp.print(`Задача #${data.task.id} сохранена.`);
-          TerminalApp.print(TerminalApp.describeTask(data.task));
-        } else {
-          TerminalApp.print('Задача сохранена.');
-        }
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'taskupdate') {
-      if (TerminalApp.getCurrentUser() === 'guest') {
-        TerminalApp.print('Error: требуется авторизация.', 'error');
-        return;
-      }
-      const rawArg = arg || '';
-      const firstSep = rawArg.indexOf('|');
-      if (firstSep === -1) {
-        TerminalApp.print('Error: используйте taskupdate <id>|<город>|<текст>', 'error');
-        return;
-      }
-      const secondPart = rawArg.slice(firstSep + 1);
-      const secondSep = secondPart.indexOf('|');
-      if (secondSep === -1) {
-        TerminalApp.print('Error: используйте taskupdate <id>|<город>|<текст>', 'error');
-        return;
-      }
-      const idPart = rawArg.slice(0, firstSep).trim();
-      const city = secondPart.slice(0, secondSep).trim();
-      const text = secondPart.slice(secondSep + 1).trim();
-      const id = Number(idPart);
-      if (!Number.isInteger(id) || id <= 0) {
-        TerminalApp.print('Error: некорректный идентификатор задачи', 'error');
-        return;
-      }
-      if (!city || !text) {
-        TerminalApp.print('Error: укажите город и текст для обновления', 'error');
-        return;
-      }
-      TerminalApp.print(`Обновление задачи #${id}...`);
-      try {
-        const resp = await fetch(`/api/tasks/${id}/`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ city, text }),
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        if (data.task) {
-          TerminalApp.upsertTask(data.task);
-          TerminalApp.print(`Задача #${data.task.id} обновлена.`);
-          TerminalApp.print(TerminalApp.describeTask(data.task));
-        } else {
-          TerminalApp.print('Задача обновлена.');
-        }
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'taskdelete') {
-      if (TerminalApp.getCurrentUser() === 'guest') {
-        TerminalApp.print('Error: требуется авторизация.', 'error');
-        return;
-      }
-      const id = Number((arg || '').trim());
-      if (!Number.isInteger(id) || id <= 0) {
-        TerminalApp.print('Error: используйте taskdelete <id>', 'error');
-        return;
-      }
-      TerminalApp.print(`Удаление задачи #${id}...`);
-      try {
-        const resp = await fetch(`/api/tasks/${id}/`, {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        });
-        if (!resp.ok) {
-          const data = await resp.json().catch(() => ({}));
-          TerminalApp.print(`Error: ${(data && data.error) || resp.statusText}`, 'error');
-          return;
-        }
-        TerminalApp.removeTask(id);
-        TerminalApp.print('Задача удалена.');
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'timer') {
-      if (!arg || Number.isNaN(Number(arg))) {
-        TerminalApp.print('Error: seconds required', 'error');
-        return;
-      }
-      let sec = Math.max(0, Math.floor(Number(arg)));
-      TerminalApp.clearTimerInterval();
-      TerminalApp.print(`Timer started: ${sec} seconds`);
-      const interval = setInterval(() => {
-        if (sec <= 0) {
-          clearInterval(interval);
-          TerminalApp.clearTimerInterval();
-          TerminalApp.print('⏰ Timer finished!', 'big');
-        } else {
-          TerminalApp.print(`... ${sec} sec left`);
-          sec -= 1;
-        }
-      }, 1000);
-      TerminalApp.setTimerInterval(interval);
-      return;
-    }
-
-    if (cmd === 'logout') {
-      if (TerminalApp.getCurrentUser() === 'guest') {
-        TerminalApp.print('Вы не вошли в систему.');
-        return;
-      }
-      const username = TerminalApp.getCurrentUser();
-      TerminalApp.print(`Выход из аккаунта ${username}...`);
-      try {
-        const resp = await fetch('/api/auth/logout/', {
-          method: 'POST',
-          credentials: 'same-origin',
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        TerminalApp.setCurrentUser('guest');
-        TerminalApp.updatePrompt();
-        TerminalApp.setTasks([]);
-        TerminalApp.print(data.message || 'Вы вышли из системы.');
-        await TerminalApp.fetchHistory();
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'weather') {
-      if (!arg) {
-        TerminalApp.print('Error: city required', 'error');
-        return;
-      }
-      TerminalApp.print(`Fetching weather for ${arg}...`);
-      try {
-        const resp = await fetch(`/api/weather/?city=${encodeURIComponent(arg)}`);
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        const description = (data.description || '').toLowerCase();
-        let icon = asciiIcons.sun;
-        if (description.includes('дожд')) icon = asciiIcons.rain;
-        else if (description.includes('снег')) icon = asciiIcons.snow;
-        else if (description.includes('облач')) icon = asciiIcons.cloud;
-        TerminalApp.printHtml(`<pre style="margin:0;color:#0f0;">${icon}</pre>`);
-        TerminalApp.print(`${(data.city || '').toUpperCase()}`, 'big');
-        TerminalApp.print(`Температура: ${data.temperature}°C`);
-        TerminalApp.print(`Влажность: ${data.humidity}%`);
-        TerminalApp.print(`Описание: ${data.description}`);
-        if (TerminalApp.getCurrentUser() !== 'guest') {
-          TerminalApp.fetchHistory();
-        }
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'flight') {
-      if (!arg) {
-        TerminalApp.print('Error: airport IATA required', 'error');
-        return;
-      }
-      TerminalApp.print(`Fetching flight for ${arg.toUpperCase()}...`);
-      try {
-        const resp = await fetch(`/api/flight/?airport=${encodeURIComponent(arg)}`);
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Error: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-        TerminalApp.printHtml(`<pre style="margin:0;color:#0f0;">${asciiIcons.plane}</pre>`);
-        TerminalApp.print(`Рейс: ${data.flight_number}`, 'big');
-        TerminalApp.print(`Авиакомпания: ${data.airline}`);
-        TerminalApp.print(`Статус: ${data.status}`);
-        TerminalApp.print(`Вылет: ${data.departure_airport} @ ${data.departure_time || 'N/A'}`);
-        TerminalApp.print(`Прилет: ${data.arrival_airport} @ ${data.arrival_time || 'N/A'}`);
-      } catch (err) {
-        TerminalApp.print(`Error: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    if (cmd === 'currency') {
-      const params = parts.slice(1);
-      if (!params.length) {
-        TerminalApp.print('Ошибка: используйте currency <из> [в] [сумма]');
-        TerminalApp.print('Доступные коды:');
-        TerminalApp.CURRENCY_LIST.forEach(([code, name]) => TerminalApp.print(`${code} — ${name}`));
-        return;
-      }
-
-      const baseUpper = params[0].toUpperCase();
-      if (!TerminalApp.CURRENCY_MAP[baseUpper]) {
-        TerminalApp.print('Эта валюта не поддерживается. Допустимые коды:');
-        TerminalApp.CURRENCY_LIST.forEach(([code, name]) => TerminalApp.print(`${code} — ${name}`));
-        return;
-      }
-
-      let targetUpper = null;
-      let amount = 1;
-
-      if (params.length >= 2) {
-        const maybeCode = params[1].toUpperCase();
-        if (TerminalApp.CURRENCY_MAP[maybeCode]) {
-          if (maybeCode === baseUpper) {
-            TerminalApp.print('Выберите валюту, отличную от базовой.');
-            return;
-          }
-          targetUpper = maybeCode;
-          if (params.length >= 3) {
-            const maybeAmount = Number.parseFloat(params[2].replace(',', '.'));
-            if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
-          }
-        } else {
-          const maybeAmount = Number.parseFloat(params[1].replace(',', '.'));
-          if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
-        }
-      }
-
-      if (params.length >= 3 && !targetUpper) {
-        const maybeAmount = Number.parseFloat(params[2].replace(',', '.'));
-        if (Number.isFinite(maybeAmount) && maybeAmount > 0) amount = maybeAmount;
-      }
-
-      const availableCodes = TerminalApp.CURRENCY_LIST.map(([code]) => code).filter((code) => code !== baseUpper);
-      const requestCodes = targetUpper ? [targetUpper] : availableCodes;
-
-      if (!requestCodes.length) {
-        TerminalApp.print('Нет валют для конвертации.');
-        return;
-      }
-
-      if (TerminalApp.elements.output) TerminalApp.elements.output.innerHTML = '';
-
-      try {
-        const search = new URLSearchParams({ base: baseUpper, symbols: requestCodes.join(',') });
-        const resp = await fetch(`/api/currency/?${search.toString()}`);
-        const data = await resp.json();
-        if (!resp.ok || data.error) {
-          TerminalApp.print(`Ошибка: ${data.error || resp.statusText}`, 'error');
-          return;
-        }
-
-        const rates = data.rates || {};
-        const entries = requestCodes.map((code) => [code, TerminalApp.CURRENCY_MAP[code], rates[code]]);
-
-        const width = 74;
-        const border = `+${'-'.repeat(width - 2)}+`;
-        const padLine = (text = '') => {
-          const truncated = text.length > width - 4 ? `${text.slice(0, width - 7)}...` : text;
-          return `| ${truncated.padEnd(width - 4, ' ')} |`;
-        };
-
-        const boxLines = [
-          border,
-          padLine('КУРСЫ ВАЛЮТ'),
-          padLine(`Базовая валюта: ${data.base}`),
-          padLine(`Сумма: ${amount}`),
-        ];
-
-        if (data.fetched_at) {
-          const formatted = TerminalApp.formatHistoryTime(data.fetched_at);
-          if (formatted) boxLines.push(padLine(`Обновлено: ${formatted}`));
-        }
-
-        boxLines.push(border);
-        entries.forEach(([code, name, rate]) => {
-          if (typeof rate === 'number') {
-            const converted = amount * rate;
-            boxLines.push(padLine(`${code} — ${name}; курс: ${rate}; ${amount} ${data.base} = ${converted.toFixed(2)} ${code}`));
-          } else {
-            boxLines.push(padLine(`${code} — ${name}; курс недоступен`));
-          }
-        });
-        boxLines.push(border);
-
-        TerminalApp.printHtml(`<pre>${boxLines.join('\n')}</pre>`);
-
-        if (!targetUpper) {
-          TerminalApp.print(`Подсказка: для конкретной валюты используйте команду вида currency ${baseUpper.toLowerCase()} <код> [сумма]`);
-        }
-      } catch (err) {
-        TerminalApp.print(`Ошибка: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    TerminalApp.print(`Unknown command: ${cmd}`, 'error');
+  // Показываем краткую справку по всем командам.
+  TerminalApp.showHelp = function () {
+    TerminalApp.print("Добро пожаловать в терминал погоды и рейсов");
+    TerminalApp.printHtml("<span class=\"big\">Терминальный дашборд</span>");
+    TerminalApp.print("Доступные команды:");
+    TerminalApp.helpItems.forEach(function (entry) {
+      TerminalApp.print("- " + entry);
+    });
+    TerminalApp.print("Подсказка: команда timezone принимает значения вроде +3 или -5.5");
   };
 })();

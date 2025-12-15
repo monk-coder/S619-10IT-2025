@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Удаление заметки - WeatherFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'forecast/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'forecast/css/notes.css' %}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-cloud-sun"></i>
+                    WeatherFlow
+                </a>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="{% url 'note_list' %}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Мои заметки
+                    </a>
+                </div>
+                <div class="user-section">
+                    <span>Привет, <strong>{{ user.username }}</strong>!</span>
+                    <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </header>
+
+        <main class="notes-main">
+            <div class="delete-container">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+
+                <h1 class="delete-title">Удаление заметки</h1>
+                <p class="delete-subtitle">Вы собираетесь удалить заметку. Это действие нельзя отменить.</p>
+
+                <div class="warning-text">
+                    <i class="fas fa-radiation"></i>
+                    <strong>Внимание!</strong> После удаления восстановить заметку будет невозможно.
+                </div>
+
+                <div class="note-preview">
+                    <div class="note-preview-title">{{ note.title }}</div>
+                    <div class="note-preview-content">
+                        {{ note.content|truncatewords:30 }}
+                    </div>
+                    <div class="note-meta">
+                        <span><i class="fas fa-calendar-plus"></i> Создано: {{ note.created_at|date:"d.m.Y H:i" }}</span>
+                        {% if note.updated_at != note.created_at %}
+                        <span><i class="fas fa-edit"></i> Обновлено: {{ note.updated_at|date:"d.m.Y H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post" style="display: contents;">
+                    {% csrf_token %}
+                    <div class="delete-actions">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Да, удалить
+                        </button>
+                        <a href="{% url 'note_list' %}" class="btn btn-outline">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 WeatherFlow. Все права защищены.</p>
+            <p>Ваши мысли в безопасности с нами</p>
+        </footer>
+    </div>
+
+    <script>
+        // Добавляем дополнительное подтверждение
+        const deleteForm = document.querySelector('form');
+        deleteForm.addEventListener('submit', function(e) {
+            if (!confirm('Вы абсолютно уверены? Это действие необратимо!')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

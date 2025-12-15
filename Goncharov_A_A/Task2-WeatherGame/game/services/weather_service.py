@@ -6,7 +6,7 @@ from typing import Any, Dict
 import requests
 from django.utils import timezone
 
-from .. import config
+from ..helper import config
 from ..models import WeatherSnapshot
 
 

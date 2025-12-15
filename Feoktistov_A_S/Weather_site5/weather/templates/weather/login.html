@@ -1,0 +1,29 @@
+{% extends "weather/base.html" %}
+
+{% block title %}Вход - Погода сейчас{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <h2>🔐 Вход в систему</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Имя пользователя:</label>
+            {{ form.username }}
+        </div>
+
+        <div class="form-group">
+            <label>Пароль:</label>
+            {{ form.password }}
+        </div>
+
+        <button type="submit" class="btn">Войти</button>
+    </form>
+
+    <div class="auth-links">
+        Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь здесь</a>
+    </div>
+</div>
+{% endblock %}

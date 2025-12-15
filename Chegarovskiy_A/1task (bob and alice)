@@ -1,86 +1,106 @@
-class Bob:
-    BOB_SALARY = 80000
-    BOB_RENT = 30000
-    BOB_FOOD = 4000
-    BOB_TRANSPORT = 1500
-    BOB_CAT_FOOD = 2000
-    BOB_CAT_GROOMING = 1500  # За два месяца
-    BOB_EXPENSES = [BOB_FOOD, BOB_TRANSPORT, BOB_CAT_FOOD, BOB_CAT_GROOMING]
+# Константы вынесены из классов
+BOB_SALARY = 80000
+BOB_RENT = 30000
+BOB_FOOD = 4000
+BOB_TRANSPORT = 1500
+BOB_CAT_FOOD = 2000
+BOB_CAT_GROOMING = 1500  # За два месяца
 
+ALICE_SALARY = 200000
+ALICE_LOAN_PAYMENT = 100000  # Выплата по ипотеке
+ALICE_FOOD = 4000
+ALICE_TRANSPORT = 1500
+
+
+class Bob:
     def __init__(self):
         self.balance = 0
+        self.rent = BOB_RENT
+        self.expenses = [BOB_FOOD, BOB_TRANSPORT, BOB_CAT_FOOD, BOB_CAT_GROOMING / 2]
 
     def monthly_update(self):
-        # Увеличиваем баланс на зарплату и уменьшаем на расходы
-        self.balance += self.BOB_SALARY
-        self.balance -= (sum(self.BOB_EXPENSES) + self.BOB_RENT)
+        self.balance += BOB_SALARY
+        self.balance -= sum(self.expenses) + self.rent
 
     def annual_update(self):
-        # Увеличиваем баланс на зарплату и уменьшаем на расходы (включая индексацию аренды)
-        self.balance += self.BOB_SALARY * 12
-        self.BOB_RENT *= 1.05  # Индексация аренды на 5%
-        self.balance -= (sum(self.BOB_EXPENSES) * 12 + self.BOB_RENT)
+        self.balance += BOB_SALARY * 12
+        self.rent *= 1.05
+        self.balance -= (sum(self.expenses) * 12 + self.rent * 12)
 
 
 class Alice:
-    ALICE_SALARY = 200000
-    ALICE_LOAN_PAYMENT = 100000  # Выплата по ипотеке
-    ALICE_FOOD = 4000
-    ALICE_TRANSPORT = 1500
-    ALICE_EXPENSES = [ALICE_FOOD, ALICE_TRANSPORT]
-
     def __init__(self):
         self.balance = 0
+        self.expenses = [ALICE_FOOD, ALICE_TRANSPORT]
 
     def monthly_update(self):
-        # Увеличиваем баланс на зарплату и уменьшаем на расходы
-        self.balance += self.ALICE_SALARY
-        self.balance -= (sum(self.ALICE_EXPENSES) + self.ALICE_LOAN_PAYMENT)
+        self.balance += ALICE_SALARY
+        self.balance -= sum(self.expenses) + ALICE_LOAN_PAYMENT
 
     def annual_update(self):
-        # Увеличиваем баланс на зарплату и уменьшаем на расходы (включая проценты по ипотеке)
-        self.balance += self.ALICE_SALARY * 12
-        interest = (self.ALICE_LOAN_PAYMENT * 0.12)  # Проценты годовые
-        self.balance -= (interest + self.ALICE_LOAN_PAYMENT)  # Общая сумма выплат по ипотеке за год
-        self.balance -= (sum(self.ALICE_EXPENSES) * 12)
+        self.balance += ALICE_SALARY * 12
+        interest = ALICE_LOAN_PAYMENT * 0.12
+        self.balance -= (interest + ALICE_LOAN_PAYMENT * 12 + sum(self.expenses) * 12)
 
 
-def simulate_life(months_or_years, number_of_periods):
+def print_balances(bob, alice, periods, is_months):
+    period_name = "месяцев" if is_months else "лет"
+    
+    balances_info = f"""Баланс Боба через {periods} {period_name}: {bob.balance:.2f}
+Баланс Алисы через {periods} {period_name}: {alice.balance:.2f}"""
+    
+    print(balances_info)
+
+
+def simulate_life(is_months, number_of_periods):
     bob = Bob()
     alice = Alice()
 
-    if months_or_years == 1:  # Месяцы
-        for _ in range(number_of_periods):
+    for _ in range(number_of_periods):
+        if is_months:
             bob.monthly_update()
             alice.monthly_update()
-    elif months_or_years == 2:  # Годы
-        for _ in range(number_of_periods):
+        else:
             bob.annual_update()
             alice.annual_update()
-            
-    print(f"Баланс Боба через {number_of_periods} {'месяцев' if months_or_years == 1 else 'лет'}: {bob.balance:.2f}")
-    print(f"Баланс Алисы через {number_of_periods} {'месяцев' if months_or_years == 1 else 'лет'}: {alice.balance:.2f}")
+    
+    print_balances(bob, alice, number_of_periods, is_months)
 
 
 def get_input():
     while True:
         try:
             months_or_years = int(input("Введите 1 для месяцев или 2 для лет: "))
+            if months_or_years not in [1, 2]:
+                print("Пожалуйста, введите 1 или 2.")
+                continue
+                
             number_of_periods = int(input("Введите количество периодов: "))
-            if months_or_years in [1, 2] and number_of_periods >= 0:
-                return months_or_years, number_of_periods
-            else:
-                print("Пожалуйста, введите корректные значения.")
+            if number_of_periods < 0:
+                print("Количество периодов должно быть неотрицательным.")
+                continue
+                
+            return months_or_years == 1, number_of_periods
         except ValueError:
             print("Ввод некорректен. Пожалуйста, введите числа.")
 
 
-# Главная программа
+def ask_continue():
+    while True:
+        answer = input("Хотите провести еще один расчет? (да/нет): ").strip().lower()
+        if answer in ['да', 'д', 'yes', 'y']:
+            return True
+        elif answer in ['нет', 'н', 'no', 'n']:
+            return False
+        else:
+            print("Пожалуйста, введите 'да' или 'нет'.")
+
+
 if __name__ == "__main__":
     while True:
-        months_or_years, number_of_periods = get_input()
-        simulate_life(months_or_years, number_of_periods)
-        another_simulation = input("Хотите провести еще один расчет? (да/нет): ").strip().lower()
-        if another_simulation != 'да':
+        is_months, number_of_periods = get_input()
+        simulate_life(is_months, number_of_periods)
+        
+        if not ask_continue():
             print("Спасибо за использование программы!")
             break

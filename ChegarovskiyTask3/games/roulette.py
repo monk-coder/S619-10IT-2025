@@ -3,7 +3,7 @@
 """
 import random
 from .base import Game
-from typing import Union
+from typing import Tuple, Union
 
 class Roulette(Game):
     """Класс для игры в рулетку"""
@@ -17,15 +17,21 @@ class Roulette(Game):
         self.bet_type = ""
         self.bet_value = None
         
-    def play(self, bet_amount: int, bet_type: str, bet_value: Union[int, str]) -> Tuple[int, int]:
-        """Сыграть в рулетку"""
+    def play(self, bet_amount: int, bet_type: str, bet_value: Union[int, str]) -> Tuple[str, int]:
+        """Сыграть в рулетку
+        
+        Возвращает: (результат, выигрыш)
+        """
         self.bet_amount = bet_amount
         self.bet_type = bet_type
         self.bet_value = bet_value
         
         self._spin_wheel()
         win_amount = self._calculate_payout()
-        return self.winning_number, win_amount
+        
+        # Формируем результат
+        result = self._format_result()
+        return result, win_amount
     
     def _spin_wheel(self):
         """Крутить рулетку"""
@@ -77,3 +83,9 @@ class Roulette(Game):
         if self.winning_number == 0:
             return "green"
         return "red" if self.winning_number in self.RED_NUMBERS else "black"
+    
+    def _format_result(self) -> str:
+        """Форматировать результат игры"""
+        color = self.get_winning_color()
+        color_emoji = "🟢" if color == "green" else "🔴" if color == "red" else "⚫"
+        return f"Выпало: {self.winning_number} {color_emoji}"

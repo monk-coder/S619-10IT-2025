@@ -1,0 +1,87 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Регистрация - Погодный Дашборд{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">
+                    <i class="fas fa-user-plus"></i> Регистрация
+                </h3>
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Пожалуйста, исправьте следующие ошибки:</strong>
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="fas fa-user"></i> Имя пользователя
+                        </label>
+                        <input type="text" 
+                               name="username" 
+                               id="id_username" 
+                               class="form-control" 
+                               placeholder="Введите имя пользователя"
+                               value="{{ form.username.value|default_if_none:'' }}"
+                               required>
+                        <div class="form-text">Требуется минимум 3 символа</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">
+                            <i class="fas fa-lock"></i> Пароль
+                        </label>
+                        <input type="password" 
+                               name="password1" 
+                               id="id_password1" 
+                               class="form-control" 
+                               placeholder="Введите пароль"
+                               required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">
+                            <i class="fas fa-lock"></i> Подтверждение пароля
+                        </label>
+                        <input type="password" 
+                               name="password2" 
+                               id="id_password2" 
+                               class="form-control" 
+                               placeholder="Повторите пароль"
+                               required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus"></i> Зарегистрироваться
+                    </button>
+                </form>
+                
+                <p class="text-center mt-3">
+                    Уже есть аккаунт? <a href="{% url 'login' %}">Войдите</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+{% endblock %}

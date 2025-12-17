@@ -9,19 +9,19 @@ logger = logging.getLogger(__name__)
 def get_weather_data(city):
     """Получает данные о погоде через OpenWeatherMap API"""
     try:
-        # Проверка наличия API ключа
+       
         if not getattr(settings, 'WEATHER_API_KEY', None):
             logger.error("API ключ OpenWeatherMap не настроен")
             return None
         
-        # Проверка входных данных
+     
         if not isinstance(city, str) or not city.strip():
             logger.error(f"Некорректное название города: {city}")
             return None
         
         city_lower = city.lower().strip()
         
-        # Проверка кэша
+       
         try:
             cached = WeatherCache.objects.get(city=city_lower)
             if (timezone.now() - cached.last_updated).total_seconds() < 7200:
@@ -30,7 +30,7 @@ def get_weather_data(city):
         except:
             pass
         
-        # Запрос к API
+   
         logger.info(f"Запрос к OpenWeatherMap API для города: {city}")
         
         response = requests.get(
@@ -44,12 +44,12 @@ def get_weather_data(city):
             timeout=10
         )
         
-        # Проверка статуса ответа
+      
         if response.status_code != 200:
             logger.error(f"API ошибка: {response.status_code} для города {city}")
             return None
         
-        # Парсинг данных
+    
         data = response.json()
         weather_data = {
             'city': data.get('name', city),
@@ -65,7 +65,7 @@ def get_weather_data(city):
         
         logger.info(f"Получены данные: {weather_data['city']} - {weather_data['temperature']}°C")
         
-        # Сохранение в кэш
+
         try:
             WeatherCache.objects.update_or_create(
                 city=city_lower,
@@ -77,6 +77,6 @@ def get_weather_data(city):
         return weather_data
         
     except Exception as e:
-        # Одна общая обработка всех возможных ошибок
+        
         logger.error(f"Ошибка при получении погоды для {city}: {str(e)}")
         return None

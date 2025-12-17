@@ -1,7 +1,7 @@
-import random
+iimport random
 
-BOB_START = 100_000
-ALICE_START = 100_000
+BOB_START = 100_000     #стартовый капитал боба
+ALICE_START = 100_000     #стартовый капитал алисы
 
 BOB_SALARY = 80_000
 ALICE_SALARY = 200_000
@@ -14,8 +14,11 @@ MORTGAGE_RATE_ANNUAL = 0.12
 MORTGAGE_TERM_MONTHS = 20 * 12
 
 monthly_rate = MORTGAGE_RATE_ANNUAL / 12
-annuity_payment = MORTGAGE_AMOUNT * (monthly_rate * (1 + monthly_rate) ** MORTGAGE_TERM_MONTHS) / \
-                  (((1 + monthly_rate) ** MORTGAGE_TERM_MONTHS) - 1)
+annuity_payment = (
+    MORTGAGE_AMOUNT
+    * (monthly_rate * (1 + monthly_rate) ** MORTGAGE_TERM_MONTHS)
+    / (((1 + monthly_rate) ** MORTGAGE_TERM_MONTHS) - 1)
+)
 
 def simulate(years):
     bob = BOB_START
@@ -44,12 +47,12 @@ def simulate(years):
 
     return bob, alice
 
-for y in [1, 5, 10, 20, 25]:
+for y in [1, 10, 25, 50, 75, 100]:
     b, a = simulate(y)
     print(f"Через {y} год(а/лет): Боб — {b:,.0f} руб., Алиса — {a:,.0f} руб.")
 
 try:
-    n = int(input("\nСколько лет смоделировать (1–100)? "))
+    n = int(input("\nСколько лет смоделировать (1–100) "))
     if 1 <= n <= 100:
         b, a = simulate(n)
         print(f"\nЧерез {n} лет: Боб — {b:,.0f} руб., Алиса — {a:,.0f} руб.")

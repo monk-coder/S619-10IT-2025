@@ -1,0 +1,63 @@
+iimport random
+
+BOB_START = 100_000     #стартовый капитал боба
+ALICE_START = 100_000     #стартовый капитал алисы
+
+BOB_SALARY = 80_000
+ALICE_SALARY = 200_000
+
+BOB_EXPENSES = 30_000 + 5_000 + 10_000
+ALICE_OTHER_EXPENSES = 130_000
+
+MORTGAGE_AMOUNT = 10_000_000
+MORTGAGE_RATE_ANNUAL = 0.12
+MORTGAGE_TERM_MONTHS = 20 * 12
+
+monthly_rate = MORTGAGE_RATE_ANNUAL / 12
+annuity_payment = (
+    MORTGAGE_AMOUNT
+    * (monthly_rate * (1 + monthly_rate) ** MORTGAGE_TERM_MONTHS)
+    / (((1 + monthly_rate) ** MORTGAGE_TERM_MONTHS) - 1)
+)
+
+def simulate(years):
+    bob = BOB_START
+    alice = ALICE_START
+    debt = MORTGAGE_AMOUNT
+    monthly_rate_local = MORTGAGE_RATE_ANNUAL / 12
+
+    for month in range(years * 12):
+        bob += BOB_SALARY - BOB_EXPENSES
+        if random.randint(1, 10) == 1:
+            bob += 150_000
+
+        alice += ALICE_SALARY
+
+        if debt > 0:
+            interest = debt * monthly_rate_local
+            principal = annuity_payment - interest
+            if principal > debt:
+                principal = debt
+            debt -= principal
+            mortgage_payment = interest + principal
+        else:
+            mortgage_payment = 0
+
+        alice -= (mortgage_payment + ALICE_OTHER_EXPENSES)
+
+    return bob, alice
+
+for y in [1, 10, 25, 50, 75, 100]:
+    b, a = simulate(y)
+    print(f"Через {y} год(а/лет): Боб — {b:,.0f} руб., Алиса — {a:,.0f} руб.")
+
+try:
+    n = int(input("\nСколько лет смоделировать (1–100) "))
+    if 1 <= n <= 100:
+        b, a = simulate(n)
+        print(f"\nЧерез {n} лет: Боб — {b:,.0f} руб., Алиса — {a:,.0f} руб.")
+    else:
+        print("Число должно быть от 1 до 100.")
+except ValueError:
+    print("Введите целое число.")
+

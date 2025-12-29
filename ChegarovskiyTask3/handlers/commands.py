@@ -15,7 +15,6 @@ from config import EMOJI, STARTING_BALANCE, REFERRAL_BONUS, BONUS_AMOUNT, BONUS_
 logger = logging.getLogger(__name__)
 db = Database()
 
-# Константы
 MEDALS_EMOJI = {1: "🥇", 2: "🥈", 3: "🥉"}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -26,8 +25,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_data = db.get_user(user.id)
     
     if not user_data:
-        # Создаем пользователя
-        referral_code = f"ref_{user.id}_{random.randint(1000, 9999)}"
+        # Создаем пользователя (referral_code теперь НЕ используется)
         db.create_user(user.id, user.username, referred_by)
         await _send_welcome_message(update, user, referred_by)
     else:
@@ -68,16 +66,15 @@ def _build_welcome_text(user_name: str, referred_by: int) -> str:
     return base_text
 
 async def show_balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Показать баланс и статистику пользователя"""
+    """Показать баланс и статистику пользователя - БЕЗ referral_code"""
     user = update.effective_user
     user_data = db.get_user(user.id)
 
     if user_data:
         balance_text = (
             f"{EMOJI['money']} **Баланс:** {user_data['balance']} монет\n"
-            f"🎮 **Сыграно игр:** {user_data['games_played']}\n"
-            f"📊 **Реферальный код:** `{user_data['referral_code']}`\n\n"
-            f"*Поделитесь кодом с друзьями и получите {REFERRAL_BONUS} монет за каждого!*"
+            f"🎮 **Сыграно игр:** {user_data['games_played']}\n\n"
+            f"*Приглашайте друзей и получайте {REFERRAL_BONUS} монет за каждого!*"
         )
         await update.message.reply_text(balance_text, parse_mode="Markdown")
     else:

@@ -9,6 +9,11 @@ class SearchHistory(models.Model):
     
     class Meta:
         ordering = ['-searched_at']
+        verbose_name = 'История поиска'
+        verbose_name_plural = 'Истории поиска'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.city} - {self.searched_at}"
 
 class WeatherTask(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -19,11 +24,23 @@ class WeatherTask(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+        verbose_name = 'Погодная задача'
+        verbose_name_plural = 'Погодные задачи'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.city}"
 
 class WeatherCache(models.Model):
     city = models.CharField(max_length=100, unique=True)
     weather_data = models.JSONField()
     last_updated = models.DateTimeField(auto_now=True)
     
+    class Meta:
+        verbose_name = 'Кэш погоды'
+        verbose_name_plural = 'Кэши погоды'
+
     def is_valid(self):
         return (timezone.now() - self.last_updated).total_seconds() < 7200  # 2 часа
+    
+    def __str__(self):
+        return f"{self.city} - {self.last_updated}"

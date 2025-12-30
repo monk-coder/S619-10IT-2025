@@ -117,5 +117,5 @@ def run_simulation():
         print("Введите целое число.")
 
 
-if name == "__main__":
+if __name__ == "__main__":
     run_simulation()

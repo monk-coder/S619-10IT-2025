@@ -2,7 +2,7 @@ import random
 
 
 class Bob:
-    def init(self):
+    def __init__(self):
         self.balance = 100_000
         self.salary = 80_000
         self.rent = 30_000
@@ -11,81 +11,85 @@ class Bob:
         self.cat_food = 2_000
         self.cat_grooming = 3_000
         self.months_passed = 0
-    
+
     def calculate_expenses(self):
         expenses = self.rent + self.food + self.transport + self.cat_food
         if self.months_passed % 2 == 0:
             expenses += self.cat_grooming
         return expenses
-    
+
     def check_bonus(self):
         if random.randint(1, 10) == 1:
             return 150_000
         return 0
-    
+
     def update_month(self):
         self.months_passed += 1
         income = self.salary + self.check_bonus()
         expenses = self.calculate_expenses()
         self.balance += income - expenses
-        
+
+        # Индексация аренды каждые 12 месяцев
         if self.months_passed % 12 == 0:
             self.rent = int(self.rent * 1.05)
 
 
 class Alice:
-    def init(self):
+    def __init__(self):
         self.balance = 100_000
         self.salary = 200_000
         self.food = 4_000
         self.transport = 1_500
         self.mortgage_amount = 10_000_000
-        self.mortgage_rate = 0.12
-        self.mortgage_term = 20 * 12
+        self.mortgage_rate = 0.12  # годовая ставка
+        self.mortgage_term = 20 * 12  # срок в месяцах
         self.debt = self.mortgage_amount
-    
-    def calculate_monthly_payment(self):
-        if self.debt <= 0:
+        # Предварительный расчёт аннуитетного платежа (фиксированный)
+        self.monthly_payment = self._calculate_annuity_payment()
+
+    def _calculate_annuity_payment(self):
+        if self.mortgage_amount <= 0 or self.mortgage_term <= 0:
             return 0
-        
-        r = self.mortgage_rate / 12
+        r = self.mortgage_rate / 12  # месячная ставка
         n = self.mortgage_term
-        payment = self.mortgage_amount * r * (1 + r)**n / ((1 + r)**n - 1)
+        # Формула аннуитета: P = S * r * (1 + r)^n / ((1 + r)^n - 1)
+        numerator = r * (1 + r) ** n
+        denominator = (1 + r) ** n - 1
+        payment = self.mortgage_amount * (numerator / denominator)
         return payment
-    
+
     def pay_mortgage(self):
         if self.debt <= 0:
             return 0
-        
+
         monthly_rate = self.mortgage_rate / 12
         interest = self.debt * monthly_rate
-        payment = self.calculate_monthly_payment()
-        principal = payment - interest
-        
+        principal = self.monthly_payment - interest
+
         if principal > self.debt:
             principal = self.debt
-        
+
         self.debt -= principal
         return interest + principal
-    
+
     def calculate_expenses(self):
         return self.food + self.transport
-    
+
     def update_month(self):
         income = self.salary
-        mortgage = self.pay_mortgage()
+        mortgage_payment = self.pay_mortgage()
         expenses = self.calculate_expenses()
-        self.balance += income - mortgage - expenses
+        self.balance += income - mortgage_payment - expenses
 
 
 def simulate(years):
     bob = Bob()
     alice = Alice()
-    
+
     for _ in range(years * 12):
         bob.update_month()
         alice.update_month()
-    
+
     return bob.balance, alice.balance
 
 
@@ -95,13 +99,13 @@ def print_results(years, bob_balance, alice_balance):
 
 def run_simulation():
     print("=== Симуляция жизни Боба и Алисы ===\n")
-    
+
     for years in [1, 5, 10, 20, 25]:
         bob_bal, alice_bal = simulate(years)
         print_results(years, bob_bal, alice_bal)
-    
-    print("\n" + "="*50)
-    
+
+    print("\n" + "=" * 50)
+
     try:
         n = int(input("\nСколько лет смоделировать (1–100)? "))
         if 1 <= n <= 100:
@@ -113,5 +117,5 @@ def run_simulation():
         print("Введите целое число.")
 
 
-if name == "main":
+if name == "__main__":
     run_simulation()

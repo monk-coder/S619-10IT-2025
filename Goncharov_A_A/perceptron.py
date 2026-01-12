@@ -13,7 +13,7 @@ class Perceptron:
         else:
             return 0
 
-    def train(self, inputs, labels, epochs=20):
+    def forward(self, inputs, labels, epochs=20):
         print("--- start params ---")
         print(f"w's: {self.weights}")
         print(f"b's: {self.bias}\n")
@@ -48,7 +48,7 @@ class Perceptron:
         print(f"learned w's: {[round(w, 2) for w in self.weights]}")
         print(f"learned b's: {round(self.bias, 2)}\n")
 
-    def predict(self, inputs):
+    def backward(self, inputs, labels):
         print("model testing")
         for input_data, label in zip(inputs, labels):
             weighted_sum = 0
@@ -66,6 +66,6 @@ labels = [0, 0, 0, 1]
 
 perceptron = Perceptron(num_inputs=2, learning_rate=0.1)
 
-perceptron.train(inputs, labels, epochs=20)
+perceptron.forward(inputs, labels, epochs=20)
 
-perceptron.predict(inputs)
+perceptron.backward(inputs, labels)

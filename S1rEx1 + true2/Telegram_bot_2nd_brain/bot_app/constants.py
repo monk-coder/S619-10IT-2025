@@ -1,0 +1,12 @@
+from enum import IntEnum
+
+
+class BotState(IntEnum):
+    MAIN_MENU = 0
+    PROFILE_MENU = 1
+    NOTE_MATERIAL = 2
+    INSTRUCTOR_TOPIC = 3
+    INSTRUCTOR_QUESTION = 4
+    PROMPT_SETTING = 5
+    INSTRUCTIONS_SETTING = 6
+    MODEL_SELECTION = 7

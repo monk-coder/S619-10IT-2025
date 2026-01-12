@@ -1,57 +1,71 @@
 import random
 
+
+class Perceptron:
+    def __init__(self, num_inputs, learning_rate=0.1):
+        self.weights = [random.uniform(-0.5, 0.5) for _ in range(num_inputs)]
+        self.bias = random.uniform(-0.5, 0.5)
+        self.learning_rate = learning_rate
+
+    def activation(self, sum_value):
+        if sum_value >= 0:
+            return 1
+        else:
+            return 0
+
+    def train(self, inputs, labels, epochs=20):
+        print("--- start params ---")
+        print(f"w's: {self.weights}")
+        print(f"b's: {self.bias}\n")
+
+        print("--- learning ---")
+        for epoch in range(epochs):
+            total_error = 0
+            for input_data, label in zip(inputs, labels):
+                weighted_sum = 0
+                for i in range(len(self.weights)):
+                    weighted_sum += input_data[i] * self.weights[i]
+                weighted_sum += self.bias
+
+                prediction = self.activation(weighted_sum)
+                error = label - prediction
+
+                if error != 0:
+                    total_error += 1
+                    for i in range(len(self.weights)):
+                        self.weights[i] = (
+                            self.weights[i] + self.learning_rate * error * input_data[i]
+                        )
+
+                    self.bias = self.bias + self.learning_rate * error
+
+            print(f"epoch {epoch + 1}: errors = {total_error}")
+            if total_error == 0:
+                print("no errors, finished learning")
+                break
+
+        print("final params")
+        print(f"learned w's: {[round(w, 2) for w in self.weights]}")
+        print(f"learned b's: {round(self.bias, 2)}\n")
+
+    def predict(self, inputs):
+        print("model testing")
+        for input_data, label in zip(inputs, labels):
+            weighted_sum = 0
+            for i in range(len(self.weights)):
+                weighted_sum += input_data[i] * self.weights[i]
+            weighted_sum += self.bias
+
+            prediction = self.activation(weighted_sum)
+
+            print(f"in: {input_data}, label: {label}, predict: {prediction}")
+
+
 inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
 labels = [0, 0, 0, 1]
 
-weights = [random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5)]
+perceptron = Perceptron(num_inputs=2, learning_rate=0.1)
 
-bias = random.uniform(-0.5, 0.5)
+perceptron.train(inputs, labels, epochs=20)
 
-learning_rate = 0.1
-
-epochs = 20
-
-print("--- start params ---")
-print(f"w's: {weights}")
-print(f"b's: {bias}\n")
-
-
-def activation(sum_value):
-    if sum_value >= 0:
-        return 1
-    else:
-        return 0
-
-
-print("--- learning ---")
-for epoch in range(epochs):
-    total_error = 0
-    for input_data, label in zip(inputs, labels):
-        weighted_sum = (
-            (input_data[0] * weights[0]) + (input_data[1] * weights[1]) + bias
-        )
-        prediction = activation(weighted_sum)
-        error = label - prediction
-
-        if error != 0:
-            total_error += 1
-            weights[0] = weights[0] + learning_rate * error * input_data[0]
-            weights[1] = weights[1] + learning_rate * error * input_data[1]
-
-            bias = bias + learning_rate * error
-
-    print(f"epoch {epoch + 1}: errors = {total_error}")
-    if total_error == 0:
-        print("no errors, finished learning")
-        break
-
-print("final params")
-print(f"learned w's: {[round(w, 2) for w in weights]}")
-print(f"learned b's: {round(bias, 2)}\n")
-
-print("model testing")
-for input_data, label in zip(inputs, labels):
-    weighted_sum = (input_data[0] * weights[0]) + (input_data[1] * weights[1]) + bias
-    prediction = activation(weighted_sum)
-
-    print(f"in: {input_data}, label: {label}, predict: {prediction}")
+perceptron.predict(inputs)

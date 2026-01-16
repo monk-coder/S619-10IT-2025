@@ -39,21 +39,7 @@ class Perceptron:
             prediction = self.activation(weighted_sum)
             print(f"input: {input_data}, label: {label}, predict: {prediction}")
 
-class Run:
-    def __init__(self, inputs, labels, epochs):
-        self.inputs = inputs
-        self.labels = labels
-        self.epochs = epochs
 
-    def start(self):
-        print("--- start params ---")
-        print(f"weights: {perceptron.weights}")
-        print(f"bias: {perceptron.bias}\n")
-    
-        print("--- learning---")
-    
-    def end(self):
-        
 inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
 labels = [0, 0, 0, 1]
 epochs = 20

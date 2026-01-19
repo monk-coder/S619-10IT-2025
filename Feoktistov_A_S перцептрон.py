@@ -16,16 +16,10 @@ class Perceptron:
         self.losses = []
     
     def activation_function(self, x):
-        """
-        Пороговая функция активации
-        Возвращает 1 если x >= 0, иначе 0
-        """
         return 1 if x >= 0 else 0
     
     def predict(self, inputs):
         """
-        Предсказание для одного примера
-        
         Args:
             inputs: входные данные (массив длиной input_size)
         
@@ -40,13 +34,6 @@ class Perceptron:
         return self.activation_function(weighted_sum)
     
     def train(self, X_train, y_train):
-        """
-        Обучение перцептрона
-        
-        Args:
-            X_train: матрица признаков (n_samples, n_features)
-            y_train: вектор меток (n_samples,)
-        """
         for epoch in range(self.epochs):
             total_error = 0
             
@@ -77,16 +64,6 @@ class Perceptron:
                 break
     
     def evaluate(self, X_test, y_test):
-        """
-        Оценка точности модели
-        
-        Args:
-            X_test: тестовые данные
-            y_test: истинные метки
-        
-        Returns:
-            Точность модели
-        """
         correct = 0
         for inputs, target in zip(X_test, y_test):
             prediction = self.predict(inputs)
@@ -97,10 +74,7 @@ class Perceptron:
         print(f"Точность: {accuracy:.2f}%")
         return accuracy
 
-
-# Создаем набор данных для логической функции AND
 def create_and_dataset():
-    """Создает набор данных для функции AND"""
     X = np.array([
         [0, 0],
         [0, 1],
@@ -110,7 +84,6 @@ def create_and_dataset():
     y = np.array([0, 0, 0, 1])  # AND: только [1,1] дает 1
     return X, y
 
-# Создаем набор данных для логической функции OR
 def create_or_dataset():
     """Создает набор данных для функции OR"""
     X = np.array([
@@ -134,59 +107,51 @@ def main():
     else:
         X, y = create_or_dataset()
         print("Обучение на функции OR:")
-    
-    # Выводим обучающие данные
+
     print("Обучающие данные:")
     for i in range(len(X)):
         print(f"  Вход: {X[i]}, Цель: {y[i]}")
     print()
     
-    # Инициализация и обучение перцептрона
     perceptron = Perceptron(input_size=2, learning_rate=0.1, epochs=50)
     perceptron.train(X, y)
     
     # Оценка на обучающих данных
     print(f"\nРезультаты для функции {function_type}:")
     perceptron.evaluate(X, y)
-    
-    # Выводим предсказания для всех комбинаций
+
     print("\nПредсказания модели:")
     test_cases = [[0, 0], [0, 1], [1, 0], [1, 1]]
     for inputs in test_cases:
         prediction = perceptron.predict(inputs)
         print(f"  Вход: {inputs} -> Предсказание: {prediction}")
     
-    # Выводим обученные веса
     print(f"\nОбученные веса:")
     print(f"  Вес смещения (w0): {perceptron.weights[0]:.4f}")
     print(f"  Вес для x1 (w1): {perceptron.weights[1]:.4f}")
     print(f"  Вес для x2 (w2): {perceptron.weights[2]:.4f}")
     
-    # Визуализация процесса обучения
     try:
         import matplotlib.pyplot as plt
         
         plt.figure(figsize=(10, 4))
         
-        # График ошибки
         plt.subplot(1, 2, 1)
         plt.plot(range(1, len(perceptron.losses) + 1), perceptron.losses, marker='o')
         plt.xlabel('Эпоха')
         plt.ylabel('Средняя ошибка')
         plt.title('Процесс обучения')
         plt.grid(True)
-        
-        # График разделяющей линии
+
         plt.subplot(1, 2, 2)
         
-        # Разделяющая линия: w0 + w1*x1 + w2*x2 = 0
         # x2 = -(w0 + w1*x1)/w2
         x1 = np.array([-0.5, 1.5])
         if perceptron.weights[2] != 0:
             x2 = -(perceptron.weights[0] + perceptron.weights[1] * x1) / perceptron.weights[2]
             plt.plot(x1, x2, 'r-', label='Разделяющая линия')
         
-        # Отрисовка точек данных
+
         colors = ['blue' if label == 0 else 'green' for label in y]
         for i, (point, color) in enumerate(zip(X, colors)):
             plt.scatter(point[0], point[1], c=color, s=100, 

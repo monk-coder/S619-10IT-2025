@@ -17,7 +17,6 @@ epochs = 20
 
 print(f"Начальные веса: w1={weights[0]:.3f}, w2={weights[1]:.3f}")
 print(f"Начальное смещение: b={bias:.3f}")
-print()
 
 
 def compute_weighted_sum(inputs, weights, bias):
@@ -54,4 +53,5 @@ print("-" * 35)
 for i in range(len(inputs)):
     weighted_sum = compute_weighted_sum(inputs[i], weights, bias)
     prediction = activation_function(weighted_sum)
-    print(f"({inputs[i][0]},{inputs[i][1]}) |    {targets[i]}     |      {prediction}")
+    print(f"({inputs[i][0]},{inputs[i][1]}) | {targets[i]} | {prediction}")
+

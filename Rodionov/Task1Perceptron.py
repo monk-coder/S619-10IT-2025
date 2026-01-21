@@ -56,23 +56,13 @@ class Perceptron:
         return prediction, weighted_sum
 
     def backward(
-    self,
-    error: float,
-    inputs: np.ndarray
-) -> None:
-    """
-    Обновление весов перцептрона методом обратного распространения ошибки.
-    
-    Parameters:
-    -----------
-    error : float
-        Ошибка на выходе нейрона (целевое значение - предсказание)
-    inputs : np.ndarray
-        Входные значения текущего примера
-    """
-    inputs_with_bias = np.append(inputs, 1.0)
-    weight_update = self.learning_rate * error * inputs_with_bias
-    self.weights += weight_update
+            self,
+            error: float,
+            inputs: np.ndarray
+    ) -> None:
+        inputs_with_bias = np.append(inputs, 1.0)
+        weight_update = self.learning_rate * error * inputs_with_bias
+        self.weights += weight_update
 
     def predict(self, inputs: np.ndarray) -> int:
         prediction, _ = self.forward(inputs)
@@ -126,8 +116,7 @@ class Perceptron:
                 epoch_error += abs(error)
 
                 if error != 0:
-                    inputs_with_bias = np.append(inputs, 1.0)
-                    self.weights += self.learning_rate * error * inputs_with_bias
+                    self.backward(error, inputs)
 
             history.epochs.append(epoch + 1)
             history.errors.append(epoch_error)
@@ -263,6 +252,7 @@ class LogicGateDataset:
 def run_experiment(
         gate_type: LogicGate,
         learning_rate: float = 0.1,
+        epochs: int = 20,
         verbose: bool = True
 ) -> Perceptron:
     if verbose:
@@ -287,6 +277,7 @@ def run_experiment(
         random_seed=42
     )
 
+    history = perceptron.train(data, targets, epochs=epochs, verbose=True)
     metrics = perceptron.evaluate(data, targets, verbose=verbose)
 
     if verbose:
@@ -309,6 +300,7 @@ def demonstrate_xor_limitation():
     perceptron = Perceptron(n_inputs=2, learning_rate=0.1, random_seed=42)
     data, targets = LogicGateDataset.create_dataset(LogicGate.XOR)
 
+    history = perceptron.train(data, targets, epochs=50, verbose=True)
     metrics = perceptron.evaluate(data, targets, verbose=True)
 
     xor_results = [
@@ -367,6 +359,7 @@ def main():
             perceptron = run_experiment(
                 gate_type=gate,
                 learning_rate=0.2,
+                epochs=20,
                 verbose=True
             )
             trained_perceptrons.append((gate.value, perceptron))

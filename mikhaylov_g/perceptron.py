@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Реализация однослойного перцептрона для бинарной классификации.
 Обучается логической функции AND.
@@ -10,7 +11,7 @@ import random
 class Perceptron:
     """Однослойный перцептрон для бинарной классификации."""
     
-    def init(self, num_inputs=2, learning_rate=0.1, epochs=20):
+    def __init__(self, num_inputs=2, learning_rate=0.1, epochs=20):  # Исправлено: __init__
         """
         Инициализация перцептрона.
         
@@ -96,7 +97,9 @@ class Perceptron:
             if total_error == 0:
                 print(f"\nОбучение завершено досрочно на эпохе {epoch + 1}")
                 break
-                def main():
+
+
+def main():
     """Основная функция для демонстрации работы перцептрона."""
     
     # 1. Создание набора данных для логической функции AND
@@ -200,5 +203,5 @@ class Perceptron:
         print("\n❌ Перцептрон не смог выучить функцию OR")
 
 
-if name == "main":
+if __name__ == "__main__":  # Исправлено: __name__ == "__main__"
     main()

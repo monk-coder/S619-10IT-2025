@@ -42,4 +42,5 @@ print("Результаты после обучения:")
 for input_vector in X:
     linear_output = np.dot(input_vector, weights) + bias
     prediction = 1 if linear_output >= 0 else 0
+
     print(f"Вход: {input_vector} -> Предсказание: {prediction}")

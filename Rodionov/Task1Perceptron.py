@@ -55,6 +55,25 @@ class Perceptron:
         prediction = self._step_activation(weighted_sum)
         return prediction, weighted_sum
 
+    def backward(
+    self,
+    error: float,
+    inputs: np.ndarray
+) -> None:
+    """
+    Обновление весов перцептрона методом обратного распространения ошибки.
+    
+    Parameters:
+    -----------
+    error : float
+        Ошибка на выходе нейрона (целевое значение - предсказание)
+    inputs : np.ndarray
+        Входные значения текущего примера
+    """
+    inputs_with_bias = np.append(inputs, 1.0)
+    weight_update = self.learning_rate * error * inputs_with_bias
+    self.weights += weight_update
+
     def predict(self, inputs: np.ndarray) -> int:
         prediction, _ = self.forward(inputs)
         return prediction

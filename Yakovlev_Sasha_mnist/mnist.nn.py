@@ -2,18 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 import os
 
 # Убедимся, что папка для графиков существует
 os.makedirs("plots", exist_ok=True)
 
 # ----------------------------
-# Вспомогательные функции
+# Вспомогательные функции активации и потерь
 # ----------------------------
 
 def sigmoid(z):
-    # Защита от переполнения
     z = np.clip(z, -500, 500)
     return 1 / (1 + np.exp(-z))
 
@@ -22,18 +20,32 @@ def sigmoid_derivative(z):
     return s * (1 - s)
 
 def softmax(z):
-    # Численно стабильная версия
     exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))
     return exp_z / np.sum(exp_z, axis=1, keepdims=True)
 
 def cross_entropy_loss(y_true, y_pred):
     m = y_true.shape[0]
-    # Предотвращаем log(0)
     y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
     return -np.sum(y_true * np.log(y_pred)) / m
 
 def one_hot_encode(y, num_classes=10):
     return np.eye(num_classes)[y]
+
+# ----------------------------
+# Функции инициализации весов
+# ----------------------------
+
+def initialize_weights_xavier(input_size, output_size):
+    """
+    Инициализация весов по методу Xavier (Glorot).
+    Подходит для сигмоиды и tanh.
+    """
+    scale = np.sqrt(2.0 / (input_size + output_size))
+    return np.random.randn(input_size, output_size) * scale
+
+def initialize_bias(output_size):
+    """Инициализация смещений нулями."""
+    return np.zeros((1, output_size))
 
 # ----------------------------
 # Класс нейросети
@@ -46,11 +58,11 @@ class SimpleNeuralNetwork:
         self.output_size = output_size
         self.learning_rate = learning_rate
 
-        # Инициализация весов (Xavier-like)
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
-        self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, output_size) * np.sqrt(2.0 / hidden_size)
-        self.b2 = np.zeros((1, output_size))
+        # Инициализация весов и смещений
+        self.W1 = initialize_weights_xavier(input_size, hidden_size)
+        self.b1 = initialize_bias(hidden_size)
+        self.W2 = initialize_weights_xavier(hidden_size, output_size)
+        self.b2 = initialize_bias(output_size)
 
     def forward(self, X):
         self.z1 = np.dot(X, self.W1) + self.b1
@@ -63,7 +75,7 @@ class SimpleNeuralNetwork:
         m = X.shape[0]
 
         # Градиенты для выходного слоя
-        dz2 = y_pred - y_true  # для softmax + cross-entropy
+        dz2 = y_pred - y_true
         dW2 = np.dot(self.a1.T, dz2) / m
         db2 = np.sum(dz2, axis=0, keepdims=True) / m
 
@@ -73,7 +85,7 @@ class SimpleNeuralNetwork:
         dW1 = np.dot(X.T, dz1) / m
         db1 = np.sum(dz1, axis=0, keepdims=True) / m
 
-        # Обновление весов
+        # Обновление параметров
         self.W2 -= self.learning_rate * dW2
         self.b2 -= self.learning_rate * db2
         self.W1 -= self.learning_rate * dW1
@@ -84,15 +96,12 @@ class SimpleNeuralNetwork:
         val_accuracies = []
 
         for epoch in range(epochs):
-            # Прямой проход
             y_pred = self.forward(X_train)
             loss = cross_entropy_loss(y_train, y_pred)
             train_losses.append(loss)
 
-            # Обратный проход
             self.backward(X_train, y_train, y_pred)
 
-            # Оценка на валидации
             val_pred = self.forward(X_val)
             val_acc = self.accuracy(val_pred, y_val)
             val_accuracies.append(val_acc)
@@ -113,18 +122,20 @@ class SimpleNeuralNetwork:
         return np.mean(y_pred_labels == y_true)
 
 # ----------------------------
-# Основной скрипт
+# Основная функция
 # ----------------------------
 
 def main():
     print("Загрузка данных MNIST...")
+    # Загружаем MNIST; pandas требуется в новых версиях scikit-learn
     mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
-    X, y = mnist.data, mnist.target.astype(int)
+    X = mnist.data.astype(np.float64)
+    y = mnist.target.astype(int)
 
-    # Нормализация: [0, 255] → [0, 1]
+    # Нормализация пикселей в диапазон [0, 1]
     X = X / 255.0
 
-    # Разделение
+    # Разделение данных
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=10000, random_state=42, stratify=y
     )
@@ -138,7 +149,7 @@ def main():
 
     print(f"Размеры: train={X_train.shape[0]}, val={X_val.shape[0]}, test={X_test.shape[0]}")
 
-    # Создание модели
+    # Создание и обучение модели
     model = SimpleNeuralNetwork(
         input_size=784,
         hidden_size=128,
@@ -146,16 +157,15 @@ def main():
         learning_rate=0.1
     )
 
-    # Обучение
     print("\nНачало обучения...")
     losses, accuracies = model.train(X_train, y_train_oh, X_val, y_val_oh, epochs=50)
 
-    # Финальная оценка на тесте
+    # Оценка на тестовой выборке
     test_pred = model.predict(X_test)
     test_acc = np.mean(test_pred == y_test)
     print(f"\nФинальная точность на тестовой выборке: {test_acc:.4f} ({test_acc*100:.2f}%)")
 
-    # Построение графиков
+    # Построение и сохранение графиков
     plt.figure(figsize=(12, 5))
 
     plt.subplot(1, 2, 1)

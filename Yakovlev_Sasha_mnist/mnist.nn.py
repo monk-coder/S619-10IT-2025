@@ -4,11 +4,11 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 import os
 
-# Убедимся, что папка для графиков существует
+# Создаём папку для графиков, если её нет
 os.makedirs("plots", exist_ok=True)
 
 # ----------------------------
-# Вспомогательные функции активации и потерь
+# Вспомогательные функции
 # ----------------------------
 
 def sigmoid(z):
@@ -31,15 +31,8 @@ def cross_entropy_loss(y_true, y_pred):
 def one_hot_encode(y, num_classes=10):
     return np.eye(num_classes)[y]
 
-# ----------------------------
-# Функции инициализации весов
-# ----------------------------
-
 def initialize_weights_xavier(input_size, output_size):
-    """
-    Инициализация весов по методу Xavier (Glorot).
-    Подходит для сигмоиды и tanh.
-    """
+    """Инициализация весов по методу Xavier (Glorot)."""
     scale = np.sqrt(2.0 / (input_size + output_size))
     return np.random.randn(input_size, output_size) * scale
 
@@ -48,7 +41,7 @@ def initialize_bias(output_size):
     return np.zeros((1, output_size))
 
 # ----------------------------
-# Класс нейросети
+# Класс нейронной сети
 # ----------------------------
 
 class SimpleNeuralNetwork:
@@ -58,17 +51,26 @@ class SimpleNeuralNetwork:
         self.output_size = output_size
         self.learning_rate = learning_rate
 
-        # Инициализация весов и смещений
+        # Инициализация параметров
         self.W1 = initialize_weights_xavier(input_size, hidden_size)
         self.b1 = initialize_bias(hidden_size)
         self.W2 = initialize_weights_xavier(hidden_size, output_size)
         self.b2 = initialize_bias(output_size)
 
+    def _layer1(self, X):
+        """Первый скрытый слой: линейное преобразование + сигмоида."""
+        z1 = np.dot(X, self.W1) + self.b1
+        return sigmoid(z1)
+
+    def _layer2(self, a1):
+        """Выходной слой: линейное преобразование + softmax."""
+        z2 = np.dot(a1, self.W2) + self.b2
+        return softmax(z2)
+
     def forward(self, X):
-        self.z1 = np.dot(X, self.W1) + self.b1
-        self.a1 = sigmoid(self.z1)
-        self.z2 = np.dot(self.a1, self.W2) + self.b2
-        self.a2 = softmax(self.z2)
+        """Прямое распространение через два слоя."""
+        self.a1 = self._layer1(X)
+        self.a2 = self._layer2(self.a1)
         return self.a2
 
     def backward(self, X, y_true, y_pred):
@@ -81,11 +83,11 @@ class SimpleNeuralNetwork:
 
         # Градиенты для скрытого слоя
         da1 = np.dot(dz2, self.W2.T)
-        dz1 = da1 * sigmoid_derivative(self.z1)
+        dz1 = da1 * sigmoid_derivative(np.dot(X, self.W1) + self.b1)
         dW1 = np.dot(X.T, dz1) / m
         db1 = np.sum(dz1, axis=0, keepdims=True) / m
 
-        # Обновление параметров
+        # Обновление весов
         self.W2 -= self.learning_rate * dW2
         self.b2 -= self.learning_rate * db2
         self.W1 -= self.learning_rate * dW1
@@ -122,17 +124,16 @@ class SimpleNeuralNetwork:
         return np.mean(y_pred_labels == y_true)
 
 # ----------------------------
-# Основная функция
+# Основная программа
 # ----------------------------
 
 def main():
     print("Загрузка данных MNIST...")
-    # Загружаем MNIST; pandas требуется в новых версиях scikit-learn
     mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
     X = mnist.data.astype(np.float64)
     y = mnist.target.astype(int)
 
-    # Нормализация пикселей в диапазон [0, 1]
+    # Нормализация
     X = X / 255.0
 
     # Разделение данных
@@ -143,7 +144,7 @@ def main():
         X_train, y_train, test_size=5000, random_state=42, stratify=y_train
     )
 
-    # One-hot encoding меток
+    # One-hot encoding
     y_train_oh = one_hot_encode(y_train)
     y_val_oh = one_hot_encode(y_val)
 
@@ -160,12 +161,12 @@ def main():
     print("\nНачало обучения...")
     losses, accuracies = model.train(X_train, y_train_oh, X_val, y_val_oh, epochs=50)
 
-    # Оценка на тестовой выборке
+    # Финальная оценка
     test_pred = model.predict(X_test)
     test_acc = np.mean(test_pred == y_test)
     print(f"\nФинальная точность на тестовой выборке: {test_acc:.4f} ({test_acc*100:.2f}%)")
 
-    # Построение и сохранение графиков
+    # Построение графиков
     plt.figure(figsize=(12, 5))
 
     plt.subplot(1, 2, 1)

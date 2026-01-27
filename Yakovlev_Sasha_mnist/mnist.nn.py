@@ -162,7 +162,7 @@ def main():
     losses, accuracies = model.train(X_train, y_train_oh, X_val, y_val_oh, epochs=200)
 
     test_acc = model.accuracy(model.forward(X_test), y_test)
-    print(f"\n✅ ФИНАЛЬНАЯ точность на тесте ({class_names}): {test_acc:.4f} ({test_acc * 100:.2f}%)")
+    print(f"\n ФИНАЛЬНАЯ точность на тесте ({class_names}): {test_acc:.4f} ({test_acc * 100:.2f}%)")
 
     # Сохранение графиков
     plt.figure(figsize=(12, 5))

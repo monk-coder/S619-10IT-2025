@@ -1,6 +1,6 @@
 # Нейросеть для классификации рукописных цифр MNIST (реализация с нуля)
 
-Автор: Яковлев Александо 10 ИТ
+Автор: Яковлев Александр 10 ИТ
 
 ## Описание
 Данный проект реализует двухслойную нейронную сеть **с нуля** (без использования TensorFlow/PyTorch) для классификации изображений из датасета MNIST (цифры 0–9).  
@@ -18,11 +18,13 @@
 1. Клонируйте репозиторий и перейдите в папку проекта:
    ```bash
    cd Yakovlev_Sasha_MNIST
-   # Neural Network for Handwritten Digit and Letter Classification (from scratch)
+   
+# Neural Network for Handwritten Digit and Letter Classification (from scratch)
 
 This project implements a **two-layer neural network from scratch** (without TensorFlow/PyTorch) for classifying:
 - **Digits 0–9** (MNIST dataset)
 - **Uppercase letters A–Z** (EMNIST Letters dataset)
+- download (EMNIST LETTERS DATASET): https://disk.yandex.ru/d/D2eN-a55F7lh4A
 
 The network includes:
 - Forward and backward propagation

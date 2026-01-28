@@ -12,8 +12,7 @@ from neural_network import NeuralNetwork
 
 def load_mnist_local():
     """Загрузка MNIST с локального диска или скачивание при отсутствии"""
-    # Используем альтернативный URL
-    base_url = "https://ossci-datasets.s3.amazonaws.com/mnist/"
+    base_url = "http://yann.lecun.com/exdb/mnist/"
     files = {
         'train_images': 'train-images-idx3-ubyte.gz',
         'train_labels': 'train-labels-idx1-ubyte.gz',
@@ -29,19 +28,7 @@ def load_mnist_local():
         filepath = data_dir / filename
         if not filepath.exists():
             print(f"Скачивание {filename}...")
-            try:
-                urllib.request.urlretrieve(base_url + filename, filepath)
-                print(f"  Успешно скачан {filename}")
-            except Exception as e:
-                print(f"  Ошибка при скачивании {filename}: {e}")
-                # Попробуем другой URL
-                alt_url = f"http://yann.lecun.com/exdb/mnist/{filename}"
-                try:
-                    urllib.request.urlretrieve(alt_url, filepath)
-                    print(f"  Успешно скачан с альтернативного URL")
-                except Exception as e2:
-                    print(f"  Ошибка при скачивании с альтернативного URL: {e2}")
-                    raise
+            urllib.request.urlretrieve(base_url + filename, filepath)
 
     # Функция для чтения файлов
     def read_images(filename):
@@ -74,51 +61,16 @@ def load_mnist_local():
     return train_images, train_labels, test_images, test_labels
 
 
-# Альтернативный способ: загрузка через sklearn (требует pandas)
-def load_mnist_sklearn():
-    """Загрузка MNIST через sklearn (требует pandas)"""
-    try:
-        from sklearn.datasets import fetch_openml
-        print("Загрузка через sklearn (требуется pandas)...")
-        mnist = fetch_openml('mnist_784', version=1, parser='liac-arff', as_frame=False)
-
-        X = mnist.data.astype('float32').T
-        y = mnist.target.astype('int32')
-
-        return X, y
-    except ImportError:
-        print("sklearn не установлен, используем ручную загрузку")
-        return None, None
-
-
 def prepare_data(validation_size=5000):
     """Подготовка данных для обучения"""
     print("Загрузка данных MNIST...")
 
-    try:
-        # Сначала пробуем ручную загрузку
-        train_images, train_labels, test_images, test_labels = load_mnist_local()
+    # Загружаем данные
+    train_images, train_labels, test_images, test_labels = load_mnist_local()
 
-        # Объединяем для разделения
-        all_images = np.vstack([train_images, test_images])
-        all_labels = np.hstack([train_labels, test_labels])
-
-    except Exception as e:
-        print(f"Ошибка при ручной загрузке: {e}")
-        print("Пробуем альтернативный метод...")
-
-        # Пробуем загрузить через sklearn
-        X, y = load_mnist_sklearn()
-        if X is not None:
-            # Если загрузили через sklearn, преобразуем
-            all_images = X.T.reshape(-1, 28, 28)
-            all_labels = y
-        else:
-            # Если ничего не сработало, создаем тестовые данные
-            print("Создание тестовых данных...")
-            np.random.seed(42)
-            all_images = np.random.randint(0, 256, size=(10000, 28, 28), dtype=np.uint8)
-            all_labels = np.random.randint(0, 10, size=10000, dtype=np.uint8)
+    # Объединяем для разделения
+    all_images = np.vstack([train_images, test_images])
+    all_labels = np.hstack([train_labels, test_labels])
 
     # Преобразуем изображения в вектор и нормализуем
     X = all_images.reshape(-1, 28 * 28).T.astype('float32') / 255.0
@@ -192,7 +144,7 @@ def plot_training_history(history, save_path='training_history.png'):
 
 def main():
     parser = argparse.ArgumentParser(description='Обучение нейронной сети на MNIST')
-    parser.add_argument('--epochs', type=int, default=5,  # Уменьшил для теста
+    parser.add_argument('--epochs', type=int, default=20,
                         help='Количество эпох обучения')
     parser.add_argument('--learning_rate', type=float, default=0.01,
                         help='Скорость обучения')
@@ -248,9 +200,9 @@ def main():
     predictions = model.predict(X_val[:, sample_indices])
 
     for i, idx in enumerate(sample_indices[:3]):
-        true_label = y_val_labels[idx]
+        true_label = np.argmax(y_val[:, idx])
         print(f"Пример {i + 1}: Предсказано {predictions[i]}, Истинное значение {true_label}")
 
 
 if __name__ == "__main__":
-    main()
+    main()   

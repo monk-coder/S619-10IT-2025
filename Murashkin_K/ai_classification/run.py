@@ -49,7 +49,7 @@ def train_model():
 
             history_loss.append(loss)
             history_acc.append(acc)
-            print(f"Эпоха {i}: Loss = {loss:.4f}, Точность = {acc:.2%}")
+            print(f"Epoch {i}: Loss = {loss:.4f}, Accuracy = {acc:.2%}")
 
     print("\nОценка на тестовых данных...")
     A2_test, _ = nn.forward_propagation(X_test)
@@ -78,4 +78,5 @@ def train_model():
 
 
 if __name__ == "__main__":
+
     train_model()

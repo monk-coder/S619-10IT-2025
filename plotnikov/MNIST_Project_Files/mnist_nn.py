@@ -1,4 +1,4 @@
-pip install numpy matplotlibpip install numpy matplotlibpip install numpy matplotlibimport numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -220,10 +220,8 @@ def load_mnist():
     """Загрузка датасета MNIST."""
     # URLs для скачивания
     urls = {
-        'train_images': 'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-        'train_labels': 'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        'test_images': 'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-        'test_labels': 'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz'
+        'https://jonathanweisberg.org/post/A%20Neural%20Network%20from%20Scratch%20-%20Part%201/',
+        'https://web.archive.org/web/20200623002706/http://yann.lecun.com/exdb/mnist/',
     }
     
     def download_and_extract(url, filename):

@@ -10,7 +10,6 @@ def evaluate_tokenizer(tokenizer, lines, desc="Оценка"):
     for line in tqdm(lines, desc=desc):
         ids = tokenizer.encode(line)
         decoded = tokenizer.decode(ids)
-        # Строгая проверка обратимости
         if decoded != line:
             print(f"\n❌ Ошибка обратимости!")
             print(f"Оригинал: '{line}'")
@@ -52,7 +51,6 @@ def main():
     print(f"  Макс. длина:          {results['max_len']} токенов")
     print(f"  Всего примеров:       {results['total_samples']}")
 
-    # Эксперимент с разными num_merges
     print("\n🔬 Эксперимент: сравнение разных num_merges")
     merge_vals = [0, 500, 2000]
     avg_lengths = []
@@ -67,7 +65,6 @@ def main():
         vocab_sizes.append(res["vocab_size"])
         print(f"  → vocab_size={res['vocab_size']}, avg_len={res['avg_len']:.2f}")
 
-    # График
     plt.figure(figsize=(8, 5))
     plt.plot(merge_vals, avg_lengths, 'o-', linewidth=2, markersize=8)
     plt.xlabel("num_merges", fontsize=12)
@@ -77,7 +74,6 @@ def main():
     plt.savefig("experiment.png", dpi=150, bbox_inches='tight')
     print("\n📈 График сохранён: experiment.png")
 
-    # Пример кодирования/декодирования
     print("\n🧪 Пример кодирования/декодирования:")
     test_text = tokenizer.val_lines[0] if tokenizer.val_lines else "Привет, мир!"
     ids = tokenizer.encode(test_text)

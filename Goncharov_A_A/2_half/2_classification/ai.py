@@ -6,6 +6,8 @@ from urllib.error import HTTPError, URLError
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+# KONSTANTI
 INPUT_SIZE = 784
 HIDDEN_SIZE = 128
 OUTPUT_SIZE = 10
@@ -100,7 +102,9 @@ def _download(url: str, dst_path: str, timeout: int = 30) -> None:
         data = resp.read()
 
     if len(data) < 1024:
-        raise RuntimeError(f"response too small when downloading (len={len(data)}). possibly blocked/proxy: {url}")
+        raise RuntimeError(
+            f"response too small when downloading (len={len(data)}). possibly blocked/proxy: {url}"
+        )
 
     with open(dst_path, "wb") as f:
         f.write(data)
@@ -180,9 +184,16 @@ def train_and_evaluate():
     y_train_oh = one_hot(y_train)
     y_test_oh = one_hot(y_test)
 
-    print(f"trainin samplies: {X_train.shape[0]:,}, testing saplies: {X_test.shape[0]:,}")
+    print(
+        f"trainin samplies: {X_train.shape[0]:,}, testing saplies: {X_test.shape[0]:,}"
+    )
 
-    nn = NeuralNetwork(input_size=INPUT_SIZE, hidden_size=HIDDEN_SIZE, output_size=OUTPUT_SIZE, lr=LEARNING_RATE)
+    nn = NeuralNetwork(
+        input_size=INPUT_SIZE,
+        hidden_size=HIDDEN_SIZE,
+        output_size=OUTPUT_SIZE,
+        lr=LEARNING_RATE,
+    )
 
     print(f"ai done with {INPUT_SIZE} -> {HIDDEN_SIZE} -> {OUTPUT_SIZE} neurons")
 
@@ -230,7 +241,9 @@ def train_and_evaluate():
     print("training completed")
 
 
-def plot_training_graphs(loss_history, acc_history, test_loss_history, test_acc_history):
+def plot_training_graphs(
+    loss_history, acc_history, test_loss_history, test_acc_history
+):
     plt.figure(figsize=(14, 5))
 
     plt.subplot(1, 2, 1)

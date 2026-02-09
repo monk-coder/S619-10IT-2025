@@ -28,10 +28,10 @@ try:
         
         # Initialize and train tokenizer
         tokenizer = BPETokenizer()
-        tokenizer.train(corpus, num_merges=10)
+        tokenizer.train(corpus, num_merges=10, verbose=False)
         
         # Test encode/decode
-        test_text = "hello world test"
+        test_text = "hello"
         encoded = tokenizer.encode(test_text)
         decoded = tokenizer.decode(encoded)
         

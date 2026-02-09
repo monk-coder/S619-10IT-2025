@@ -1,8 +1,8 @@
 # BPE Tokenizer Implementation
 
-Реализация субсловного токенизатора на основе Byte Pair Encoding (BPE) с нуля.
+A Byte Pair Encoding (BPE) tokenizer implemented from scratch in Python.
 
-## Установка
+## Installation
 
 ```bash
 pip install -r requirements.txt

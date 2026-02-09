@@ -1,8 +1,6 @@
 import json
 import unicodedata
 from collections import defaultdict
-import random
-import math
 from typing import List, Dict, Tuple, Optional
 
 
@@ -14,7 +12,7 @@ class BPETokenizer:
         self.special_tokens = {"<unk>": 0, "<pad>": 1, "<s>": 2, "</s>": 3}
     
     def train(self, corpus: List[str], num_merges: int, verbose: bool = True):
-        # Подсчет частот
+        # Count frequencies
         vocab = defaultdict(int)
         for text in corpus:
             text = unicodedata.normalize('NFKC', text)
@@ -23,19 +21,19 @@ class BPETokenizer:
                 if word:
                     vocab[" ".join(list(word))] += 1
         
-        # Инициализация словаря символов
+        # Initialize with characters
         chars = set()
         for word in vocab.keys():
             chars.update(word.split())
         
-        # Создание базового словаря
-        self.vocab = {char: i + 4 for i, char in enumerate(sorted(chars))}
+        # Build vocabulary
+        self.vocab = {char: i + len(self.special_tokens) for i, char in enumerate(sorted(chars))}
         self.vocab.update(self.special_tokens)
         self.id_to_token = {v: k for k, v in self.vocab.items()}
         
-        # Выполнение слияний
+        # Perform BPE merges
         for _ in range(num_merges):
-            # Подсчет пар
+            # Get pair frequencies
             pairs = defaultdict(int)
             for word, freq in vocab.items():
                 symbols = word.split()
@@ -45,29 +43,31 @@ class BPETokenizer:
             if not pairs:
                 break
             
-            # Наиболее частая пара
+            # Find most frequent pair
             best_pair = max(pairs.items(), key=lambda x: (x[1], x[0]))[0]
             
             if pairs[best_pair] < 2:
                 break
             
-            # Сохранение правила
+            # Add to merges
             self.merges.append(best_pair)
             
-            # Обновление словаря
+            # Merge the pair
             new_vocab = {}
             bigram = " ".join(best_pair)
             replacement = "".join(best_pair)
+            
             for word, freq in vocab.items():
                 new_vocab[word.replace(bigram, replacement)] = freq
+            
             vocab = new_vocab
             
-            # Добавление нового токена
-            new_token = "".join(best_pair)
-            if new_token not in self.vocab:
+            # Add new token to vocabulary
+            new_token_str = "".join(best_pair)
+            if new_token_str not in self.vocab:
                 new_id = len(self.vocab)
-                self.vocab[new_token] = new_id
-                self.id_to_token[new_id] = new_token
+                self.vocab[new_token_str] = new_id
+                self.id_to_token[new_id] = new_token_str
     
     def encode(self, text: str) -> List[int]:
         text = unicodedata.normalize('NFKC', text)
@@ -77,7 +77,7 @@ class BPETokenizer:
         for word in words:
             tokens = list(word)
             
-            # Применение правил слияния
+            # Apply merge rules
             for pair in self.merges:
                 new_tokens = []
                 i = 0
@@ -92,7 +92,7 @@ class BPETokenizer:
                 if len(new_tokens) < len(tokens):
                     tokens = new_tokens
             
-            # Конвертация в ID
+            # Convert to IDs
             for token in tokens:
                 if token in self.vocab:
                     ids.append(self.vocab[token])
@@ -101,7 +101,18 @@ class BPETokenizer:
                         if char in self.vocab:
                             ids.append(self.vocab[char])
                         else:
-                            ids.append(0)  # <unk>
+                            ids.append(self.special_tokens["<unk>"])
+            
+            # Add space token ID between words
+            if word != words[-1]:  # Not the last word
+                # Use a special token or just add a marker
+                # We'll use a special space token
+                if " " not in self.vocab:
+                    # Add space to vocab if not present
+                    space_id = len(self.vocab)
+                    self.vocab[" "] = space_id
+                    self.id_to_token[space_id] = " "
+                ids.append(self.vocab[" "])
         
         return ids
     
@@ -113,12 +124,15 @@ class BPETokenizer:
             else:
                 tokens.append("<unk>")
         
-        return "".join(tokens)
+        # Join tokens, spaces are already included as separate tokens
+        result = "".join(tokens)
+        return result
     
     def save(self, filepath: str):
         data = {
             'vocab': self.vocab,
-            'merges': [list(pair) for pair in self.merges]
+            'merges': [list(pair) for pair in self.merges],
+            'special_tokens': self.special_tokens
         }
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -126,6 +140,8 @@ class BPETokenizer:
     def load(self, filepath: str):
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        
         self.vocab = {k: int(v) for k, v in data['vocab'].items()}
         self.merges = [tuple(pair) for pair in data['merges']]
+        self.special_tokens = data['special_tokens']
         self.id_to_token = {v: k for k, v in self.vocab.items()}

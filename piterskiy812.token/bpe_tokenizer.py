@@ -21,11 +21,8 @@ class BPETokenizer:
         self.merges: List[Tuple[str, str]] = []  # merge rules
         self.vocab_size = vocab_size
         self.special_tokens = {"<unk>": 0, "<pad>": 1, "<s>": 2, "</s>": 3}
-        # Исправляем паттерн для корректной работы с Unicode
-        self.pattern = re.compile(
-            r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""",
-            re.IGNORECASE | re.UNICODE
-        )
+        # Простой паттерн для токенизации
+        self.pattern = re.compile(r'\S+|\s+')
         
     def _get_stats(self, token_freqs: Dict[str, int]) -> Dict[Tuple[str, str], int]:
         """Calculate frequencies of adjacent token pairs.
@@ -83,16 +80,16 @@ class BPETokenizer:
             text = unicodedata.normalize('NFKC', text)
             tokens = re.findall(self.pattern, text)
             for token in tokens:
-                # Инициализируем как последовательность символов с пробелом между ними
-                bpe_token = " ".join(list(token))
-                token_freqs[bpe_token] += 1
+                if token.strip():  # Skip pure whitespace
+                    bpe_token = " ".join(list(token))
+                    token_freqs[bpe_token] += 1
         
         # Initialize base vocabulary
         chars = set()
         for token in token_freqs.keys():
             chars.update(token.split())
         
-        # Сортируем символы для воспроизводимости
+        # Sort for reproducibility
         sorted_chars = sorted(chars)
         self.vocab = {char: i + len(self.special_tokens) for i, char in enumerate(sorted_chars)}
         self.vocab.update(self.special_tokens)
@@ -114,8 +111,7 @@ class BPETokenizer:
                     print(f"No pairs to merge at step {i}")
                 break
             
-            # Находим наиболее частую пару
-            # Используем кортеж для стабильной сортировки при одинаковых частотах
+            # Find most frequent pair
             best_pair = max(pairs.items(), key=lambda x: (x[1], x[0]))[0]
             best_freq = pairs[best_pair]
             
@@ -179,13 +175,16 @@ class BPETokenizer:
         
         ids = []
         for word in words:
+            if not word.strip():  # Skip pure whitespace
+                continue
+                
             bpe_tokens = self._apply_merges(word)
             
             for token in bpe_tokens:
                 if token in self.vocab:
                     ids.append(self.vocab[token])
                 else:
-                    # Если токен не найден, разбиваем на символы
+                    # If token not found, split into characters
                     for char in token:
                         if char in self.vocab:
                             ids.append(self.vocab[char])
@@ -211,10 +210,6 @@ class BPETokenizer:
                 tokens.append("<unk>")
         
         text = "".join(tokens)
-        # Восстанавливаем пробелы: добавляем пробел между токенами, которые не были слиты
-        # Более простая и надежная логика
-        text = re.sub(r'(?<=[^\s])(?=\p{L}|\p{N})', ' ', text)
-        
         return text
     
     def save(self, filepath: str):
@@ -223,7 +218,7 @@ class BPETokenizer:
         Args:
             filepath: Path to save file
         """
-        # Конвертируем кортежи в списки для JSON сериализации
+        # Convert tuples to lists for JSON serialization
         serializable_merges = [list(pair) for pair in self.merges]
         
         data = {
@@ -246,7 +241,7 @@ class BPETokenizer:
             data = json.load(f)
         
         self.vocab = {k: int(v) for k, v in data['vocab'].items()}
-        # Конвертируем списки обратно в кортежи
+        # Convert lists back to tuples
         self.merges = [tuple(pair) for pair in data['merges']]
         self.vocab_size = data['vocab_size']
         self.special_tokens = data['special_tokens']
@@ -271,7 +266,7 @@ def split_train_val(corpus: List[str], val_ratio: float = 0.1) -> Tuple[List[str
     Returns:
         Tuple of (train, val)
     """
-    # Создаем копию, чтобы не менять оригинальный список
+    # Create copy to avoid modifying original list
     shuffled = corpus.copy()
     np.random.shuffle(shuffled)
     split_idx = int(len(shuffled) * (1 - val_ratio))
@@ -296,7 +291,7 @@ def calculate_metrics(tokenizer: BPETokenizer, val_corpus: List[str]) -> Dict:
         lengths.append(len(ids))
         all_ids.extend(ids)
     
-    # Конвертируем в Python типы для JSON сериализации
+    # Convert to Python types for JSON serialization
     metrics = {
         'vocab_size': tokenizer.vocab_size,
         'avg_length': float(np.mean(lengths)) if lengths else 0.0,
@@ -308,7 +303,7 @@ def calculate_metrics(tokenizer: BPETokenizer, val_corpus: List[str]) -> Dict:
         'unique_tokens': len(set(all_ids))
     }
     
-    # Доля очень длинных токенизаций (top-1%)
+    # Proportion of very long tokenizations (top-1%)
     if lengths:
         lengths_array = np.array(lengths)
         threshold = np.percentile(lengths_array, 99)
@@ -348,9 +343,6 @@ def validate_decoding(tokenizer: BPETokenizer, val_corpus: List[str], num_sample
             print(f"Decoding failed for sample {i}:")
             print(f"  Original: {text[:100]}...")
             print(f"  Decoded:  {decoded[:100]}...")
-            print(f"  Original length: {len(text)}")
-            print(f"  Decoded length: {len(decoded)}")
-            print(f"  Encoded IDs: {encoded}")
             return False
     
     return True

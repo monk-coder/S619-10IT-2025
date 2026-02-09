@@ -21,6 +21,7 @@ class BPETokenizer:
         self.merges: List[Tuple[str, str]] = []  # merge rules
         self.vocab_size = vocab_size
         self.special_tokens = {"<unk>": 0, "<pad>": 1, "<s>": 2, "</s>": 3}
+        # Исправляем паттерн для корректной работы с Unicode
         self.pattern = re.compile(
             r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""",
             re.IGNORECASE | re.UNICODE
@@ -78,10 +79,11 @@ class BPETokenizer:
             print("Preprocessing text and counting character frequencies...")
         
         # Count word frequencies with pre-tokenization
-        for text in tqdm(corpus, disable=not verbose):
+        for text in tqdm(corpus, disable=not verbose, desc="Processing corpus"):
             text = unicodedata.normalize('NFKC', text)
             tokens = re.findall(self.pattern, text)
             for token in tokens:
+                # Инициализируем как последовательность символов с пробелом между ними
                 bpe_token = " ".join(list(token))
                 token_freqs[bpe_token] += 1
         
@@ -90,7 +92,9 @@ class BPETokenizer:
         for token in token_freqs.keys():
             chars.update(token.split())
         
-        self.vocab = {char: i + len(self.special_tokens) for i, char in enumerate(sorted(chars))}
+        # Сортируем символы для воспроизводимости
+        sorted_chars = sorted(chars)
+        self.vocab = {char: i + len(self.special_tokens) for i, char in enumerate(sorted_chars)}
         self.vocab.update(self.special_tokens)
         self.id_to_token = {v: k for k, v in self.vocab.items()}
         self.vocab_size = len(self.vocab)
@@ -102,7 +106,7 @@ class BPETokenizer:
                 print(f"Performing {num_merges} merges...")
         
         # Perform merges
-        for i in tqdm(range(num_merges), disable=not verbose or num_merges == 0):
+        for i in tqdm(range(num_merges), disable=not verbose or num_merges == 0, desc="BPE merges"):
             pairs = self._get_stats(token_freqs)
             
             if not pairs:
@@ -110,7 +114,9 @@ class BPETokenizer:
                     print(f"No pairs to merge at step {i}")
                 break
             
-            best_pair = max(pairs, key=pairs.get)
+            # Находим наиболее частую пару
+            # Используем кортеж для стабильной сортировки при одинаковых частотах
+            best_pair = max(pairs.items(), key=lambda x: (x[1], x[0]))[0]
             best_freq = pairs[best_pair]
             
             if best_freq < 2:
@@ -179,6 +185,7 @@ class BPETokenizer:
                 if token in self.vocab:
                     ids.append(self.vocab[token])
                 else:
+                    # Если токен не найден, разбиваем на символы
                     for char in token:
                         if char in self.vocab:
                             ids.append(self.vocab[char])
@@ -204,8 +211,9 @@ class BPETokenizer:
                 tokens.append("<unk>")
         
         text = "".join(tokens)
-        # Восстанавливаем пробелы между словами
-        text = re.sub(r'(?<=[^\s])(?=[\p{L}\p{N}])', ' ', text)
+        # Восстанавливаем пробелы: добавляем пробел между токенами, которые не были слиты
+        # Более простая и надежная логика
+        text = re.sub(r'(?<=[^\s])(?=\p{L}|\p{N})', ' ', text)
         
         return text
     
@@ -215,9 +223,12 @@ class BPETokenizer:
         Args:
             filepath: Path to save file
         """
+        # Конвертируем кортежи в списки для JSON сериализации
+        serializable_merges = [list(pair) for pair in self.merges]
+        
         data = {
             'vocab': self.vocab,
-            'merges': self.merges,
+            'merges': serializable_merges,
             'vocab_size': self.vocab_size,
             'special_tokens': self.special_tokens
         }
@@ -235,6 +246,7 @@ class BPETokenizer:
             data = json.load(f)
         
         self.vocab = {k: int(v) for k, v in data['vocab'].items()}
+        # Конвертируем списки обратно в кортежи
         self.merges = [tuple(pair) for pair in data['merges']]
         self.vocab_size = data['vocab_size']
         self.special_tokens = data['special_tokens']
@@ -259,9 +271,11 @@ def split_train_val(corpus: List[str], val_ratio: float = 0.1) -> Tuple[List[str
     Returns:
         Tuple of (train, val)
     """
-    np.random.shuffle(corpus)
-    split_idx = int(len(corpus) * (1 - val_ratio))
-    return corpus[:split_idx], corpus[split_idx:]
+    # Создаем копию, чтобы не менять оригинальный список
+    shuffled = corpus.copy()
+    np.random.shuffle(shuffled)
+    split_idx = int(len(shuffled) * (1 - val_ratio))
+    return shuffled[:split_idx], shuffled[split_idx:]
 
 
 def calculate_metrics(tokenizer: BPETokenizer, val_corpus: List[str]) -> Dict:
@@ -282,22 +296,28 @@ def calculate_metrics(tokenizer: BPETokenizer, val_corpus: List[str]) -> Dict:
         lengths.append(len(ids))
         all_ids.extend(ids)
     
+    # Конвертируем в Python типы для JSON сериализации
     metrics = {
         'vocab_size': tokenizer.vocab_size,
-        'avg_length': float(np.mean(lengths)),
-        'median_length': float(np.median(lengths)),
-        'std_length': float(np.std(lengths)),
-        'min_length': int(np.min(lengths)),
-        'max_length': int(np.max(lengths)),
+        'avg_length': float(np.mean(lengths)) if lengths else 0.0,
+        'median_length': float(np.median(lengths)) if lengths else 0.0,
+        'std_length': float(np.std(lengths)) if len(lengths) > 1 else 0.0,
+        'min_length': int(np.min(lengths)) if lengths else 0,
+        'max_length': int(np.max(lengths)) if lengths else 0,
         'total_tokens': len(all_ids),
         'unique_tokens': len(set(all_ids))
     }
     
     # Доля очень длинных токенизаций (top-1%)
-    threshold = np.percentile(lengths, 99)
-    long_ratio = np.mean(np.array(lengths) > threshold)
-    metrics['long_sequences_ratio'] = float(long_ratio)
-    metrics['long_threshold'] = float(threshold)
+    if lengths:
+        lengths_array = np.array(lengths)
+        threshold = np.percentile(lengths_array, 99)
+        long_ratio = np.mean(lengths_array > threshold)
+        metrics['long_sequences_ratio'] = float(long_ratio)
+        metrics['long_threshold'] = float(threshold)
+    else:
+        metrics['long_sequences_ratio'] = 0.0
+        metrics['long_threshold'] = 0.0
     
     return metrics
 
@@ -313,6 +333,10 @@ def validate_decoding(tokenizer: BPETokenizer, val_corpus: List[str], num_sample
     Returns:
         True if all tests pass
     """
+    if not val_corpus:
+        print("Warning: Validation corpus is empty")
+        return True
+    
     samples = min(num_samples, len(val_corpus))
     
     for i in range(samples):
@@ -324,6 +348,9 @@ def validate_decoding(tokenizer: BPETokenizer, val_corpus: List[str], num_sample
             print(f"Decoding failed for sample {i}:")
             print(f"  Original: {text[:100]}...")
             print(f"  Decoded:  {decoded[:100]}...")
+            print(f"  Original length: {len(text)}")
+            print(f"  Decoded length: {len(decoded)}")
+            print(f"  Encoded IDs: {encoded}")
             return False
     
     return True

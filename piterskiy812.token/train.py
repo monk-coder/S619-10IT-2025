@@ -15,7 +15,7 @@ def main():
     print("BPE Tokenizer Training")
     print("=" * 40)
     
-    # Путь к данным
+    # ПУТЬ К ДАННЫМ - читаем из папки 0
     data_path = "0/data.txt"
     
     # Check data file

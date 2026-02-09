@@ -1,130 +1,66 @@
+#!/usr/bin/env python3
+"""
+Train BPE Tokenizer on data.txt
+"""
+
 import os
-import json
-import random
 from bpe_tokenizer import BPETokenizer
 
-
-def load_corpus(filepath: str):
+def load_data(filepath):
     """Load corpus from file."""
     with open(filepath, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f if line.strip()]
-    return lines
-
+        return [line.strip() for line in f if line.strip()]
 
 def main():
-    # Check if data.txt exists
+    print("BPE Tokenizer Training")
+    print("=" * 40)
+    
+    # Check data file
     if not os.path.exists("data.txt"):
         print("Error: data.txt not found!")
-        print("Please make sure data.txt is in the same directory as this script.")
-        print("Current directory:", os.getcwd())
+        print("Create data.txt with text corpus")
         return
     
     # Load data
-    print("Loading data.txt...")
-    corpus = load_corpus("data.txt")
+    corpus = load_data("data.txt")
     print(f"Loaded {len(corpus)} lines")
     
     if len(corpus) < 10:
-        print("Warning: Corpus is very small. Training may not be effective.")
+        print("Warning: Small dataset")
     
-    # Split into train/val (90/10)
-    random.seed(42)  # For reproducibility
-    random.shuffle(corpus)
-    
+    # Split train/val
     split_idx = int(len(corpus) * 0.9)
-    train_corpus = corpus[:split_idx]
-    val_corpus = corpus[split_idx:]
+    train = corpus[:split_idx]
+    val = corpus[split_idx:split_idx + 10]  # First 10 for testing
     
-    print(f"\nSplit:")
-    print(f"  Training set: {len(train_corpus)} lines")
-    print(f"  Validation set: {len(val_corpus)} lines")
+    print(f"Training on {len(train)} lines")
+    print(f"Testing on {len(val)} lines")
     
-    # Save splits (optional)
-    os.makedirs("splits", exist_ok=True)
-    with open("splits/train.txt", 'w', encoding='utf-8') as f:
-        f.write("\n".join(train_corpus))
-    with open("splits/val.txt", 'w', encoding='utf-8') as f:
-        f.write("\n".join(val_corpus))
-    print("Splits saved to 'splits/' directory")
-    
-    # Train with different merge values
+    # Train with different merges
     merge_values = [0, 2000, 8000]
     
-    for num_merges in merge_values:
-        print(f"\n{'='*60}")
-        print(f"Training with num_merges = {num_merges}")
-        print(f"{'='*60}")
+    for merges in merge_values:
+        print(f"\nTraining with {merges} merges...")
         
-        # Initialize and train tokenizer
         tokenizer = BPETokenizer()
+        tokenizer.train(train, merges, verbose=True)
         
-        if num_merges == 0:
-            print("Training without merges (character-level tokenizer)...")
-        else:
-            print(f"Training with {num_merges} BPE merges...")
-        
-        tokenizer.train(train_corpus, num_merges, verbose=True)
-        
-        # Test encode/decode on validation set
-        print("\nTesting encode/decode on validation set...")
-        test_samples = min(50, len(val_corpus))
+        # Test on validation
         correct = 0
-        
-        for i in range(test_samples):
-            text = val_corpus[i]
+        for text in val:
             encoded = tokenizer.encode(text)
             decoded = tokenizer.decode(encoded)
-            
             if decoded == text:
                 correct += 1
-            else:
-                if i < 3:  # Show first 3 failures
-                    print(f"  Sample {i}: FAIL")
-                    print(f"    Original: '{text[:50]}...'" if len(text) > 50 else f"    Original: '{text}'")
-                    print(f"    Decoded:  '{decoded[:50]}...'" if len(decoded) > 50 else f"    Decoded:  '{decoded}'")
         
-        accuracy = correct / test_samples * 100
-        print(f"Decode accuracy: {correct}/{test_samples} = {accuracy:.1f}%")
+        print(f"Accuracy: {correct}/{len(val)}")
         
-        # Calculate average sequence length
-        total_tokens = 0
-        total_texts = min(100, len(val_corpus))
-        
-        for i in range(total_texts):
-            ids = tokenizer.encode(val_corpus[i])
-            total_tokens += len(ids)
-        
-        avg_length = total_tokens / total_texts if total_texts > 0 else 0
-        print(f"Average sequence length: {avg_length:.1f} tokens")
-        
-        # Save the model with 8000 merges
-        if num_merges == 8000:
+        # Save final model
+        if merges == 8000:
             tokenizer.save("bpe_tokenizer_8000.json")
-            print(f"\nModel saved to 'bpe_tokenizer_8000.json'")
-            print(f"Vocabulary size: {len(tokenizer.vocab)} tokens")
+            print("Saved: bpe_tokenizer_8000.json")
     
-    # Also save merge rules separately
-    if os.path.exists("bpe_tokenizer_8000.json"):
-        print(f"\n{'='*60}")
-        print("Creating bpe_merges.json with merge rules...")
-        
-        with open("bpe_tokenizer_8000.json", 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        with open("bpe_merges.json", 'w', encoding='utf-8') as f:
-            json.dump(data['merges'], f, ensure_ascii=False, indent=2)
-        
-        print("Merge rules saved to 'bpe_merges.json'")
-    
-    print(f"\n{'='*60}")
-    print("Training completed successfully!")
-    print("Created files:")
-    print("  - bpe_tokenizer_8000.json (final trained model)")
-    print("  - bpe_merges.json (merge rules)")
-    print("  - splits/train.txt (training split)")
-    print("  - splits/val.txt (validation split)")
-    print(f"{'='*60}")
-
+    print("\nTraining complete!")
 
 if __name__ == "__main__":
     main()

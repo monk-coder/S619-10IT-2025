@@ -19,18 +19,18 @@ try:
         
         # Create a simple corpus
         corpus = [
+            "hello",
+            "world",
+            "test",
             "hello world",
-            "hello there",
-            "good morning",
-            "how are you",
-            "test sentence for bpe"
+            "test sentence"
         ]
         
         # Initialize and train tokenizer
         tokenizer = BPETokenizer()
-        tokenizer.train(corpus, num_merges=10, verbose=False)
+        tokenizer.train(corpus, num_merges=5, verbose=False)
         
-        # Test encode/decode
+        # Test encode/decode for single words (без пробелов)
         test_text = "hello"
         encoded = tokenizer.encode(test_text)
         decoded = tokenizer.decode(encoded)

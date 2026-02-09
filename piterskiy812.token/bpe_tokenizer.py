@@ -1,5 +1,4 @@
 import json
-import re
 import unicodedata
 from collections import defaultdict
 from typing import List, Dict, Tuple, Optional
@@ -21,7 +20,6 @@ class BPETokenizer:
         self.merges: List[Tuple[str, str]] = []  # merge rules
         self.vocab_size = vocab_size
         self.special_tokens = {"<unk>": 0, "<pad>": 1, "<s>": 2, "</s>": 3}
-        self.pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
         
     def _get_stats(self, vocab: Dict[str, int]) -> Dict[Tuple[str, str], int]:
         """Get frequency of pairs of tokens."""
@@ -58,7 +56,7 @@ class BPETokenizer:
         if verbose:
             print("Preprocessing corpus...")
             
-        for text in tqdm(corpus, disable=not verbose):
+        for text in corpus:
             text = unicodedata.normalize('NFKC', text)
             
             # Simple whitespace tokenization as base
@@ -85,7 +83,7 @@ class BPETokenizer:
             print(f"Starting {num_merges} merge operations...")
         
         # Step 2: Perform BPE merges
-        for i in tqdm(range(num_merges), disable=not verbose):
+        for i in range(num_merges):
             # Get frequencies of all pairs
             pairs = self._get_stats(vocab)
             
@@ -199,8 +197,8 @@ class BPETokenizer:
             else:
                 tokens.append("<unk>")
         
-        # Simply concatenate tokens - spaces were preserved in encoding
-        return " ".join(tokens)
+        # ИСПРАВЛЕНИЕ: просто склеиваем все токены
+        return "".join(tokens)
     
     def save(self, filepath: str):
         """Save tokenizer to file.

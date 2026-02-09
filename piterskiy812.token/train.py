@@ -15,15 +15,23 @@ def main():
     print("BPE Tokenizer Training")
     print("=" * 40)
     
+    # Путь к данным
+    data_path = "0/data.txt"
+    
     # Check data file
-    if not os.path.exists("data.txt"):
-        print("Error: data.txt not found!")
-        print("Create data.txt with text corpus")
+    if not os.path.exists(data_path):
+        print(f"Error: {data_path} not found!")
+        print("Current directory:", os.getcwd())
+        print("Available files:")
+        for root, dirs, files in os.walk("."):
+            for file in files:
+                if file.endswith(".txt"):
+                    print(f"  {os.path.join(root, file)}")
         return
     
     # Load data
-    corpus = load_data("data.txt")
-    print(f"Loaded {len(corpus)} lines")
+    corpus = load_data(data_path)
+    print(f"Loaded {len(corpus)} lines from {data_path}")
     
     if len(corpus) < 10:
         print("Warning: Small dataset")
@@ -31,12 +39,12 @@ def main():
     # Split train/val
     split_idx = int(len(corpus) * 0.9)
     train = corpus[:split_idx]
-    val = corpus[split_idx:split_idx + 10]  # First 10 for testing
+    val = corpus[split_idx:split_idx + 10]
     
     print(f"Training on {len(train)} lines")
     print(f"Testing on {len(val)} lines")
     
-    # Train with different merges
+    # Train with required merges: 0, 2000, 8000
     merge_values = [0, 2000, 8000]
     
     for merges in merge_values:
@@ -45,7 +53,7 @@ def main():
         tokenizer = BPETokenizer()
         tokenizer.train(train, merges, verbose=True)
         
-        # Test on validation
+        # Test encode/decode
         correct = 0
         for text in val:
             encoded = tokenizer.encode(text)
@@ -53,14 +61,15 @@ def main():
             if decoded == text:
                 correct += 1
         
-        print(f"Accuracy: {correct}/{len(val)}")
+        accuracy = correct / len(val) * 100 if len(val) > 0 else 0
+        print(f"Decode accuracy: {accuracy:.1f}% ({correct}/{len(val)})")
         
         # Save final model
         if merges == 8000:
             tokenizer.save("bpe_tokenizer_8000.json")
             print("Saved: bpe_tokenizer_8000.json")
     
-    print("\nTraining complete!")
+    print("\n✅ Training complete!")
 
 if __name__ == "__main__":
     main()

@@ -6,16 +6,24 @@ from bpe_tokenizer import BPETokenizer
 
 
 def evaluate_tokenizer(tokenizer, lines, desc="Оценка"):
+    """Проверяет обратимость и считает метрики на наборе строк."""
     lengths = []
+    
     for line in tqdm(lines, desc=desc):
+        # Кодирование
         ids = tokenizer.encode(line)
+        
+        # Декодирование
         decoded = tokenizer.decode(ids)
+        
+        # Строгая проверка обратимости
         if decoded != line:
             print(f"\n❌ Ошибка обратимости!")
             print(f"Оригинал: '{line}'")
             print(f"Декод:    '{decoded}'")
             print(f"IDs: {ids}")
             raise AssertionError(f"decode(encode(x)) != x для строки: '{line[:50]}'")
+        
         lengths.append(len(ids))
     
     lengths = np.array(lengths)
@@ -28,60 +36,166 @@ def evaluate_tokenizer(tokenizer, lines, desc="Оценка"):
     }
 
 
+def run_experiment(data_path, merge_values, output_base="tokenizer"):
+    """Проводит эксперимент с разными значениями num_merges."""
+    results = []
+    
+    print("\n" + "="*60)
+    print("🔬 ЭКСПЕРИМЕНТ: влияние num_merges на длину токенизации")
+    print("="*60)
+    
+    for i, num_merges in enumerate(merge_values):
+        print(f"\n[{i+1}/{len(merge_values)}] Обучение с num_merges={num_merges}")
+        
+        # Обучение
+        tokenizer = BPETokenizer()
+        tokenizer.train(
+            data_path,
+            num_merges=num_merges,
+            val_split=0.1,
+            show_progress=False  # без прогресса для эксперимента
+        )
+        
+        # Оценка
+        res = evaluate_tokenizer(
+            tokenizer,
+            tokenizer.val_lines,
+            desc=f"Оценка (nm={num_merges})"
+        )
+        
+        # Сохранение
+        output_path = f"{output_base}_nm{num_merges}.json"
+        tokenizer.save(output_path)
+        
+        results.append({
+            "num_merges": num_merges,
+            "vocab_size": res["vocab_size"],
+            "avg_len": res["avg_len"]
+        })
+        
+        print(f"  → vocab_size: {res['vocab_size']:5d} | avg_len: {res['avg_len']:6.2f} токенов | сохранено: {output_path}")
+    
+    return results
+
+
+def plot_experiment(results, save_path="experiment.png"):
+    """Строит график результатов эксперимента."""
+    merge_vals = [r["num_merges"] for r in results]
+    avg_lens = [r["avg_len"] for r in results]
+    vocab_sizes = [r["vocab_size"] for r in results]
+    
+    plt.figure(figsize=(10, 4))
+    
+    # График 1: средняя длина
+    plt.subplot(1, 2, 1)
+    plt.plot(merge_vals, avg_lens, 'o-', color='#2E86AB', linewidth=2, markersize=8)
+    plt.xlabel("num_merges", fontsize=11)
+    plt.ylabel("Средняя длина (токены)", fontsize=11)
+    plt.title("Длина последовательности", fontsize=12, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    
+    # График 2: размер словаря
+    plt.subplot(1, 2, 2)
+    plt.plot(merge_vals, vocab_sizes, 's-', color='#A23B72', linewidth=2, markersize=8)
+    plt.xlabel("num_merges", fontsize=11)
+    plt.ylabel("Размер словаря", fontsize=11)
+    plt.title("Размер словаря", fontsize=12, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    print(f"\n📈 Графики сохранены: {save_path}")
+
+
+def demo_encoding(tokenizer):
+    """Демонстрирует кодирование/декодирование на примере."""
+    print("\n" + "="*60)
+    print("🧪 ДЕМОНСТРАЦИЯ: кодирование и декодирование")
+    print("="*60)
+    
+    if tokenizer.val_lines:
+        test_text = tokenizer.val_lines[0]
+    else:
+        test_text = "Привет, мир! Это тест BPE токенизатора."
+    
+    print(f"\nИсходный текст:\n  '{test_text}'")
+    
+    ids = tokenizer.encode(test_text)
+    print(f"\nТокены (ID):\n  {ids}")
+    
+    # Показываем токены в виде строк
+    tokens_str = [tokenizer._inv_vocab.get(i, '<?>') for i in ids]
+    print(f"\nТокены (строки):\n  {tokens_str}")
+    
+    decoded = tokenizer.decode(ids)
+    print(f"\nДекодированный текст:\n  '{decoded}'")
+    
+    is_reversible = decoded == test_text
+    print(f"\n✅ Обратимость: {'УСПЕШНО' if is_reversible else 'ОШИБКА'}")
+    
+    return is_reversible
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Обучение BPE токенизатора")
+    """Основная точка входа."""
+    parser = argparse.ArgumentParser(description="BPE Tokenizer — обучение и анализ")
     parser.add_argument("--num_merges", type=int, default=2000, help="Количество слияний")
     parser.add_argument("--data_path", type=str, default="data.txt", help="Путь к корпусу")
     parser.add_argument("--output", type=str, default="tokenizer.json", help="Файл для сохранения")
+    parser.add_argument("--run_experiment", action="store_true", help="Запустить эксперимент с разными num_merges")
     args = parser.parse_args()
-
-    print(f"📚 Обучение BPE с num_merges={args.num_merges}...")
-    tokenizer = BPETokenizer()
-    tokenizer.train(args.data_path, num_merges=args.num_merges)
-    tokenizer.save(args.output)
-    print(f"✅ Токенизатор сохранён в {args.output}")
-
-    print("\n🔍 Проверка обратимости на val...")
-    results = evaluate_tokenizer(tokenizer, tokenizer.val_lines, desc="Проверка val")
     
-    print("\n📊 Результаты на валидации:")
-    print(f"  Размер словаря:       {results['vocab_size']}")
-    print(f"  Средняя длина:        {results['avg_len']:.2f} токенов")
-    print(f"  99-перцентиль:        {results['top1p_len']:.1f} токенов")
-    print(f"  Макс. длина:          {results['max_len']} токенов")
-    print(f"  Всего примеров:       {results['total_samples']}")
-
-    print("\n🔬 Эксперимент: сравнение разных num_merges")
-    merge_vals = [0, 500, 2000]
-    avg_lengths = []
-    vocab_sizes = []
-
-    for nm in merge_vals:
-        print(f"\nОбучение с num_merges={nm}...")
-        tok = BPETokenizer()
-        tok.train(args.data_path, num_merges=nm)
-        res = evaluate_tokenizer(tok, tok.val_lines, desc=f"nm={nm}")
-        avg_lengths.append(res["avg_len"])
-        vocab_sizes.append(res["vocab_size"])
-        print(f"  → vocab_size={res['vocab_size']}, avg_len={res['avg_len']:.2f}")
-
-    plt.figure(figsize=(8, 5))
-    plt.plot(merge_vals, avg_lengths, 'o-', linewidth=2, markersize=8)
-    plt.xlabel("num_merges", fontsize=12)
-    plt.ylabel("Средняя длина последовательности (токены)", fontsize=12)
-    plt.title("Влияние количества слияний на длину токенизации", fontsize=13)
-    plt.grid(True, alpha=0.3)
-    plt.savefig("experiment.png", dpi=150, bbox_inches='tight')
-    print("\n📈 График сохранён: experiment.png")
-
-    print("\n🧪 Пример кодирования/декодирования:")
-    test_text = tokenizer.val_lines[0] if tokenizer.val_lines else "Привет, мир!"
-    ids = tokenizer.encode(test_text)
-    decoded = tokenizer.decode(ids)
-    print(f"Текст:    '{test_text}'")
-    print(f"IDs:      {ids[:20]}{'...' if len(ids) > 20 else ''}")
-    print(f"Декод:    '{decoded}'")
-    print(f"✅ Обратимость: {decoded == test_text}")
+    print("\n" + "="*60)
+    print("🚀 BPE TOKENIZER — обучение с нуля")
+    print("="*60)
+    print(f"📁 Корпус: {args.data_path}")
+    print(f"🔄 Слияний: {args.num_merges}")
+    print(f"💾 Выход: {args.output}")
+    
+    # Обучение
+    print("\n" + "-"*60)
+    print("📚 ЭТАП 1: Обучение токенизатора")
+    print("-"*60)
+    tokenizer = BPETokenizer()
+    tokenizer.train(
+        args.data_path,
+        num_merges=args.num_merges,
+        val_split=0.1,
+        show_progress=True
+    )
+    
+    # Сохранение
+    tokenizer.save(args.output)
+    print(f"✅ Модель сохранена: {args.output}")
+    
+    # Оценка на валидации
+    print("\n" + "-"*60)
+    print("🔍 ЭТАП 2: Проверка обратимости и метрики")
+    print("-"*60)
+    results = evaluate_tokenizer(tokenizer, tokenizer.val_lines, desc="Валидация")
+    
+    print("\n📊 Метрики на валидационном наборе:")
+    print(f"  • Размер словаря:    {results['vocab_size']}")
+    print(f"  • Средняя длина:     {results['avg_len']:.2f} токенов")
+    print(f"  • 99-перцентиль:     {results['top1p_len']:.1f} токенов")
+    print(f"  • Макс. длина:       {results['max_len']} токенов")
+    print(f"  • Примеров:          {results['total_samples']}")
+    
+    # Демонстрация
+    demo_encoding(tokenizer)
+    
+    # Эксперимент (опционально)
+    if args.run_experiment:
+        print("\n" + "-"*60)
+        print("🔬 ЭТАП 3: Эксперимент с разными num_merges")
+        print("-"*60)
+        merge_values = [0, 500, 2000]
+        exp_results = run_experiment(args.data_path, merge_values)
+        plot_experiment(exp_results)
+    
+    print("\n" + "="*60)
+    print("✅ ВСЁ ГОТОВО! Токенизатор обучен и протестирован.")
+    print("="*60)
 
 
 if __name__ == "__main__":

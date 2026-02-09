@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import numpy as np
+from typing import List, Dict  # Добавил импорт типов в начало
 from bpe_tokenizer import BPETokenizer, split_train_val, calculate_metrics, validate_decoding
 
 
@@ -268,8 +269,5 @@ def main():
 if __name__ == "__main__":
     # Set random seed for reproducibility
     np.random.seed(42)
-    
-    # Add type hints
-    from typing import List, Dict
     
     main()

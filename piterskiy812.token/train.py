@@ -16,7 +16,7 @@ def main():
     print("=" * 40)
     
     # ПУТЬ К ДАННЫМ - читаем из папки 0
-    data_path = "0/data.txt"
+    data_path = "../0/data.txt"
     
     # Check data file
     if not os.path.exists(data_path):

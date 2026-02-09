@@ -1,7 +1,7 @@
 import json
 import unicodedata
 from collections import defaultdict
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 
 
 class BPETokenizer:
@@ -9,33 +9,68 @@ class BPETokenizer:
         self.vocab = {}
         self.id_to_token = {}
         self.merges = []
-        self.special_tokens = {"<unk>": 0, "<pad>": 1, "<s>": 2, "</s>": 3}
+        self.special_tokens = {"<unk>": 0, "<pad>": 1}
+        # Добавляем пробел в начальный словарь
+        self.space_token = " "
     
     def train(self, corpus: List[str], num_merges: int, verbose: bool = True):
-        # Count frequencies
+        # Count word frequencies (сохраняем исходные строки с пробелами)
         vocab = defaultdict(int)
         for text in corpus:
             text = unicodedata.normalize('NFKC', text)
-            words = text.split()
+            # Сохраняем как есть, чтобы потом разбить на слова и пробелы
+            words = []
+            current_word = []
+            
+            for char in text:
+                if char == ' ':
+                    if current_word:
+                        words.append("".join(current_word))
+                        current_word = []
+                    words.append(" ")  # Пробел как отдельный "токен"
+                else:
+                    current_word.append(char)
+            
+            if current_word:
+                words.append("".join(current_word))
+            
+            # Добавляем в словарь частот
             for word in words:
-                if word:
-                    vocab[" ".join(list(word))] += 1
+                if word:  # Не добавляем пустые строки
+                    if word == " ":
+                        # Пробелы просто считаем
+                        vocab[" "] = vocab.get(" ", 0) + 1
+                    else:
+                        vocab[" ".join(list(word))] += 1
         
-        # Initialize with characters
+        # Initialize with characters (включая пробел)
         chars = set()
         for word in vocab.keys():
-            chars.update(word.split())
+            if word == " ":
+                chars.add(" ")
+            else:
+                chars.update(word.split())
         
-        # Build vocabulary
-        self.vocab = {char: i + len(self.special_tokens) for i, char in enumerate(sorted(chars))}
+        # Build initial vocab (гарантируем что пробел есть)
+        char_list = sorted(chars)
+        if " " not in char_list:
+            char_list.insert(0, " ")  # Добавляем пробел первым
+        
+        self.vocab = {char: i + 2 for i, char in enumerate(char_list)}
         self.vocab.update(self.special_tokens)
         self.id_to_token = {v: k for k, v in self.vocab.items()}
         
-        # Perform BPE merges
+        if verbose:
+            print(f"Vocab size: {len(self.vocab)} (includes space)")
+        
+        # BPE merges (только для не-пробельных символов)
         for _ in range(num_merges):
-            # Get pair frequencies
+            # Count pairs (игнорируем пары с пробелами)
             pairs = defaultdict(int)
             for word, freq in vocab.items():
+                if word == " ":  # Пропускаем пробелы
+                    continue
+                    
                 symbols = word.split()
                 for i in range(len(symbols) - 1):
                     pairs[(symbols[i], symbols[i + 1])] += freq
@@ -43,76 +78,83 @@ class BPETokenizer:
             if not pairs:
                 break
             
-            # Find most frequent pair
-            best_pair = max(pairs.items(), key=lambda x: (x[1], x[0]))[0]
-            
+            # Get best pair
+            best_pair = max(pairs.items(), key=lambda x: x[1])[0]
             if pairs[best_pair] < 2:
                 break
             
-            # Add to merges
+            # Save merge
             self.merges.append(best_pair)
             
-            # Merge the pair
+            # Update vocab
             new_vocab = {}
             bigram = " ".join(best_pair)
             replacement = "".join(best_pair)
             
             for word, freq in vocab.items():
-                new_vocab[word.replace(bigram, replacement)] = freq
+                if word == " ":  # Пробелы не меняем
+                    new_vocab[word] = freq
+                else:
+                    new_vocab[word.replace(bigram, replacement)] = freq
             
             vocab = new_vocab
             
-            # Add new token to vocabulary
-            new_token_str = "".join(best_pair)
-            if new_token_str not in self.vocab:
+            # Add new token
+            new_token = "".join(best_pair)
+            if new_token not in self.vocab:
                 new_id = len(self.vocab)
-                self.vocab[new_token_str] = new_id
-                self.id_to_token[new_id] = new_token_str
+                self.vocab[new_token] = new_id
+                self.id_to_token[new_id] = new_token
     
     def encode(self, text: str) -> List[int]:
+        # Сохраняем исходный текст с пробелами
         text = unicodedata.normalize('NFKC', text)
-        words = text.split()
         ids = []
         
-        for word in words:
-            tokens = list(word)
-            
-            # Apply merge rules
-            for pair in self.merges:
-                new_tokens = []
-                i = 0
-                while i < len(tokens):
-                    if i < len(tokens) - 1 and tokens[i] == pair[0] and tokens[i + 1] == pair[1]:
-                        new_tokens.append(pair[0] + pair[1])
-                        i += 2
-                    else:
-                        new_tokens.append(tokens[i])
-                        i += 1
-                
-                if len(new_tokens) < len(tokens):
-                    tokens = new_tokens
-            
-            # Convert to IDs
-            for token in tokens:
-                if token in self.vocab:
-                    ids.append(self.vocab[token])
+        i = 0
+        while i < len(text):
+            if text[i] == ' ':
+                # Пробел - добавляем его ID
+                if " " in self.vocab:
+                    ids.append(self.vocab[" "])
                 else:
-                    for char in token:
-                        if char in self.vocab:
-                            ids.append(self.vocab[char])
-                        else:
-                            ids.append(self.special_tokens["<unk>"])
-            
-            # Add space token ID between words
-            if word != words[-1]:  # Not the last word
-                # Use a special token or just add a marker
-                # We'll use a special space token
-                if " " not in self.vocab:
-                    # Add space to vocab if not present
+                    # Если пробела нет в словаре, добавляем
                     space_id = len(self.vocab)
                     self.vocab[" "] = space_id
                     self.id_to_token[space_id] = " "
-                ids.append(self.vocab[" "])
+                    ids.append(space_id)
+                i += 1
+            else:
+                # Собираем слово
+                start = i
+                while i < len(text) and text[i] != ' ':
+                    i += 1
+                word = text[start:i]
+                
+                # Токенизируем слово с BPE
+                tokens = list(word)
+                
+                # Apply merges
+                for pair in self.merges:
+                    new_tokens = []
+                    j = 0
+                    while j < len(tokens):
+                        if j < len(tokens) - 1 and tokens[j] == pair[0] and tokens[j + 1] == pair[1]:
+                            new_tokens.append(pair[0] + pair[1])
+                            j += 2
+                        else:
+                            new_tokens.append(tokens[j])
+                            j += 1
+                    
+                    if len(new_tokens) < len(tokens):
+                        tokens = new_tokens
+                
+                # Add word tokens
+                for token in tokens:
+                    if token in self.vocab:
+                        ids.append(self.vocab[token])
+                    else:
+                        ids.append(0)  # <unk>
         
         return ids
     
@@ -120,19 +162,19 @@ class BPETokenizer:
         tokens = []
         for token_id in ids:
             if token_id in self.id_to_token:
-                tokens.append(self.id_to_token[token_id])
+                token = self.id_to_token[token_id]
+                tokens.append(token)
             else:
                 tokens.append("<unk>")
         
-        # Join tokens, spaces are already included as separate tokens
+        # Склеиваем все токены
         result = "".join(tokens)
         return result
     
     def save(self, filepath: str):
         data = {
             'vocab': self.vocab,
-            'merges': [list(pair) for pair in self.merges],
-            'special_tokens': self.special_tokens
+            'merges': self.merges
         }
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -140,8 +182,6 @@ class BPETokenizer:
     def load(self, filepath: str):
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        
         self.vocab = {k: int(v) for k, v in data['vocab'].items()}
         self.merges = [tuple(pair) for pair in data['merges']]
-        self.special_tokens = data['special_tokens']
         self.id_to_token = {v: k for k, v in self.vocab.items()}

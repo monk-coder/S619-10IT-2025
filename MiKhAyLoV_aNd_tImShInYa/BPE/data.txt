@@ -1,0 +1,20 @@
+The quick brown fox jumps over the lazy dog.
+Machine learning is a subset of artificial intelligence.
+Natural language processing helps computers understand human language.
+Python is a popular programming language for data science.
+Tokenization is the process of splitting text into smaller pieces.
+Byte pair encoding is a form of subword tokenization.
+This algorithm iteratively merges frequent character pairs.
+Modern language models use subword tokenization.
+The vocabulary size affects model performance.
+Training a tokenizer requires a large text corpus.
+Hello world! This is a simple example.
+Testing the tokenizer with various sentences.
+The quick brown fox jumps over the lazy dog again.
+Machine learning models need lots of data.
+Natural language understanding is challenging.
+Python code should be readable and efficient.
+Tokenization is the first step in NLP pipelines.
+BPE stands for Byte Pair Encoding.
+Subword units handle rare words effectively.
+Vocabulary size can be tuned for different tasks.

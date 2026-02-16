@@ -6,17 +6,13 @@ from bpe_tokenizer import BPETokenizer
 
 
 def evaluate_tokenizer(tokenizer, lines, desc="Оценка"):
-    """Проверяет обратимость и считает метрики на наборе строк."""
     lengths = []
     
     for line in tqdm(lines, desc=desc):
-        # Кодирование
         ids = tokenizer.encode(line)
         
-        # Декодирование
         decoded = tokenizer.decode(ids)
-        
-        # Строгая проверка обратимости
+    
         if decoded != line:
             print(f"\n❌ Ошибка обратимости!")
             print(f"Оригинал: '{line}'")
@@ -37,7 +33,6 @@ def evaluate_tokenizer(tokenizer, lines, desc="Оценка"):
 
 
 def run_experiment(data_path, merge_values, output_base="tokenizer"):
-    """Проводит эксперимент с разными значениями num_merges."""
     results = []
     
     print("\n" + "="*60)
@@ -47,7 +42,6 @@ def run_experiment(data_path, merge_values, output_base="tokenizer"):
     for i, num_merges in enumerate(merge_values):
         print(f"\n[{i+1}/{len(merge_values)}] Обучение с num_merges={num_merges}")
         
-        # Обучение
         tokenizer = BPETokenizer()
         tokenizer.train(
             data_path,
@@ -56,14 +50,12 @@ def run_experiment(data_path, merge_values, output_base="tokenizer"):
             show_progress=False  # без прогресса для эксперимента
         )
         
-        # Оценка
         res = evaluate_tokenizer(
             tokenizer,
             tokenizer.val_lines,
             desc=f"Оценка (nm={num_merges})"
         )
         
-        # Сохранение
         output_path = f"{output_base}_nm{num_merges}.json"
         tokenizer.save(output_path)
         

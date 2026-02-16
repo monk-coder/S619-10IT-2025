@@ -13,34 +13,14 @@ from tqdm import tqdm
 
 
 class BPETokenizer:
-    """
-    КЛАСС ТОКЕНИЗАТОРА
-    -------------------
-    Здесь хранятся все методы для работы с токенизатором:
-    - train: обучение на текстах
-    - encode: превращение текста в числа
-    - decode: превращение чисел обратно в текст
-    - save: сохранение в файл
-    - load: загрузка из файла
-    """
     
     def __init__(self):
-        """Конструктор - вызывается при создании токенизатора"""
         self.vocab = {}
         self.inverse_vocab = {}  
         self.merges = {}       
         self.special_tokens = {}  
         
     def _get_stats(self, words: List[List[str]]) -> Dict[Tuple[str, str], int]:
-        """
-        Подсчет частоты пар соседних символов
-        -------------------------------------
-        words: список слов, каждое слово - список символов
-        возвращает: словарь {(символ1, символ2): частота}
-        
-        Пример: если есть слово ["h","e","l","l","o"]
-        то пары: ("h","e"), ("e","l"), ("l","l"), ("l","o")
-        """
         pairs = defaultdict(int) 
         for word in words:       
             for i in range(len(word) - 1): 
@@ -49,17 +29,6 @@ class BPETokenizer:
         return dict(pairs)    
     
     def _merge_pair(self, words: List[List[str]], pair: Tuple[str, str], new_token: str) -> List[List[str]]:
-        """
-        Замена всех вхождений пары на новый токен
-        -----------------------------------------
-        words: список слов
-        pair: пара для замены (например, ("h","e"))
-        new_token: новый токен (например, "he")
-        возвращает: обновленный список слов
-        
-        Пример: слово ["h","e","l","l","o"], пара ("h","e"), новый токен "he"
-        результат: ["he","l","l","o"]
-        """
         new_words = []  
         for word in words: 
             new_word = [] 
@@ -75,43 +44,18 @@ class BPETokenizer:
         return new_words
     
     def _preprocess_text(self, text: str) -> List[str]:
-        """
-        Предобработка текста: нормализация пробелов и разбиение на слова
-        ----------------------------------------------------------------
-        text: входной текст
-        возвращает: список слов
-        
-        Пример: "Hello  world!" -> ["Hello", "world!"]
-        """
+
         # Заменяем несколько пробелов на один
         text = re.sub(r'\s+', ' ', text.strip())
         # Разбиваем на слова по пробелам
         return text.split()
     
     def _word_to_chars(self, word: str) -> List[str]:
-        """
-        Преобразование слова в список символов
-        --------------------------------------
-        word: слово (например, "hello")
-        возвращает: список символов (["h","e","l","l","o"])
-        """
+
         return list(word)
     
     def train(self, corpus: List[str], num_merges: int, verbose: bool = True) -> 'BPETokenizer':
-        """
-        ОБУЧЕНИЕ ТОКЕНИЗАТОРА - САМАЯ ВАЖНАЯ ЧАСТЬ
-        --------------------------------------------
-        corpus: список текстов для обучения
-        num_merges: сколько раз объединять пары
-        verbose: показывать ли прогресс
-        
-        Алгоритм BPE:
-        1. Начинаем с отдельных символов
-        2. Находим самую частую пару соседних символов
-        3. Объединяем их в один токен
-        4. Повторяем шаги 2-3 num_merges раз
-        """
-        
+  
         # ШАГ 1: Собираем все слова из корпуса
         print("Сбор всех слов из корпуса...")
         all_words = []
@@ -178,15 +122,7 @@ class BPETokenizer:
         return self
     
     def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:
-        """
-        КОДИРОВАНИЕ ТЕКСТА В ЧИСЛА
-        ---------------------------
-        text: текст для кодирования
-        add_special_tokens: добавлять ли <s> в начало и </s> в конец
-        возвращает: список чисел (ID токенов)
-        
-        Пример: "hello" -> [5, 6, 7, 7, 8] (если h=5, e=6, l=7, o=8)
-        """
+
         words = self._preprocess_text(text)
         
         encoded_tokens = []
@@ -219,15 +155,7 @@ class BPETokenizer:
         return encoded_tokens
     
     def decode(self, ids: List[int], skip_special_tokens: bool = True) -> str:
-        """
-        ДЕКОДИРОВАНИЕ ЧИСЕЛ ОБРАТНО В ТЕКСТ
-        ------------------------------------
-        ids: список чисел (ID токенов)
-        skip_special_tokens: пропускать ли специальные токены
-        возвращает: восстановленный текст
-        
-        Пример: [5,6,7,7,8] -> "hello"
-        """
+ 
         tokens = []
         special_ids = set(self.special_tokens.values())
         
@@ -245,11 +173,7 @@ class BPETokenizer:
         return text
     
     def save(self, path: str) -> None:
-        """
-        СОХРАНЕНИЕ ТОКЕНИЗАТОРА В ФАЙЛ
-        -------------------------------
-        path: путь к файлу (например, "my_tokenizer.json")
-        """
+
         data = {
             'vocab': self.vocab,
             'merges': {f"{k[0]}||{k[1]}": v for k, v in self.merges.items()},
@@ -262,12 +186,7 @@ class BPETokenizer:
         print(f"Токенизатор сохранен в {path}")
     
     def load(self, path: str) -> 'BPETokenizer':
-        """
-        ЗАГРУЗКА ТОКЕНИЗАТОРА ИЗ ФАЙЛА
-        -------------------------------
-        path: путь к файлу
-        возвращает: загруженный токенизатор
-        """
+
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
@@ -287,13 +206,7 @@ class BPETokenizer:
 
 
 def prepare_data(file_path: str, train_ratio: float = 0.9) -> Tuple[List[str], List[str]]:
-    """
-    ПОДГОТОВКА ДАННЫХ: РАЗБИЕНИЕ НА ОБУЧАЮЩУЮ И ПРОВЕРОЧНУЮ ВЫБОРКИ
-    -----------------------------------------------------------------
-    file_path: путь к файлу с данными
-    train_ratio: доля данных для обучения (0.9 = 90%)
-    возвращает: (train_data, val_data) - списки текстов
-    """
+
     with open(file_path, 'r', encoding='utf-8') as f:
         lines = [line.strip() for line in f if line.strip()]
     
@@ -317,13 +230,7 @@ def prepare_data(file_path: str, train_ratio: float = 0.9) -> Tuple[List[str], L
 
 
 def evaluate_tokenizer(tokenizer: BPETokenizer, val_data: List[str]) -> Dict:
-    """
-    ОЦЕНКА КАЧЕСТВА ТОКЕНИЗАТОРА
-    ----------------------------
-    tokenizer: обученный токенизатор
-    val_data: проверочные данные
-    возвращает: словарь с метриками
-    """
+
     print("Оценка токенизатора...")
     
     token_lengths = []
@@ -352,13 +259,7 @@ def evaluate_tokenizer(tokenizer: BPETokenizer, val_data: List[str]) -> Dict:
 
 
 def experiment_different_merges(train_data: List[str], val_data: List[str], merge_values: List[int]) -> None:
-    """
-    ЭКСПЕРИМЕНТ С РАЗНЫМ КОЛИЧЕСТВОМ СЛИЯНИЙ
-    -----------------------------------------
-    train_data: обучающие данные
-    val_data: проверочные данные
-    merge_values: список значений num_merges для сравнения
-    """
+
     print("\n" + "="*60)
     print("ЭКСПЕРИМЕНТ: Сравнение разных значений num_merges")
     print("="*60)
@@ -470,3 +371,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+

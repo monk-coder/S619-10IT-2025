@@ -47,7 +47,7 @@ def run_experiment(data_path, merge_values, output_base="tokenizer"):
             data_path,
             num_merges=num_merges,
             val_split=0.1,
-            show_progress=False  # без прогресса для эксперимента
+            show_progress=False  
         )
         
         res = evaluate_tokenizer(

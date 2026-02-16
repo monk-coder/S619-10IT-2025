@@ -1,0 +1,26 @@
+# Конфигурация BPE токенизатора
+
+tokenizer:
+  num_merges: 8000
+  special_tokens:
+    - "<PAD>"
+    - "<UNK>"
+    - "<BOS>"
+    - "<EOS>"
+  lowercase: true
+  strip_accents: false
+  max_word_length: null
+  min_frequency: 1
+
+data:
+  path: "data/raw/data.txt"
+  val_size: 0.1
+  seed: 42
+
+training:
+  merge_values: [0, 2000, 8000]
+  output_dir: "models"
+
+evaluation:
+  output_dir: "results"
+  test_texts: 10

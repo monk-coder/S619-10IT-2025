@@ -71,14 +71,12 @@ def run_experiment(data_path, merge_values, output_base="tokenizer"):
 
 
 def plot_experiment(results, save_path="experiment.png"):
-    """Строит график результатов эксперимента."""
     merge_vals = [r["num_merges"] for r in results]
     avg_lens = [r["avg_len"] for r in results]
     vocab_sizes = [r["vocab_size"] for r in results]
     
     plt.figure(figsize=(10, 4))
     
-    # График 1: средняя длина
     plt.subplot(1, 2, 1)
     plt.plot(merge_vals, avg_lens, 'o-', color='#2E86AB', linewidth=2, markersize=8)
     plt.xlabel("num_merges", fontsize=11)
@@ -86,7 +84,6 @@ def plot_experiment(results, save_path="experiment.png"):
     plt.title("Длина последовательности", fontsize=12, fontweight='bold')
     plt.grid(True, alpha=0.3)
     
-    # График 2: размер словаря
     plt.subplot(1, 2, 2)
     plt.plot(merge_vals, vocab_sizes, 's-', color='#A23B72', linewidth=2, markersize=8)
     plt.xlabel("num_merges", fontsize=11)
@@ -99,8 +96,7 @@ def plot_experiment(results, save_path="experiment.png"):
     print(f"\n📈 Графики сохранены: {save_path}")
 
 
-def demo_encoding(tokenizer):
-    """Демонстрирует кодирование/декодирование на примере."""
+def demo_encoding(tokenizer)
     print("\n" + "="*60)
     print("🧪 ДЕМОНСТРАЦИЯ: кодирование и декодирование")
     print("="*60)
@@ -115,7 +111,6 @@ def demo_encoding(tokenizer):
     ids = tokenizer.encode(test_text)
     print(f"\nТокены (ID):\n  {ids}")
     
-    # Показываем токены в виде строк
     tokens_str = [tokenizer._inv_vocab.get(i, '<?>') for i in ids]
     print(f"\nТокены (строки):\n  {tokens_str}")
     
@@ -129,7 +124,6 @@ def demo_encoding(tokenizer):
 
 
 def main():
-    """Основная точка входа."""
     parser = argparse.ArgumentParser(description="BPE Tokenizer — обучение и анализ")
     parser.add_argument("--num_merges", type=int, default=2000, help="Количество слияний")
     parser.add_argument("--data_path", type=str, default="data.txt", help="Путь к корпусу")
@@ -144,7 +138,6 @@ def main():
     print(f"🔄 Слияний: {args.num_merges}")
     print(f"💾 Выход: {args.output}")
     
-    # Обучение
     print("\n" + "-"*60)
     print("📚 ЭТАП 1: Обучение токенизатора")
     print("-"*60)
@@ -156,11 +149,9 @@ def main():
         show_progress=True
     )
     
-    # Сохранение
     tokenizer.save(args.output)
     print(f"✅ Модель сохранена: {args.output}")
     
-    # Оценка на валидации
     print("\n" + "-"*60)
     print("🔍 ЭТАП 2: Проверка обратимости и метрики")
     print("-"*60)
@@ -173,10 +164,8 @@ def main():
     print(f"  • Макс. длина:       {results['max_len']} токенов")
     print(f"  • Примеров:          {results['total_samples']}")
     
-    # Демонстрация
     demo_encoding(tokenizer)
     
-    # Эксперимент (опционально)
     if args.run_experiment:
         print("\n" + "-"*60)
         print("🔬 ЭТАП 3: Эксперимент с разными num_merges")

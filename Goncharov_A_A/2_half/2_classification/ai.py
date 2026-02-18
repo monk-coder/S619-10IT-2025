@@ -2,12 +2,10 @@ import gzip
 import os
 import urllib.request
 from urllib.error import HTTPError, URLError
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-# KONSTANTI
 INPUT_SIZE = 784
 HIDDEN_SIZE = 128
 OUTPUT_SIZE = 10
@@ -52,7 +50,6 @@ class NeuralNetwork:
         self.Z2 = self.A1 @ self.W2 + self.b2
         self.A2 = self.softmax(self.Z2)
         return self.A2
-
     def loss(self, y_pred, y_true):
         epsilon = 1e-9
         return -np.mean(np.sum(y_true * np.log(y_pred + epsilon), axis=1))
@@ -265,7 +262,7 @@ def plot_training_graphs(
     plt.tight_layout()
     plt.savefig(GRAPH_FILENAME)
     print(f"\ngraphs saved in '{GRAPH_FILENAME}'")
-    plt.close()  # Close the figure to free memory
+    plt.close() 
 
 
 if __name__ == "__main__":

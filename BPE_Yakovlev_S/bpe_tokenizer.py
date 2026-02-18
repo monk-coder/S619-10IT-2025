@@ -1,41 +1,61 @@
 import json
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+from typing import List, Dict, Tuple, Optional
 
 
 class BPETokenizer:
-    
-    def __init__(self):
-        self.vocab = {}     
-        self.merges = []     
-        self._inv_vocab = {} 
-        self.val_lines = []  
 
-    def _get_stats(self, tokens):
-        pairs = defaultdict(int)
+import json
+from collections import Counter, defaultdict
+from typing import List, Dict, Tuple, Optional
+
+
+class BPETokenizer:
+     def __init__(self) -> None:
+        """Initialize empty tokenizer."""
+        self.vocab: Dict[str, int] = {}          # token -> id
+        self.merges: List[Tuple[str, str]] = []  # merge operations in order
+        self._inv_vocab: Dict[int, str] = {}     # id -> token
+        self.val_lines: List[str] = []           # validation split
+    
+    def _get_pair_stats(self, tokens: List[str]) -> Dict[Tuple[str, str], int]:
+        stats = defaultdict(int)
         for i in range(len(tokens) - 1):
             pair = (tokens[i], tokens[i + 1])
-            pairs[pair] += 1
-        return pairs
-
-    def _merge_pair(self, tokens, pair, new_token):
+            stats[pair] += 1
+        return stats
+    
+    def _merge_tokens(self, tokens: List[str], pair: Tuple[str, str], replacement: str) -> List[str]:
+        result = []
         i = 0
-        new_tokens = []
         while i < len(tokens):
             if i < len(tokens) - 1 and tokens[i] == pair[0] and tokens[i + 1] == pair[1]:
-                new_tokens.append(new_token)
+                result.append(replacement)
                 i += 2
             else:
-                new_tokens.append(tokens[i])
+                result.append(tokens[i])
                 i += 1
-        return new_tokens
-
-    def train(self, file_path, num_merges=1000, val_split=0.1, show_progress=True):
-        with open(file_path, "r", encoding="utf-8") as f:
-            lines = [line.rstrip('\n') for line in f if line.strip()]
+        return result
+    
+    def train(
+        self,
+        file_path: str,
+        num_merges: int = 1000,
+        val_split: float = 0.1,
+        show_progress: bool = True
+    ) -> None:
+        if not 0.0 <= val_split <= 1.0:
+            raise ValueError(f"val_split must be between 0 and 1, got {val_split}")
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = [line.rstrip('\n') for line in f if line.strip()]
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found: {file_path}")
         
         if not lines:
-            raise ValueError("Файл пустой!")
-
+            raise ValueError(f"File {file_path} is empty or contains only whitespace")
+        
         all_chars = set()
         for line in lines:
             all_chars.update(line)
@@ -44,29 +64,39 @@ class BPETokenizer:
         train_lines = lines[:split_idx]
         self.val_lines = lines[split_idx:]
         
-        self.vocab = {ch: i for i, ch in enumerate(sorted(all_chars))}
+        self.vocab = {ch: idx for idx, ch in enumerate(sorted(all_chars))}
         next_id = len(self.vocab)
         
         word_freqs = Counter()
         for line in train_lines:
             word_freqs[tuple(line)] += 1
-
-        from tqdm import tqdm
-        merge_iter = range(num_merges)
-        if show_progress:
-            merge_iter = tqdm(merge_iter, desc="BPE обучение", unit="слияние")
         
-        for _ in merge_iter:
-            stats = defaultdict(int)
+        if show_progress:
+            try:
+                from tqdm import tqdm
+                merge_range = tqdm(
+                    range(num_merges),
+                    desc="Training BPE",
+                    unit="merge",
+                    ncols=80
+                )
+            except ImportError:
+                print("Warning: tqdm not installed, progress bar disabled")
+                merge_range = range(num_merges)
+        else:
+            merge_range = range(num_merges)
+        
+        for _ in merge_range:
+            # Count all pairs across the corpus
+            pair_stats = defaultdict(int)
             for word, freq in word_freqs.items():
-                pairs = self._get_stats(list(word))
-                for pair, count in pairs.items():
-                    stats[pair] += count
+                for pair, count in self._get_pair_stats(list(word)).items():
+                    pair_stats[pair] += count
             
-            if not stats:
-                break  
+            if not pair_stats:
+                break
             
-            best_pair = max(stats, key=stats.get)
+            best_pair = max(pair_stats, key=pair_stats.get)
             new_token = ''.join(best_pair)
             
             self.merges.append(best_pair)
@@ -77,16 +107,13 @@ class BPETokenizer:
             
             new_word_freqs = Counter()
             for word, freq in word_freqs.items():
-                new_word = tuple(self._merge_pair(list(word), best_pair, new_token))
-                new_word_freqs[new_word] += freq
+                merged_word = tuple(self._merge_tokens(list(word), best_pair, new_token))
+                new_word_freqs[merged_word] += freq
             word_freqs = new_word_freqs
         
-        self._inv_vocab = {v: k for k, v in self.vocab.items()}
-        
-        if show_progress:
-            print(f"\n✅ Обучение завершено: {len(self.vocab)} токенов, {len(self.merges)} слияний")
-
-    def encode(self, text):
+        self._inv_vocab = {idx: token for token, idx in self.vocab.items()}
+    
+    def encode(self, text: str) -> List[int]:
         if not text:
             return []
         
@@ -94,39 +121,206 @@ class BPETokenizer:
         
         for pair in self.merges:
             new_token = ''.join(pair)
-            tokens = self._merge_pair(tokens, pair, new_token)
+            tokens = self._merge_tokens(tokens, pair, new_token)
         
         ids = []
         for token in tokens:
             if token in self.vocab:
                 ids.append(self.vocab[token])
             else:
-                for ch in token:
-                    if ch in self.vocab:
-                        ids.append(self.vocab[ch])
+                for char in token:
+                    if char in self.vocab:
+                        ids.append(self.vocab[char])
                     else:
-                        raise ValueError(f"Символ '{ch}' не найден в словаре!")
+                        raise ValueError(
+                            f"Character '{char}' not in vocabulary. "
+                            f"Ensure all characters are present in training corpus."
+                        )
+        
         return ids
-
-    def decode(self, ids):
-        return ''.join(self._inv_vocab.get(i, '') for i in ids)
-
-    def save(self, path):
+    
+    def decode(self, ids: List[int]) -> str:
+        return ''.join(self._inv_vocab.get(idx, '') for idx in ids)
+    
+    def save(self, path: str) -> None:
         data = {
-            "vocab": self.vocab,
-            "merges": self.merges,
-            "val_lines": self.val_lines
+            'vocab': self.vocab,
+            'merges': self.merges,
+            'val_lines': self.val_lines
         }
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-
+    
     @classmethod
-    def load(cls, path):
+    def load(cls, path: str) -> 'BPETokenizer':
         obj = cls()
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        obj.vocab = data["vocab"]
-        obj.merges = [tuple(pair) for pair in data["merges"]]
-        obj.val_lines = data.get("val_lines", [])
-        obj._inv_vocab = {v: k for k, v in obj.vocab.items()}
+        
+        obj.vocab = data['vocab']
+        obj.merges = [tuple(pair) for pair in data['merges']]
+        obj.val_lines = data.get('val_lines', [])
+        obj._inv_vocab = {idx: token for token, idx in obj.vocab.items()}
+        
         return obj
+    
+    def __len__(self) -> int:
+        return len(self.vocab)
+    
+    def __repr__(self) -> str:
+        return f"BPETokenizer(vocab_size={len(self.vocab)}, merges={len(self.merges)})"def __init__(self) -> None:
+        self.vocab: Dict[str, int] = {}          # token -> id
+        self.merges: List[Tuple[str, str]] = []  # merge operations in order
+        self._inv_vocab: Dict[int, str] = {}     # id -> token
+        self.val_lines: List[str] = []           # validation split
+    
+    def _get_pair_stats(self, tokens: List[str]) -> Dict[Tuple[str, str], int]:
+        stats = defaultdict(int)
+        for i in range(len(tokens) - 1):
+            pair = (tokens[i], tokens[i + 1])
+            stats[pair] += 1
+        return stats
+    
+    def _merge_tokens(self, tokens: List[str], pair: Tuple[str, str], replacement: str) -> List[str]:
+        result = []
+        i = 0
+        while i < len(tokens):
+            if i < len(tokens) - 1 and tokens[i] == pair[0] and tokens[i + 1] == pair[1]:
+                result.append(replacement)
+                i += 2
+            else:
+                result.append(tokens[i])
+                i += 1
+        return result
+    
+    def train(
+        self,
+        file_path: str,
+        num_merges: int = 1000,
+        val_split: float = 0.1,
+        show_progress: bool = True
+    ) -> None:
+        if not 0.0 <= val_split <= 1.0:
+            raise ValueError(f"val_split must be between 0 and 1, got {val_split}")
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = [line.rstrip('\n') for line in f if line.strip()]
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found: {file_path}")
+        
+        if not lines:
+            raise ValueError(f"File {file_path} is empty or contains only whitespace")
+        
+        all_chars = set()
+        for line in lines:
+            all_chars.update(line)
+        
+        split_idx = int(len(lines) * (1 - val_split))
+        train_lines = lines[:split_idx]
+        self.val_lines = lines[split_idx:]
+        
+        self.vocab = {ch: idx for idx, ch in enumerate(sorted(all_chars))}
+        next_id = len(self.vocab)
+        
+        word_freqs = Counter()
+        for line in train_lines:
+            word_freqs[tuple(line)] += 1
+        
+        if show_progress:
+            try:
+                from tqdm import tqdm
+                merge_range = tqdm(
+                    range(num_merges),
+                    desc="Training BPE",
+                    unit="merge",
+                    ncols=80
+                )
+            except ImportError:
+                print("Warning: tqdm not installed, progress bar disabled")
+                merge_range = range(num_merges)
+        else:
+            merge_range = range(num_merges)
+        
+        for _ in merge_range:
+            pair_stats = defaultdict(int)
+            for word, freq in word_freqs.items():
+                for pair, count in self._get_pair_stats(list(word)).items():
+                    pair_stats[pair] += count
+            
+            if not pair_stats:
+                break
+            
+            best_pair = max(pair_stats, key=pair_stats.get)
+            new_token = ''.join(best_pair)
+            
+            self.merges.append(best_pair)
+            
+            if new_token not in self.vocab:
+                self.vocab[new_token] = next_id
+                next_id += 1
+            
+            new_word_freqs = Counter()
+            for word, freq in word_freqs.items():
+                merged_word = tuple(self._merge_tokens(list(word), best_pair, new_token))
+                new_word_freqs[merged_word] += freq
+            word_freqs = new_word_freqs
+        
+        self._inv_vocab = {idx: token for token, idx in self.vocab.items()}
+    
+    def encode(self, text: str) -> List[int]:
+        if not text:
+            return []
+        
+        tokens = list(text)
+        
+        for pair in self.merges:
+            new_token = ''.join(pair)
+            tokens = self._merge_tokens(tokens, pair, new_token)
+        
+        ids = []
+        for token in tokens:
+            if token in self.vocab:
+                ids.append(self.vocab[token])
+            else:
+                for char in token:
+                    if char in self.vocab:
+                        ids.append(self.vocab[char])
+                    else:
+                        raise ValueError(
+                            f"Character '{char}' not in vocabulary. "
+                            f"Ensure all characters are present in training corpus."
+                        )
+        
+        return ids
+    
+    def decode(self, ids: List[int]) -> str:
+        return ''.join(self._inv_vocab.get(idx, '') for idx in ids)
+    
+    def save(self, path: str) -> None:
+        data = {
+            'vocab': self.vocab,
+            'merges': self.merges,
+            'val_lines': self.val_lines
+        }
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    @classmethod
+    def load(cls, path: str) -> 'BPETokenizer':
+        obj = cls()
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        obj.vocab = data['vocab']
+        obj.merges = [tuple(pair) for pair in data['merges']]
+        obj.val_lines = data.get('val_lines', [])
+        obj._inv_vocab = {idx: token for token, idx in obj.vocab.items()}
+        
+        return obj
+    
+    def __len__(self) -> int:
+        return len(self.vocab)
+    
+    def __repr__(self) -> str:
+        return f"BPETokenizer(vocab_size={len(self.vocab)}, merges={len(self.merges)})"

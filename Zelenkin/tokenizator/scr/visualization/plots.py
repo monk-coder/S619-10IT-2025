@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Dict, Optional
-import seaborn as sns
 
 
 class TokenizerVisualizer:
@@ -114,4 +113,5 @@ class TokenizerVisualizer:
 
         if save_path:
             plt.savefig(save_path, dpi=150, bbox_inches='tight')
+
         plt.show()

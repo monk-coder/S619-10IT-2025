@@ -38,7 +38,7 @@ def main():
     print(f"Training on {len(train)} lines")
     print(f"Testing on {len(val)} lines")
     
-    # Train with required merges: 0, 2000, 8000
+    # Train with merges: 0, 2000, 8000
     merge_values = [0, 2000, 8000]
     
     for merges in merge_values:
@@ -60,12 +60,12 @@ def main():
         accuracy = correct / len(val) * 100 if len(val) > 0 else 0
         print(f"Decode accuracy: {accuracy:.1f}% ({correct}/{len(val)})")
         
-        # Save final model
+        # Save model for 8000 merges
         if merges == 8000:
             tokenizer.save("bpe_tokenizer_8000.json")
-            print("✅ Model saved: bpe_tokenizer_8000.json")
+            print(f"✅ Model saved: bpe_tokenizer_8000.json (vocab size: {len(tokenizer.vocab)})")
     
-    # Финальная проверка - загружаем сохраненную модель и смотрим размер
+    # Финальная проверка
     if os.path.exists("bpe_tokenizer_8000.json"):
         print(f"\n{'='*50}")
         print("Loading saved model for final check...")
@@ -73,6 +73,8 @@ def main():
         loaded.load("bpe_tokenizer_8000.json")
         print(f"✅ Final vocabulary size: {len(loaded.vocab)} tokens")
         print(f"✅ Merges performed: {len(loaded.merges)}")
+        if len(loaded.vocab) > 8000:
+            print(f"✅ GOAL ACHIEVED! Vocabulary size > 8000")
     
     print(f"\n{'='*50}")
     print("✅ Training complete!")

@@ -21,12 +21,6 @@ def main():
     # Check data file
     if not os.path.exists(data_path):
         print(f"Error: {data_path} not found!")
-        print("Current directory:", os.getcwd())
-        print("Available files:")
-        for root, dirs, files in os.walk("."):
-            for file in files:
-                if file.endswith(".txt"):
-                    print(f"  {os.path.join(root, file)}")
         return
     
     # Load data
@@ -48,7 +42,9 @@ def main():
     merge_values = [0, 2000, 8000]
     
     for merges in merge_values:
-        print(f"\nTraining with {merges} merges...")
+        print(f"\n{'='*50}")
+        print(f"Training with {merges} merges...")
+        print(f"{'='*50}")
         
         tokenizer = BPETokenizer()
         tokenizer.train(train, merges, verbose=True)
@@ -67,9 +63,19 @@ def main():
         # Save final model
         if merges == 8000:
             tokenizer.save("bpe_tokenizer_8000.json")
-            print("Saved: bpe_tokenizer_8000.json")
+            print("✅ Model saved: bpe_tokenizer_8000.json")
     
-    print("\n✅ Training complete!")
+    # Финальная проверка - загружаем сохраненную модель и смотрим размер
+    if os.path.exists("bpe_tokenizer_8000.json"):
+        print(f"\n{'='*50}")
+        print("Loading saved model for final check...")
+        loaded = BPETokenizer()
+        loaded.load("bpe_tokenizer_8000.json")
+        print(f"✅ Final vocabulary size: {len(loaded.vocab)} tokens")
+        print(f"✅ Merges performed: {len(loaded.merges)}")
+    
+    print(f"\n{'='*50}")
+    print("✅ Training complete!")
 
 if __name__ == "__main__":
     main()

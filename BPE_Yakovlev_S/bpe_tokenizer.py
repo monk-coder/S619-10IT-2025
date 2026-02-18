@@ -12,11 +12,10 @@ from typing import List, Dict, Tuple, Optional
 
 class BPETokenizer:
      def __init__(self) -> None:
-        """Initialize empty tokenizer."""
-        self.vocab: Dict[str, int] = {}          # token -> id
-        self.merges: List[Tuple[str, str]] = []  # merge operations in order
-        self._inv_vocab: Dict[int, str] = {}     # id -> token
-        self.val_lines: List[str] = []           # validation split
+        self.vocab: Dict[str, int] = {}         
+        self.merges: List[Tuple[str, str]] = []  
+        self._inv_vocab: Dict[int, str] = {}     
+        self.val_lines: List[str] = []          
     
     def _get_pair_stats(self, tokens: List[str]) -> Dict[Tuple[str, str], int]:
         stats = defaultdict(int)

@@ -39,8 +39,7 @@ class BPETokenizer:
         val_split: float = 0.1,
         show_progress: bool = True
     ) -> None:
-        if file_path is None:
-            file_path = self.find_data_file()
+       
         
         if not 0.0 <= val_split <= 1.0:
             raise ValueError(f"val_split must be between 0 and 1, got {val_split}")

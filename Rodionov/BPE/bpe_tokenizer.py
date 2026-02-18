@@ -204,7 +204,7 @@ class BPETokenizer:
         tokens = [self.vocab.get(token_id, '<unk>') for token_id in token_ids]
         text = ''.join(tokens)
         text = text.replace('</w>', ' ')
-        text = re.sub(r'\s+([.,!?;:)\]})])', r'\1', text)
+        text = re.sub(r'\s+([.,!?;:)\]})<>])', r'\1', text)
         text = re.sub(r'\s+', ' ', text).strip()
         return text
 
@@ -286,5 +286,6 @@ class BPETokenizer:
             'total_tokens': int(np.sum(lengths)),
             'num_samples': len(lengths)
         }
+
 
         return stats

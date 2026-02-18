@@ -31,41 +31,6 @@ class BPETokenizer:
                 i += 1
         return result
     
-    def find_data_file(self) -> str:
-        current_dir = os.getcwd()
-        
-        for root, dirs, files in os.walk(current_dir):
-            if 'S619-10IT-2025' in root:
-                target_dir = os.path.join(root, '0')
-                if os.path.exists(target_dir):
-                    data_path = os.path.join(target_dir, 'data.txt')
-                    if os.path.exists(data_path):
-                        return data_path
-        
-        parent_dir = os.path.dirname(current_dir)
-        for root, dirs, files in os.walk(parent_dir):
-            if 'S619-10IT-2025' in root:
-                target_dir = os.path.join(root, '0')
-                if os.path.exists(target_dir):
-                    data_path = os.path.join(target_dir, 'data.txt')
-                    if os.path.exists(data_path):
-                        return data_path
-        
-        search_dirs = [
-            os.path.join(current_dir, 'S619-10IT-2025', '0'),
-            os.path.join(parent_dir, 'S619-10IT-2025', '0'),
-            os.path.join(os.path.dirname(parent_dir), 'S619-10IT-2025', '0'),
-            os.path.join(current_dir, '..', 'S619-10IT-2025', '0'),
-            os.path.join(current_dir, '0'),
-            os.path.join(current_dir, '..', '0')
-        ]
-        
-        for dir_path in search_dirs:
-            data_path = os.path.join(dir_path, 'data.txt')
-            if os.path.exists(data_path):
-                return os.path.abspath(data_path)
-        
-        return 'data.txt'
     
     def train(
         self,

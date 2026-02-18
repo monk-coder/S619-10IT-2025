@@ -51,7 +51,7 @@ class BPETokenizer(BaseTokenizer):
         initial_chars.add(' ')
 
         # Инициализация словаря символами
-        self.vocab.initialize(initial_chars, self.config.special_tokens)
+        self.vocab = Vocabulary(initial_chars, self.config.special_tokens)
 
         # Обучение слияниям
         self._learn_merges(word_counts, self.config.num_merges)
@@ -248,4 +248,5 @@ class BPETokenizer(BaseTokenizer):
 
     @property
     def merges_count(self) -> int:
+
         return len(self.core.merges)

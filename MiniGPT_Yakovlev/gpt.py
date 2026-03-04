@@ -1,34 +1,79 @@
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import os
+import urllib.request
+import ssl
 
 import config
 from tokenizer import BPETokenizer
 
 
+def download_file_from_github(url, save_path):
+    try:
+        ssl._create_default_https_context = ssl._create_unverified_context
+        print(f"Downloading data from GitHub: {url}")
+        urllib.request.urlretrieve(url, save_path)
+        print(f"Data saved to {save_path}")
+        return True
+    except Exception as e:
+        print(f"Failed to download from GitHub: {e}")
+        return False
+
+
+def find_data_file():
+    if os.path.exists(config.DATA_PATH):
+        print(f"Found data file locally: {config.DATA_PATH}")
+        return config.DATA_PATH
+    
+    print(f"Local data file not found: {config.DATA_PATH}")
+    
+    if hasattr(config, 'GITHUB_DATA_URL') and config.GITHUB_DATA_URL:
+        if download_file_from_github(config.GITHUB_DATA_URL, config.DATA_PATH):
+            return config.DATA_PATH
+    
+    search_paths = [
+        "data.txt",
+        "./data.txt",
+        "../data.txt",
+        "../../data.txt",
+        "data/data.txt",
+        "dataset/data.txt",
+        "datasets/data.txt"
+    ]
+    
+    for path in search_paths:
+        if os.path.exists(path):
+            print(f"Found data file at: {path}")
+            return path
+    
+    print("Warning: No data.txt found. Please create one or set GITHUB_DATA_URL in config.py")
+    return None
+
+
 def gelu(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x ** 3)))
+    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
 
 
 def gelu_backward(x):
-    tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x ** 3))
-    return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out ** 2) * np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * x ** 2)
+    tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3))
+    return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out**2) * np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * x**2)
 
 
 class Embedding:
     def __init__(self, num_embeddings, embedding_dim):
         self.weight = np.random.randn(num_embeddings, embedding_dim) * 0.02
         self.grad = np.zeros_like(self.weight)
-
+    
     def forward(self, x):
         self.x = x
         return self.weight[x]
-
+    
     def backward(self, dout):
         self.grad.fill(0)
         np.add.at(self.grad, self.x, dout)
         return None
-
+    
     def update(self, lr):
         self.weight -= lr * self.grad
 
@@ -39,20 +84,20 @@ class Linear:
         self.bias = np.zeros(out_features) if bias else None
         self.grad_weight = np.zeros_like(self.weight)
         self.grad_bias = np.zeros(out_features) if bias else None
-
+    
     def forward(self, x):
         self.x = x
         out = x @ self.weight
         if self.bias is not None:
             out = out + self.bias
         return out
-
+    
     def backward(self, dout):
         self.grad_weight = self.x.reshape(-1, self.x.shape[-1]).T @ dout.reshape(-1, dout.shape[-1])
         if self.bias is not None:
-            self.grad_bias = dout.sum(axis=tuple(range(dout.ndim - 1)))
+            self.grad_bias = dout.sum(axis=tuple(range(dout.ndim-1)))
         return dout @ self.weight.T
-
+    
     def update(self, lr):
         self.weight -= lr * self.grad_weight
         if self.bias is not None:
@@ -66,7 +111,7 @@ class LayerNorm:
         self.beta = np.zeros(d_model)
         self.grad_gamma = np.zeros(d_model)
         self.grad_beta = np.zeros(d_model)
-
+    
     def forward(self, x):
         self.x_shape = x.shape
         x = x.reshape(-1, x.shape[-1])
@@ -76,7 +121,7 @@ class LayerNorm:
         self.x_norm = x_norm
         out = x_norm * self.gamma + self.beta
         return out.reshape(self.x_shape)
-
+    
     def backward(self, dout):
         dout = dout.reshape(-1, dout.shape[-1])
         N = dout.shape[0]
@@ -87,7 +132,7 @@ class LayerNorm:
         dmean = (-dx_norm / np.sqrt(self.var)).sum(axis=0) + dvar * (-2 * (self.x_norm - self.mean)).sum(axis=0) / N
         dx = dx_norm / np.sqrt(self.var) + dvar * 2 * (self.x_norm - self.mean) / N + dmean / N
         return dx.reshape(self.x_shape)
-
+    
     def update(self, lr):
         self.gamma -= lr * self.grad_gamma
         self.beta -= lr * self.grad_beta
@@ -97,18 +142,18 @@ class MLP:
     def __init__(self, d_model, d_ff):
         self.fc1 = Linear(d_model, d_ff)
         self.fc2 = Linear(d_ff, d_model)
-
+    
     def forward(self, x, training=True):
         self.x = x
         x = self.fc1.forward(x)
         self.x_act = gelu(x)
         return self.fc2.forward(self.x_act)
-
+    
     def backward(self, dout):
         dout = self.fc2.backward(dout)
         dout = dout * gelu_backward(self.x_act)
         return self.fc1.backward(dout)
-
+    
     def update(self, lr):
         self.fc1.update(lr)
         self.fc2.update(lr)
@@ -125,19 +170,17 @@ class MultiHeadAttention:
         self.wv = Linear(d_model, d_model)
         self.wo = Linear(d_model, d_model)
         self.dropout = dropout
-
+    
     def _causal_mask(self, T):
         return np.triu(np.ones((T, T)) * -1e9, k=1)
-
+    
     def forward(self, x, training=True):
         B, T, D = x.shape
         Q = self.wq.forward(x)
         K = self.wk.forward(x)
         V = self.wv.forward(x)
-
         def split_heads(x):
             return x.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3)
-
         Q_h = split_heads(Q)
         K_h = split_heads(K)
         V_h = split_heads(V)
@@ -156,7 +199,7 @@ class MultiHeadAttention:
         self.K_h = K_h
         out = (attn @ V_h).transpose(0, 2, 1, 3).reshape(B, T, D)
         return self.wo.forward(out)
-
+    
     def backward(self, dout):
         B, T, D = dout.shape
         dout = self.wo.backward(dout)
@@ -167,15 +210,13 @@ class MultiHeadAttention:
         d_scores = attn * (d_scores - np.sum(attn * d_scores, axis=-1, keepdims=True))
         dQ_h = d_scores @ self.K_h / np.sqrt(self.d_head)
         dK_h = d_scores.transpose(0, 1, 3, 2) @ self.Q_h / np.sqrt(self.d_head)
-
         def merge_heads(x):
             return x.transpose(0, 2, 1, 3).reshape(B, T, D)
-
         dQ = merge_heads(dQ_h)
         dK = merge_heads(dK_h)
         dV = merge_heads(dV_h)
         return self.wq.backward(dQ) + self.wk.backward(dK) + self.wv.backward(dV)
-
+    
     def update(self, lr):
         self.wq.update(lr)
         self.wk.update(lr)
@@ -190,7 +231,7 @@ class TransformerBlock:
         self.ln2 = LayerNorm(d_model)
         self.mlp = MLP(d_model, d_ff)
         self.dropout = dropout
-
+    
     def forward(self, x, training=True):
         x_norm = self.ln1.forward(x)
         x_attn = self.attn.forward(x_norm, training)
@@ -203,14 +244,14 @@ class TransformerBlock:
             x_mlp = x_mlp * (np.random.rand(*x_mlp.shape) > self.dropout) / (1 - self.dropout + 1e-9)
         x = x + x_mlp
         return x
-
+    
     def backward(self, dout):
         dout = self.mlp.backward(dout)
         dout = self.ln2.backward(dout)
         dout = self.attn.backward(dout)
         dout = self.ln1.backward(dout)
         return dout
-
+    
     def update(self, lr):
         self.ln1.update(lr)
         self.attn.update(lr)
@@ -228,7 +269,7 @@ class TransformerLM:
         self.blocks = [TransformerBlock(d_model, n_head, d_ff, dropout) for _ in range(n_layer)]
         self.ln_f = LayerNorm(d_model)
         self.head = Linear(d_model, vocab_size, bias=False)
-
+    
     def forward(self, x, training=True):
         B, T = x.shape
         tok_emb = self.token_emb.forward(x)
@@ -239,7 +280,7 @@ class TransformerLM:
             x = block.forward(x, training)
         x = self.ln_f.forward(x)
         return self.head.forward(x)
-
+    
     def backward(self, dout):
         dout = self.head.backward(dout)
         dout = self.ln_f.backward(dout)
@@ -247,7 +288,7 @@ class TransformerLM:
             dout = block.backward(dout)
         self.pos_emb.backward(dout)
         self.token_emb.backward(dout)
-
+    
     def update(self, lr):
         self.token_emb.update(lr)
         self.pos_emb.update(lr)
@@ -291,52 +332,54 @@ class Adam:
         for name, param, grad in self._get_params(model):
             self.m[name] = np.zeros_like(param)
             self.v[name] = np.zeros_like(param)
-
+    
     def _get_params(self, obj, prefix='model'):
         for attr in dir(obj):
             if attr.startswith('_'): continue
             val = getattr(obj, attr)
-            if isinstance(val, np.ndarray) and hasattr(obj, 'grad') and hasattr(getattr(obj, 'grad', None),
-                                                                                'shape') and getattr(obj,
-                                                                                                     'grad').shape == val.shape:
+            if isinstance(val, np.ndarray) and hasattr(obj, 'grad') and hasattr(getattr(obj, 'grad', None), 'shape') and getattr(obj, 'grad').shape == val.shape:
                 yield f"{prefix}.{attr}", val, getattr(obj, 'grad')
             elif hasattr(val, 'weight'):
                 yield from self._get_params(val, f"{prefix}.{attr}")
-
+    
     def step(self):
         self.t += 1
-        lr_t = self.lr * np.sqrt(1 - self.beta2 ** self.t) / (1 - self.beta1 ** self.t)
+        lr_t = self.lr * np.sqrt(1 - self.beta2**self.t) / (1 - self.beta1**self.t)
         for name, param, grad in self._get_params(self.model):
             self.m[name] = self.beta1 * self.m[name] + (1 - self.beta1) * grad
-            self.v[name] = self.beta2 * self.v[name] + (1 - self.beta2) * grad ** 2
+            self.v[name] = self.beta2 * self.v[name] + (1 - self.beta2) * grad**2
             param -= lr_t * self.m[name] / (np.sqrt(self.v[name]) + self.eps)
 
 
 def load_data(tokenizer, seq_len):
-    with open(config.DATA_PATH, 'r', encoding='utf-8') as f:
+    data_path = find_data_file()
+    if data_path is None:
+        raise FileNotFoundError("data.txt not found. Please create it or set GITHUB_DATA_URL in config.py")
+    
+    with open(data_path, 'r', encoding='utf-8') as f:
         lines = [line.rstrip('\n') for line in f if line.strip()]
-
+    
     all_ids = []
     for line in lines:
         ids = tokenizer.encode(line)
         ids.append(tokenizer.eos_token_id)
         all_ids.extend(ids)
-
+    
     all_ids = np.array(all_ids)
-
+    
     X, Y = [], []
     for i in range(0, len(all_ids) - seq_len, seq_len):
-        chunk = all_ids[i:i + seq_len + 1]
+        chunk = all_ids[i:i+seq_len+1]
         if len(chunk) == seq_len + 1:
             X.append(chunk[:-1])
             Y.append(chunk[1:])
-
+    
     split = int(len(X) * 0.9)
     train_X = np.array(X[:split]) if X[:split] else np.array([]).reshape(0, seq_len)
     train_Y = np.array(Y[:split]) if Y[:split] else np.array([]).reshape(0, seq_len)
     val_X = np.array(X[split:]) if X[split:] else np.array([]).reshape(0, seq_len)
     val_Y = np.array(Y[split:]) if Y[split:] else np.array([]).reshape(0, seq_len)
-
+    
     return (train_X, train_Y), (val_X, val_Y)
 
 
@@ -366,7 +409,7 @@ def generate(model, tokenizer, prompt, max_new_tokens, temperature=1.0, top_k=No
 
 def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.png'):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
-
+    
     ax1.plot(train_losses, label='Train Loss', color='blue')
     ax1.plot(val_losses, label='Val Loss', color='red')
     ax1.set_xlabel('Epoch')
@@ -374,7 +417,7 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax1.set_title('Cross-Entropy Loss')
     ax1.legend()
     ax1.grid(True)
-
+    
     ax2.plot(train_accs, label='Train Accuracy', color='green')
     ax2.plot(val_accs, label='Val Accuracy', color='orange')
     ax2.set_xlabel('Epoch')
@@ -382,11 +425,11 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax2.set_title('Token Prediction Accuracy')
     ax2.legend()
     ax2.grid(True)
-
+    
     plt.tight_layout()
     plt.savefig(path, dpi=150)
     plt.close()
-
+    
     fig_loss, ax_loss = plt.subplots(1, 1, figsize=(8, 5))
     ax_loss.plot(train_losses, label='Train Loss', color='blue')
     ax_loss.plot(val_losses, label='Val Loss', color='red')
@@ -397,7 +440,7 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax_loss.grid(True)
     plt.savefig(path.replace('.png', '_loss.png'), dpi=150)
     plt.close()
-
+    
     fig_acc, ax_acc = plt.subplots(1, 1, figsize=(8, 5))
     ax_acc.plot(train_accs, label='Train Accuracy', color='green')
     ax_acc.plot(val_accs, label='Val Accuracy', color='orange')
@@ -416,7 +459,10 @@ def train():
         tokenizer = BPETokenizer.load(config.TOKENIZER_PATH)
     except:
         tokenizer = BPETokenizer()
-        tokenizer.train(config.DATA_PATH, num_merges=config.NUM_MERGES, val_split=config.VAL_SPLIT)
+        data_path = find_data_file()
+        if data_path is None:
+            raise FileNotFoundError("data.txt not found. Please create it or set GITHUB_DATA_URL in config.py")
+        tokenizer.train(data_path, num_merges=config.NUM_MERGES, val_split=config.VAL_SPLIT)
         tokenizer.save(config.TOKENIZER_PATH)
     config.VOCAB_SIZE = len(tokenizer)
     (train_X, train_Y), (val_X, val_Y) = load_data(tokenizer, config.MAX_SEQ_LEN)
@@ -437,8 +483,8 @@ def train():
     for epoch in range(config.EPOCHS):
         perm = np.random.permutation(len(train_X))
         epoch_losses, epoch_accs = [], []
-        for idx in tqdm(perm, desc=f"Epoch {epoch + 1}/{config.EPOCHS} [train]"):
-            x, y = train_X[idx:idx + 1], train_Y[idx:idx + 1]
+        for idx in tqdm(perm, desc=f"Epoch {epoch+1}/{config.EPOCHS} [train]"):
+            x, y = train_X[idx:idx+1], train_Y[idx:idx+1]
             logits = model.forward(x, training=True)
             loss, dout = cross_entropy_loss(logits, y)
             acc = compute_accuracy(logits, y)
@@ -453,7 +499,7 @@ def train():
             epoch_accs.append(acc)
         val_loss, val_acc = 0, 0
         for idx in range(len(val_X)):
-            x, y = val_X[idx:idx + 1], val_Y[idx:idx + 1]
+            x, y = val_X[idx:idx+1], val_Y[idx:idx+1]
             logits = model.forward(x, training=False)
             loss, _ = cross_entropy_loss(logits, y)
             acc = compute_accuracy(logits, y)
@@ -467,15 +513,13 @@ def train():
         val_losses.append(val_loss)
         train_accs.append(avg_train_acc)
         val_accs.append(val_acc)
-        print(
-            f"Epoch {epoch + 1}: loss={avg_train_loss:.4f}, acc={avg_train_acc:.4f} | val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
+        print(f"Epoch {epoch+1}: loss={avg_train_loss:.4f}, acc={avg_train_acc:.4f} | val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
     np.save(f"{config.SAVE_DIR}/train_losses.npy", train_losses)
     np.save(f"{config.SAVE_DIR}/val_losses.npy", val_losses)
     np.save(f"{config.SAVE_DIR}/train_accs.npy", train_accs)
     np.save(f"{config.SAVE_DIR}/val_accs.npy", val_accs)
     plot_metrics(train_losses, val_losses, train_accs, val_accs, f"{config.LOG_DIR}/metrics.png")
     params = {}
-
     def collect(obj, prefix):
         for attr in dir(obj):
             if not attr.startswith('_') and hasattr(getattr(obj, attr), 'shape'):
@@ -484,7 +528,6 @@ def train():
                     params[f"{prefix}.{attr}"] = val.copy()
             elif hasattr(getattr(obj, attr), 'weight'):
                 collect(getattr(obj, attr), f"{prefix}.{attr}")
-
     collect(model, 'model')
     np.savez(f"{config.SAVE_DIR}/model_weights.npz", **{k: v for k, v in params.items() if v.size < 1e7})
     print("Training complete!")

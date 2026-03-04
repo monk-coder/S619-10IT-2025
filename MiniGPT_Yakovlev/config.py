@@ -2,6 +2,8 @@ import os
 
 DATA_PATH = "data.txt"
 TOKENIZER_PATH = "tokenizer.json"
+NUM_MERGES = 1000
+VAL_SPLIT = 0.1
 
 VOCAB_SIZE = None
 D_MODEL = 128

@@ -5,6 +5,8 @@ TOKENIZER_PATH = "tokenizer.json"
 NUM_MERGES = 1000
 VAL_SPLIT = 0.1
 
+GITHUB_DATA_URL = "https://raw.githubusercontent.com/username/repo/main/data.txt"
+
 VOCAB_SIZE = None
 D_MODEL = 128
 N_HEAD = 4

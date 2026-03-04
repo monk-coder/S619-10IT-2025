@@ -414,7 +414,7 @@ Training requires lots of text data.""")
         epochs=10,
         batch_size=16,
         seq_len=32,
-        lr=3e-3
+        lr=3e-2
     )
 
     print("Training completed!")
@@ -427,4 +427,5 @@ Training requires lots of text data.""")
 
 
 if __name__ == '__main__':
+
     main()

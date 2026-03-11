@@ -13,7 +13,6 @@ def load_data(filepath, tokenizer_path='tokenizer.pkl', vocab_size=1000):
     if os.path.exists(tokenizer_path):
         with open(tokenizer_path, 'rb') as f:
             tokenizer = pickle.load(f)
-        # Если сохранённый токенизатор имеет другой размер словаря, предупредим
         if len(tokenizer.vocab) != vocab_size:
             print(f"Предупреждение: сохранённый токенизатор имеет размер {len(tokenizer.vocab)}, "
                   f"запрошен {vocab_size}. Используется существующий.")
@@ -47,8 +46,7 @@ def get_batch(data, batch_size, seq_len, split='train', val_split=0.1):
     return x, y
 
 def main():
-    # Гиперпараметры
-    vocab_size = 500          # увеличен для двух томов
+    vocab_size = 500         
     d_model = 128
     n_layer = 2
     n_head = 2
@@ -56,28 +54,24 @@ def main():
     seq_len = 128
     batch_size = 32
     lr = 1e-3
-    epochs = 10                 # можно увеличить
+    epochs = 10                 
     log_every = 100
 
-    # Данные
     data, tokenizer = load_data('data.txt', vocab_size=vocab_size)
     print(f'Размер данных: {len(data)} токенов')
     print(f'Размер словаря: {len(tokenizer.vocab)}')
 
-    # Модель
     model = TransformerLM(vocab_size, d_model, n_layer, n_head, max_len)
     params, _ = model.parameters()
     optimizer = Adam(params, lr=lr)
 
-    # Для логирования
     train_losses = []
     val_losses = []
-    val_accs = []                # список для accuracy
+    val_accs = []               
     steps = []
 
     step = 0
     for epoch in range(epochs):
-        # Валидация в начале эпохи
         x_val, y_val = get_batch(data, batch_size, seq_len, split='val')
         logits = model.forward(x_val)
         val_loss, _ = cross_entropy_loss(logits, y_val)
@@ -86,7 +80,6 @@ def main():
         val_accs.append(val_acc)
         steps.append(step)
 
-        # Обучение
         num_batches = (len(data) // (batch_size * seq_len)) // 10  # примерное число батчей
         pbar = tqdm(range(num_batches), desc=f'Эпоха {epoch+1}/{epochs}')
         for _ in pbar:
@@ -106,13 +99,11 @@ def main():
 
         print(f"Эпоха {epoch+1}: val loss = {val_loss:.4f}, val acc = {val_acc:.4f}")
 
-    # Сохраняем параметры модели
     params, _ = model.parameters()
     with open('model_params.pkl', 'wb') as f:
         pickle.dump(params, f)
     print("Модель сохранена в model_params.pkl")
 
-    # График потерь
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 2, 1)
     plt.plot(train_losses, label='train')
@@ -123,7 +114,6 @@ def main():
     plt.legend()
     plt.title('График потерь')
 
-    # График точности
     plt.subplot(1, 2, 2)
     plt.plot(val_accs, label='val accuracy', color='green')
     plt.xlabel('эпоха')

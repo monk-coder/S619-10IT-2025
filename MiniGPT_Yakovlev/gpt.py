@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import urllib.request
 import ssl
+from collections import deque
 
 import config
 from tokenizer import BPETokenizer
@@ -33,13 +34,8 @@ def find_data_file():
             return config.DATA_PATH
     
     search_paths = [
-        "data.txt",
-        "./data.txt",
-        "../data.txt",
-        "../../data.txt",
-        "data/data.txt",
-        "dataset/data.txt",
-        "datasets/data.txt"
+        "data.txt", "./data.txt", "../data.txt", "data/data.txt",
+        "dataset/data.txt", "datasets/data.txt"
     ]
     
     for path in search_paths:
@@ -47,8 +43,105 @@ def find_data_file():
             print(f"Found data file at: {path}")
             return path
     
-    print("Warning: No data.txt found. Please create one or set GITHUB_DATA_URL in config.py")
+    print("Warning: No data.txt found.")
     return None
+
+
+def stream_lines(file_path, chunk_size=1000):
+    lines = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.rstrip('\n')
+            if line.strip():
+                lines.append(line)
+                if len(lines) >= chunk_size:
+                    yield lines
+                    lines = []
+    if lines:
+        yield lines
+
+
+def create_chunks_from_lines(lines, tokenizer, seq_len):
+    all_ids = []
+    for line in lines:
+        ids = tokenizer.encode(line)
+        ids.append(tokenizer.eos_token_id)
+        all_ids.extend(ids)
+    
+    all_ids = np.array(all_ids)
+    X, Y = [], []
+    for i in range(0, len(all_ids) - seq_len, seq_len):
+        chunk = all_ids[i:i+seq_len+1]
+        if len(chunk) == seq_len + 1:
+            X.append(chunk[:-1])
+            Y.append(chunk[1:])
+    
+    return np.array(X) if X else np.array([]).reshape(0, seq_len), \
+           np.array(Y) if Y else np.array([]).reshape(0, seq_len)
+
+
+def load_data_chunked(tokenizer, seq_len, chunk_size=1000):
+    data_path = find_data_file()
+    if data_path is None:
+        raise FileNotFoundError("data.txt not found.")
+    
+    print(f"Loading data in chunks of {chunk_size} lines...")
+    
+    all_X, all_Y = [], []
+    total_lines = 0
+    
+    for chunk_lines in stream_lines(data_path, chunk_size):
+        total_lines += len(chunk_lines)
+        X, Y = create_chunks_from_lines(chunk_lines, tokenizer, seq_len)
+        if len(X) > 0:
+            all_X.append(X)
+            all_Y.append(Y)
+        print(f"  Processed {total_lines} lines, {sum(len(x) for x in all_X)} samples so far")
+    
+    if not all_X:
+        raise ValueError("No data samples created. Check your data file.")
+    
+    train_X = np.vstack(all_X)
+    train_Y = np.vstack(all_Y)
+    
+    split = int(len(train_X) * 0.9)
+    train_X_final = train_X[:split]
+    train_Y_final = train_Y[:split]
+    val_X_final = train_X[split:]
+    val_Y_final = train_Y[split:]
+    
+    print(f"Total samples: {len(train_X_final)} train, {len(val_X_final)} val")
+    
+    return (train_X_final, train_Y_final), (val_X_final, val_Y_final)
+
+
+def load_data_generator(tokenizer, seq_len, batch_size=32, chunk_size=500):
+    data_path = find_data_file()
+    if data_path is None:
+        raise FileNotFoundError("data.txt not found.")
+    
+    print(f"Using streaming data loader (batch_size={batch_size})")
+    
+    buffer_X, buffer_Y = [], []
+    
+    for chunk_lines in stream_lines(data_path, chunk_size):
+        X, Y = create_chunks_from_lines(chunk_lines, tokenizer, seq_len)
+        
+        for i in range(len(X)):
+            buffer_X.append(X[i])
+            buffer_Y.append(Y[i])
+            
+            if len(buffer_X) >= batch_size:
+                batch_X = np.array(buffer_X[:batch_size])
+                batch_Y = np.array(buffer_Y[:batch_size])
+                yield batch_X, batch_Y
+                buffer_X = buffer_X[batch_size:]
+                buffer_Y = buffer_Y[batch_size:]
+        
+        X, Y = None, None
+    
+    if buffer_X:
+        yield np.array(buffer_X), np.array(buffer_Y)
 
 
 def gelu(x):
@@ -260,7 +353,7 @@ class TransformerBlock:
 
 
 class TransformerLM:
-    def __init__(self, vocab_size, d_model=128, n_head=4, n_layer=3, d_ff=512, max_seq_len=128, dropout=0.1):
+    def __init__(self, vocab_size, d_model=64, n_head=2, n_layer=2, d_ff=128, max_seq_len=64, dropout=0.1):
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.max_seq_len = max_seq_len
@@ -320,7 +413,7 @@ def compute_accuracy(logits, targets):
 
 
 class Adam:
-    def __init__(self, model, lr=3e-4, beta1=0.9, beta2=0.999, eps=1e-8):
+    def __init__(self, model, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
         self.model = model
         self.lr = lr
         self.beta1 = beta1
@@ -351,38 +444,6 @@ class Adam:
             param -= lr_t * self.m[name] / (np.sqrt(self.v[name]) + self.eps)
 
 
-def load_data(tokenizer, seq_len):
-    data_path = find_data_file()
-    if data_path is None:
-        raise FileNotFoundError("data.txt not found. Please create it or set GITHUB_DATA_URL in config.py")
-    
-    with open(data_path, 'r', encoding='utf-8') as f:
-        lines = [line.rstrip('\n') for line in f if line.strip()]
-    
-    all_ids = []
-    for line in lines:
-        ids = tokenizer.encode(line)
-        ids.append(tokenizer.eos_token_id)
-        all_ids.extend(ids)
-    
-    all_ids = np.array(all_ids)
-    
-    X, Y = [], []
-    for i in range(0, len(all_ids) - seq_len, seq_len):
-        chunk = all_ids[i:i+seq_len+1]
-        if len(chunk) == seq_len + 1:
-            X.append(chunk[:-1])
-            Y.append(chunk[1:])
-    
-    split = int(len(X) * 0.9)
-    train_X = np.array(X[:split]) if X[:split] else np.array([]).reshape(0, seq_len)
-    train_Y = np.array(Y[:split]) if Y[:split] else np.array([]).reshape(0, seq_len)
-    val_X = np.array(X[split:]) if X[split:] else np.array([]).reshape(0, seq_len)
-    val_Y = np.array(Y[split:]) if Y[split:] else np.array([]).reshape(0, seq_len)
-    
-    return (train_X, train_Y), (val_X, val_Y)
-
-
 def generate(model, tokenizer, prompt, max_new_tokens, temperature=1.0, top_k=None):
     ids = tokenizer.encode(prompt)
     ids = ids[-model.max_seq_len:]
@@ -409,7 +470,6 @@ def generate(model, tokenizer, prompt, max_new_tokens, temperature=1.0, top_k=No
 
 def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.png'):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
-    
     ax1.plot(train_losses, label='Train Loss', color='blue')
     ax1.plot(val_losses, label='Val Loss', color='red')
     ax1.set_xlabel('Epoch')
@@ -417,7 +477,6 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax1.set_title('Cross-Entropy Loss')
     ax1.legend()
     ax1.grid(True)
-    
     ax2.plot(train_accs, label='Train Accuracy', color='green')
     ax2.plot(val_accs, label='Val Accuracy', color='orange')
     ax2.set_xlabel('Epoch')
@@ -425,11 +484,9 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax2.set_title('Token Prediction Accuracy')
     ax2.legend()
     ax2.grid(True)
-    
     plt.tight_layout()
     plt.savefig(path, dpi=150)
     plt.close()
-    
     fig_loss, ax_loss = plt.subplots(1, 1, figsize=(8, 5))
     ax_loss.plot(train_losses, label='Train Loss', color='blue')
     ax_loss.plot(val_losses, label='Val Loss', color='red')
@@ -440,7 +497,6 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs, path='metrics.p
     ax_loss.grid(True)
     plt.savefig(path.replace('.png', '_loss.png'), dpi=150)
     plt.close()
-    
     fig_acc, ax_acc = plt.subplots(1, 1, figsize=(8, 5))
     ax_acc.plot(train_accs, label='Train Accuracy', color='green')
     ax_acc.plot(val_accs, label='Val Accuracy', color='orange')
@@ -461,13 +517,23 @@ def train():
         tokenizer = BPETokenizer()
         data_path = find_data_file()
         if data_path is None:
-            raise FileNotFoundError("data.txt not found. Please create it or set GITHUB_DATA_URL in config.py")
+            raise FileNotFoundError("data.txt not found.")
         tokenizer.train(data_path, num_merges=config.NUM_MERGES, val_split=config.VAL_SPLIT)
         tokenizer.save(config.TOKENIZER_PATH)
     config.VOCAB_SIZE = len(tokenizer)
-    (train_X, train_Y), (val_X, val_Y) = load_data(tokenizer, config.MAX_SEQ_LEN)
+    
+    use_streaming = getattr(config, 'USE_STREAMING', False)
+    
+    if use_streaming:
+        print("Using streaming data loader...")
+        data_loader = load_data_generator(tokenizer, config.MAX_SEQ_LEN, config.BATCH_SIZE, chunk_size=500)
+        (train_X, train_Y), (val_X, val_Y) = load_data_chunked(tokenizer, config.MAX_SEQ_LEN, chunk_size=1000)
+    else:
+        (train_X, train_Y), (val_X, val_Y) = load_data_chunked(tokenizer, config.MAX_SEQ_LEN, chunk_size=1000)
+    
     print(f"Train samples: {len(train_X)}, Val samples: {len(val_X)}")
     print(f"Vocab size: {config.VOCAB_SIZE}, EOS token ID: {tokenizer.eos_token_id}")
+    
     model = TransformerLM(
         vocab_size=config.VOCAB_SIZE,
         d_model=config.D_MODEL,
@@ -477,36 +543,62 @@ def train():
         max_seq_len=config.MAX_SEQ_LEN,
         dropout=config.DROPOUT
     )
+    total_params = sum(p.size for _, p, _ in Adam(model)._get_params(model))
+    print(f"Total parameters: {total_params:,}")
+    
     optimizer = Adam(model, lr=config.LR, beta1=config.BETA1, beta2=config.BETA2, eps=config.EPS)
     train_losses, val_losses = [], []
     train_accs, val_accs = [], []
+    
     for epoch in range(config.EPOCHS):
-        perm = np.random.permutation(len(train_X))
         epoch_losses, epoch_accs = [], []
-        for idx in tqdm(perm, desc=f"Epoch {epoch+1}/{config.EPOCHS} [train]"):
-            x, y = train_X[idx:idx+1], train_Y[idx:idx+1]
-            logits = model.forward(x, training=True)
-            loss, dout = cross_entropy_loss(logits, y)
-            acc = compute_accuracy(logits, y)
-            model.backward(dout)
-            for name, param, grad in optimizer._get_params(model):
-                norm = np.linalg.norm(grad)
-                if norm > config.GRAD_CLIP:
-                    grad *= config.GRAD_CLIP / norm
-            optimizer.step()
-            model.update(optimizer.lr)
-            epoch_losses.append(loss)
-            epoch_accs.append(acc)
+        
+        if use_streaming:
+            data_loader = load_data_generator(tokenizer, config.MAX_SEQ_LEN, config.BATCH_SIZE, chunk_size=500)
+            total_batches = len(train_X) // config.BATCH_SIZE
+            for batch_idx, (x, y) in enumerate(tqdm(data_loader, desc=f"Epoch {epoch+1}/{config.EPOCHS}", total=total_batches)):
+                if len(x) < config.BATCH_SIZE:
+                    continue
+                logits = model.forward(x, training=True)
+                loss, dout = cross_entropy_loss(logits, y)
+                acc = compute_accuracy(logits, y)
+                model.backward(dout)
+                for name, param, grad in optimizer._get_params(model):
+                    norm = np.linalg.norm(grad)
+                    if norm > config.GRAD_CLIP:
+                        grad *= config.GRAD_CLIP / norm
+                optimizer.step()
+                model.update(optimizer.lr)
+                epoch_losses.append(loss)
+                epoch_accs.append(acc)
+        else:
+            perm = np.random.permutation(len(train_X))
+            for idx in tqdm(perm, desc=f"Epoch {epoch+1}/{config.EPOCHS}"):
+                x, y = train_X[idx:idx+1], train_Y[idx:idx+1]
+                logits = model.forward(x, training=True)
+                loss, dout = cross_entropy_loss(logits, y)
+                acc = compute_accuracy(logits, y)
+                model.backward(dout)
+                for name, param, grad in optimizer._get_params(model):
+                    norm = np.linalg.norm(grad)
+                    if norm > config.GRAD_CLIP:
+                        grad *= config.GRAD_CLIP / norm
+                optimizer.step()
+                model.update(optimizer.lr)
+                epoch_losses.append(loss)
+                epoch_accs.append(acc)
+        
         val_loss, val_acc = 0, 0
-        for idx in range(len(val_X)):
+        val_limit = min(len(val_X), config.VAL_SAMPLES)
+        for idx in range(val_limit):
             x, y = val_X[idx:idx+1], val_Y[idx:idx+1]
             logits = model.forward(x, training=False)
             loss, _ = cross_entropy_loss(logits, y)
             acc = compute_accuracy(logits, y)
             val_loss += loss
             val_acc += acc
-        val_loss /= len(val_X) if len(val_X) > 0 else 1
-        val_acc /= len(val_X) if len(val_X) > 0 else 1
+        val_loss /= val_limit if val_limit > 0 else 1
+        val_acc /= val_limit if val_limit > 0 else 1
         avg_train_loss = np.mean(epoch_losses) if epoch_losses else 0
         avg_train_acc = np.mean(epoch_accs) if epoch_accs else 0
         train_losses.append(avg_train_loss)
@@ -514,6 +606,7 @@ def train():
         train_accs.append(avg_train_acc)
         val_accs.append(val_acc)
         print(f"Epoch {epoch+1}: loss={avg_train_loss:.4f}, acc={avg_train_acc:.4f} | val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
+    
     np.save(f"{config.SAVE_DIR}/train_losses.npy", train_losses)
     np.save(f"{config.SAVE_DIR}/val_losses.npy", val_losses)
     np.save(f"{config.SAVE_DIR}/train_accs.npy", train_accs)

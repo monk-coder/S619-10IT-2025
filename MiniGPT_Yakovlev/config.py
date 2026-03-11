@@ -5,8 +5,6 @@ TOKENIZER_PATH = "tokenizer.json"
 NUM_MERGES = 500
 VAL_SPLIT = 0.1
 
-GITHUB_DATA_URL = "https://github.com/monk-coder/S619-10IT-2025/blob/main/0/data.txt"
-
 VOCAB_SIZE = None
 D_MODEL = 64
 N_HEAD = 2

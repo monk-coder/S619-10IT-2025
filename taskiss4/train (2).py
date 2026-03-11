@@ -2,29 +2,41 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import pickle
+import os
 from bpe_tokenizer import BPETokenizer, prepare_data
-from model import TransformerLM, loss_fn
+from model import TransformerLM, loss_and_accuracy
 
-# ============= ШАГ 4: Оптимизатор (вставляем сюда) =============
+
 class AdamOptimizer:
-    """Adam оптимизатор"""
-    def __init__(self, learning_rate=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
-        self.lr = learning_rate
+    """Adam оптимизатор с learning rate scheduling"""
+    def __init__(self, learning_rate=1e-3, beta1=0.9, beta2=0.999, eps=1e-8, warmup_steps=1000):
+        self.base_lr = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
+        self.warmup_steps = warmup_steps
         self.t = 0
-        self.m = []  # моменты первого порядка
-        self.v = []  # моменты второго порядка
+        self.m = []
+        self.v = []
     
     def init_params(self, params: list):
         """Инициализация моментов для каждого параметра"""
         self.m = [np.zeros_like(p) for p in params]
         self.v = [np.zeros_like(p) for p in params]
     
+    def get_lr(self):
+        """Получение текущего learning rate с warmup"""
+        self.t += 1
+        if self.t < self.warmup_steps:
+            return self.base_lr * (self.t / self.warmup_steps)
+        else:
+            # Косинусное затухание
+            progress = (self.t - self.warmup_steps) / (10000 - self.warmup_steps)
+            return self.base_lr * 0.5 * (1 + np.cos(np.pi * progress))
+    
     def step(self, params: list, grads: list):
         """Один шаг оптимизации"""
-        self.t += 1
+        lr = self.get_lr()
         
         for i, (p, g) in enumerate(zip(params, grads)):
             # Обновление моментов
@@ -36,38 +48,46 @@ class AdamOptimizer:
             v_hat = self.v[i] / (1 - self.beta2 ** self.t)
             
             # Обновление параметров
-            p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+            p -= lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
-# ============= ШАГ 5: DataLoader и функции обучения =============
 class DataLoader:
     """Загрузчик данных для обучения"""
-    def __init__(self, texts: list, tokenizer, seq_len: int, batch_size: int):
+    def __init__(self, texts: list, tokenizer, seq_len: int, batch_size: int, shuffle: bool = True):
         self.tokenizer = tokenizer
         self.seq_len = seq_len
         self.batch_size = batch_size
+        self.shuffle = shuffle
         
         # Токенизируем все тексты
         print("Токенизация данных...")
         all_tokens = []
-        for text in tqdm(texts):
+        for text in tqdm(texts, desc="Tokenizing"):
             tokens = tokenizer.encode(text)
             if len(tokens) > 0:
                 all_tokens.extend(tokens)
         
         # Создаем последовательности
         self.data = np.array(all_tokens)
+        
+        # Обрезаем до кратного размера
+        total_len = (len(self.data) - 1) // (seq_len * batch_size) * (seq_len * batch_size)
+        self.data = self.data[:total_len + 1]
+        
         self.num_batches = (len(self.data) - 1) // (seq_len * batch_size)
         
         print(f"Всего токенов: {len(self.data)}")
         print(f"Количество батчей: {self.num_batches}")
     
     def __len__(self):
-        """Возвращает количество батчей"""
         return self.num_batches
     
     def __iter__(self):
         self.i = 0
+        if self.shuffle:
+            # Перемешиваем данные
+            indices = np.random.permutation(len(self.data) - self.seq_len * self.batch_size)
+            self.data = self.data[indices]
         return self
     
     def __next__(self):
@@ -89,15 +109,21 @@ class DataLoader:
 
 def train_epoch(model, dataloader, optimizer, epoch_num):
     """Обучение одной эпохи"""
+    model.train()
     total_loss = 0
+    total_accuracy = 0
+    num_batches = 0
     
-    for batch_idx, (x, y) in enumerate(tqdm(dataloader, desc=f"Epoch {epoch_num}")):
+    pbar = tqdm(dataloader, desc=f"Epoch {epoch_num}")
+    for batch_idx, (x, y) in enumerate(pbar):
         # Forward pass
         logits = model.forward(x)
         
-        # Loss
-        loss, dlogits = loss_fn(logits, y)
+        # Loss и accuracy
+        loss, dlogits, accuracy = loss_and_accuracy(logits, y)
         total_loss += loss
+        total_accuracy += accuracy
+        num_batches += 1
         
         # Backward pass
         model.backward(dlogits)
@@ -106,38 +132,59 @@ def train_epoch(model, dataloader, optimizer, epoch_num):
         params = model.get_parameters()
         grads = model.get_gradients()
         optimizer.step(params, grads)
+        model.zero_grad()
         
-        if batch_idx % 10 == 0:
-            tqdm.write(f"Batch {batch_idx}, Loss: {loss:.4f}")
+        # Обновление прогресс-бара
+        pbar.set_postfix({
+            'loss': f'{loss:.4f}',
+            'acc': f'{accuracy:.2%}',
+            'lr': f'{optimizer.get_lr():.2e}'
+        })
     
-    return total_loss / len(dataloader)
+    return total_loss / num_batches, total_accuracy / num_batches
 
 
-def validate(model, val_texts, tokenizer, seq_len, num_batches=5):
-    """Валидация модели с защитой от деления на ноль"""
+def validate(model, val_texts, tokenizer, seq_len, num_batches=20):
+    """Валидация модели"""
+    model.eval()
     total_loss = 0
+    total_accuracy = 0
     count = 0
     
-    # Берем только первые несколько текстов для валидации
-    val_sample = val_texts[:20]  # берем 20 текстов
+    # Случайно выбираем тексты для валидации
+    indices = np.random.permutation(len(val_texts))[:num_batches * 2]
     
-    for text in val_sample:
+    for idx in indices:
         try:
-            # Токенизируем текст
+            text = val_texts[idx]
             tokens = tokenizer.encode(text)
+            
             if len(tokens) < seq_len + 1:
-                continue  # пропускаем слишком короткие тексты
+                continue
             
-            # Создаем один батч
-            tokens = np.array(tokens[:seq_len + 1])
-            x = tokens[:-1].reshape(1, -1)
-            y = tokens[1:].reshape(1, -1)
+            # Берем несколько срезов из длинного текста
+            num_slices = min(3, (len(tokens) - seq_len) // (seq_len // 2))
             
-            # Forward pass
-            logits = model.forward(x)
-            loss, _ = loss_fn(logits, y)
-            total_loss += loss
-            count += 1
+            for s in range(num_slices):
+                start = s * (seq_len // 2)
+                end = start + seq_len + 1
+                
+                if end > len(tokens):
+                    continue
+                
+                slice_tokens = np.array(tokens[start:end])
+                x = slice_tokens[:-1].reshape(1, -1)
+                y = slice_tokens[1:].reshape(1, -1)
+                
+                logits = model.forward(x)
+                loss, _, accuracy = loss_and_accuracy(logits, y)
+                
+                total_loss += loss
+                total_accuracy += accuracy
+                count += 1
+                
+                if count >= num_batches:
+                    break
             
             if count >= num_batches:
                 break
@@ -147,106 +194,19 @@ def validate(model, val_texts, tokenizer, seq_len, num_batches=5):
             continue
     
     if count == 0:
-        print("ВНИМАНИЕ: Нет данных для валидации, возвращаем loss=10.0")
-        return 10.0
+        return 10.0, 0.0
     
-    return total_loss / count
+    return total_loss / count, total_accuracy / count
 
 
-# ============= ШАГ 6: Главная функция обучения =============
-def main():
-    # Гиперпараметры
-    D_MODEL = 128      # Размер эмбеддингов
-    N_HEAD = 4         # Количество голов attention
-    N_LAYER = 3        # Количество слоев трансформера
-    MAX_SEQ_LEN = 128  # Максимальная длина последовательности
-    BATCH_SIZE = 32    # Размер батча
-    EPOCHS = 10        # Количество эпох
-    LR = 1e-3          # Learning rate
+def generate_text(model, tokenizer, prompt, max_length=50, temperature=0.8):
+    """Генерация текста"""
+    model.eval()
     
-    print("=" * 60)
-    print("ОБУЧЕНИЕ ЯЗЫКОВОЙ МОДЕЛИ TRANSFORMER")
-    print("=" * 60)
+    # Токенизируем промпт
+    tokens = tokenizer.encode(prompt)
+    input_ids = np.array(tokens).reshape(1, -1)
     
-    # 1. Загрузка токенизатора
-    print("\n1. Загрузка токенизатора...")
-    tokenizer = BPETokenizer()
-    tokenizer.load("bpe_tokenizer.json")
-    VOCAB_SIZE = len(tokenizer.vocab)
-    print(f"Размер словаря: {VOCAB_SIZE}")
-    
-    # 2. Подготовка данных
-    print("\n2. Подготовка данных...")
-    train_texts, val_texts = prepare_data("data.txt", train_ratio=0.9)
-    
-    # 3. Создание даталоадера
-    print("\n3. Создание даталоадера...")
-    train_loader = DataLoader(train_texts, tokenizer, MAX_SEQ_LEN, BATCH_SIZE)
-    
-    # 4. Инициализация модели
-    print("\n4. Инициализация модели...")
-    model = TransformerLM(
-        vocab_size=VOCAB_SIZE,
-        d_model=D_MODEL,
-        n_head=N_HEAD,
-        n_layer=N_LAYER,
-        max_seq_len=MAX_SEQ_LEN
-    )
-    
-    # 5. Инициализация оптимизатора
-    print("\n5. Инициализация оптимизатора...")
-    optimizer = AdamOptimizer(learning_rate=LR)
-    optimizer.init_params(model.get_parameters())
-    
-    # 6. Обучение
-    print("\n6. Начало обучения...")
-    train_losses = []
-    val_losses = []
-    
-    for epoch in range(1, EPOCHS + 1):
-        print(f"\n--- Эпоха {epoch} ---")
-        
-        # Обучение
-        train_loss = train_epoch(model, train_loader, optimizer, epoch)
-        train_losses.append(train_loss)
-        
-        # Валидация
-        val_loss = validate(model, val_texts, tokenizer, MAX_SEQ_LEN)
-        val_losses.append(val_loss)
-        
-        print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
-        
-        # Сохранение модели после каждой эпохи
-        with open(f"model_epoch_{epoch}.pkl", 'wb') as f:
-            pickle.dump({
-                'model': model,
-                'train_loss': train_loss,
-                'val_loss': val_loss
-            }, f)
-    
-    # 7. Построение графика обучения
-    print("\n7. Построение графика обучения...")
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label='Train Loss', marker='o')
-    plt.plot(val_losses, label='Validation Loss', marker='s')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('training_loss.png')
-    plt.show()
-    
-    # 8. Сохранение финальной модели
-    print("\n8. Сохранение финальной модели...")
-    with open("transformer_lm_final.pkl", 'wb') as f:
-        pickle.dump({
-            'model': model,
-            'train_losses': train_losses,
-            'val_losses': val_losses
-        }, f)
-    print("Обучение завершено!")
-
-
-if __name__ == "__main__":
-    main()
+    for _ in range(max_length):
+        # Обрезаем до максимальной длины
+        if input_ids

@@ -8,7 +8,7 @@ from tokenizer import BPETokenizer
 from model import TransformerLM
 from utils import cross_entropy_loss, compute_accuracy, Adam
 
-def load_data(filepath, tokenizer_path='tokenizer.pkl', vocab_size=1000):
+def load_data(filepath, tokenizer_path='tokenizer.pkl', vocab_size=500):
     """Загружает или обучает токенизатор и возвращает данные в виде массива индексов."""
     if os.path.exists(tokenizer_path):
         with open(tokenizer_path, 'rb') as f:

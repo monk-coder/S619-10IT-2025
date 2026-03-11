@@ -32,5 +32,8 @@ SAVE_DIR = "checkpoints"
 LOG_DIR = "logs"
 VAL_SAMPLES = 20
 
+USE_STREAMING = False
+CHUNK_SIZE = 1000
+
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)

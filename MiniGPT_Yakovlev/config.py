@@ -33,5 +33,12 @@ VAL_SAMPLES = 20
 USE_STREAMING = False
 CHUNK_SIZE = 1000
 
+EPS_SOFTMAX = 1e-9
+EPS_LOG = 1e-9
+MASK_VALUE = -1e9
+LAYER_NORM_EPS = 1e-5
+GELU_COEF = 0.044715
+SQRT_2_PI = np.sqrt(2 / np.pi)
+
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)

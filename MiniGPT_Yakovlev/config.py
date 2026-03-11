@@ -1,6 +1,6 @@
 import os
 
-DATA_PATH = ".../0/data.txt"
+DATA_PATH = "../0/data.txt"
 TOKENIZER_PATH = "tokenizer.json"
 NUM_MERGES = 500
 VAL_SPLIT = 0.1

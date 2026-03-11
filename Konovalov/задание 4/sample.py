@@ -38,15 +38,12 @@ def main():
     parser.add_argument('--top_k', type=int, default=None)
     args = parser.parse_args()
 
-    # Загружаем токенизатор
     with open('../tokenizer.pkl', 'rb') as f:
         tokenizer = pickle.load(f)
 
-    # Загружаем параметры модели
     with open('model_params.pkl', 'rb') as f:
         saved_params = pickle.load(f)
 
-    # Создаём модель с теми же гиперпараметрами
     vocab_size = 500
     d_model = 128
     n_layer = 2
@@ -55,13 +52,11 @@ def main():
 
     model = TransformerLM(vocab_size, d_model, n_layer, n_head, max_len)
 
-    # Загружаем веса
     model_params, _ = model.parameters()
     for k in saved_params:
         if k in model_params:
             model_params[k][:] = saved_params[k]
 
-    # Генерация
     output = generate(model, tokenizer, args.prompt, args.max_new_tokens,
                       args.temperature, args.top_k)
     print(output)

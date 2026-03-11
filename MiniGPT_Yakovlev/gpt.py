@@ -1,13 +1,14 @@
 import numpy as np
+import config
 
 
 def gelu(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
+    return 0.5 * x * (1 + np.tanh(config.SQRT_2_PI * (x + config.GELU_COEF * x**3)))
 
 
 def gelu_backward(x):
-    tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3))
-    return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out**2) * np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * x**2)
+    tanh_out = np.tanh(config.SQRT_2_PI * (x + config.GELU_COEF * x**3))
+    return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out**2) * config.SQRT_2_PI * (1 + 3 * config.GELU_COEF * x**2)
 
 
 class Embedding:
@@ -55,8 +56,8 @@ class Linear:
 
 
 class LayerNorm:
-    def __init__(self, d_model, eps=1e-5):
-        self.eps = eps
+    def __init__(self, d_model, eps=None):
+        self.eps = eps if eps is not None else config.LAYER_NORM_EPS
         self.gamma = np.ones(d_model)
         self.beta = np.zeros(d_model)
         self.grad_gamma = np.zeros(d_model)
@@ -122,7 +123,7 @@ class MultiHeadAttention:
         self.dropout = dropout
     
     def _causal_mask(self, T):
-        return np.triu(np.ones((T, T)) * -1e9, k=1)
+        return np.triu(np.ones((T, T)) * config.MASK_VALUE, k=1)
     
     def forward(self, x, training=True):
         B, T, D = x.shape
@@ -139,10 +140,10 @@ class MultiHeadAttention:
         scores = scores + mask
         scores_max = np.max(scores, axis=-1, keepdims=True)
         attn = np.exp(scores - scores_max)
-        attn = attn / (attn.sum(axis=-1, keepdims=True) + 1e-9)
+        attn = attn / (attn.sum(axis=-1, keepdims=True) + config.EPS_SOFTMAX)
         if training and self.dropout > 0:
             mask_drop = (np.random.rand(*attn.shape) > self.dropout).astype(float)
-            attn = attn * mask_drop / (1 - self.dropout + 1e-9)
+            attn = attn * mask_drop / (1 - self.dropout + config.EPS_SOFTMAX)
         self.attn = attn
         self.V_h = V_h
         self.Q_h = Q_h
@@ -186,12 +187,12 @@ class TransformerBlock:
         x_norm = self.ln1.forward(x)
         x_attn = self.attn.forward(x_norm, training)
         if training and self.dropout > 0:
-            x_attn = x_attn * (np.random.rand(*x_attn.shape) > self.dropout) / (1 - self.dropout + 1e-9)
+            x_attn = x_attn * (np.random.rand(*x_attn.shape) > self.dropout) / (1 - self.dropout + config.EPS_SOFTMAX)
         x = x + x_attn
         x_norm = self.ln2.forward(x)
         x_mlp = self.mlp.forward(x_norm, training)
         if training and self.dropout > 0:
-            x_mlp = x_mlp * (np.random.rand(*x_mlp.shape) > self.dropout) / (1 - self.dropout + 1e-9)
+            x_mlp = x_mlp * (np.random.rand(*x_mlp.shape) > self.dropout) / (1 - self.dropout + config.EPS_SOFTMAX)
         x = x + x_mlp
         return x
     
@@ -276,12 +277,12 @@ def cross_entropy_loss(logits, targets):
     B, T, V = logits.shape
     logits_max = np.max(logits, axis=-1, keepdims=True)
     exp_logits = np.exp(logits - logits_max)
-    probs = exp_logits / (exp_logits.sum(axis=-1, keepdims=True) + 1e-9)
+    probs = exp_logits / (exp_logits.sum(axis=-1, keepdims=True) + config.EPS_SOFTMAX)
     targets_flat = targets.reshape(-1)
     probs_flat = probs.reshape(-1, V)
     one_hot = np.zeros_like(probs_flat)
     one_hot[np.arange(len(targets_flat)), targets_flat] = 1
-    loss = -np.sum(one_hot * np.log(probs_flat + 1e-9)) / (B * T)
+    loss = -np.sum(one_hot * np.log(probs_flat + config.EPS_LOG)) / (B * T)
     dout = (probs - one_hot).reshape(B, T, V) / (B * T)
     return loss, dout
 
@@ -294,12 +295,12 @@ def compute_accuracy(logits, targets):
 
 
 class Adam:
-    def __init__(self, model, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
+    def __init__(self, model, lr=1e-3, beta1=0.9, beta2=0.999, eps=None):
         self.model = model
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
-        self.eps = eps
+        self.eps = eps if eps is not None else config.EPS
         self.t = 0
         self.m = {}
         self.v = {}

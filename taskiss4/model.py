@@ -8,19 +8,19 @@ class LayerNorm:
         self.gamma = np.ones(d_model)
         self.beta = np.zeros(d_model)
         self.eps = eps
-        self.cache = None  # для backward
+        self.cache = None
+        self.dgamma = None
+        self.dbeta = None
     
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         x: (batch_size, seq_len, d_model)
         """
-        # Нормализация по последней оси
         mean = np.mean(x, axis=-1, keepdims=True)
         var = np.var(x, axis=-1, keepdims=True)
         x_norm = (x - mean) / np.sqrt(var + self.eps)
         out = self.gamma * x_norm + self.beta
         
-        # Сохраняем для backward
         self.cache = (x, x_norm, mean, var)
         return out
     
@@ -32,8 +32,8 @@ class LayerNorm:
         batch_size, seq_len, d_model = x.shape
         
         # Градиенты для обучаемых параметров
-        dgamma = np.sum(dout * x_norm, axis=(0, 1))
-        dbeta = np.sum(dout, axis=(0, 1))
+        self.dgamma = np.sum(dout * x_norm, axis=(0, 1))
+        self.dbeta = np.sum(dout, axis=(0, 1))
         
         # Градиент по x_norm
         dx_norm = dout * self.gamma
@@ -50,9 +50,28 @@ class LayerNorm:
              dvar * 2 * (x - mean) / d_model + \
              dmean / d_model
         
-        self.dgamma = dgamma
-        self.dbeta = dbeta
         return dx
+
+
+class Dropout:
+    """Слой Dropout для предотвращения переобучения"""
+    def __init__(self, p=0.1):
+        self.p = p
+        self.mask = None
+        self.training = True
+    
+    def forward(self, x: np.ndarray, training: bool = True) -> np.ndarray:
+        self.training = training
+        if training and self.p > 0:
+            self.mask = np.random.binomial(1, 1-self.p, x.shape) / (1-self.p)
+            return x * self.mask
+        return x
+    
+    def backward(self, dout: np.ndarray) -> np.ndarray:
+        if self.training and self.p > 0 and self.mask is not None:
+            return dout * self.mask
+        return dout
+
 
 class Embedding:
     """Слой эмбеддингов"""
@@ -81,14 +100,14 @@ class Embedding:
         # Инициализируем градиент нулями
         self.dW = np.zeros_like(self.W)
         
-        # Аккумулируем градиенты для каждого токена
+        # Аккумулируем градиенты для каждого токена (векторизованная версия)
         for b in range(batch_size):
             for s in range(seq_len):
                 token_idx = x[b, s]
                 self.dW[token_idx] += dout[b, s]
         
-        # Для embedding слоя нет градиента по входу (вход - это индексы)
         return None
+
 
 class PositionalEncoding:
     """Синусоидальные позиционные эмбеддинги"""
@@ -114,9 +133,10 @@ class PositionalEncoding:
         # Позиционные эмбеддинги не обучаются
         return dout
 
+
 class MultiHeadAttention:
     """Multi-Head Self-Attention с causal mask"""
-    def __init__(self, d_model: int, n_head: int):
+    def __init__(self, d_model: int, n_head: int, dropout: float = 0.1):
         assert d_model % n_head == 0, "d_model должен делиться на n_head"
         
         self.d_model = d_model
@@ -136,6 +156,8 @@ class MultiHeadAttention:
         self.dW_v = np.zeros_like(self.W_v)
         self.dW_o = np.zeros_like(self.W_o)
         
+        # Dropout для attention весов
+        self.dropout = Dropout(dropout)
         self.cache = None
     
     def _create_causal_mask(self, seq_len: int) -> np.ndarray:
@@ -143,7 +165,7 @@ class MultiHeadAttention:
         mask = np.triu(np.ones((seq_len, seq_len)) * -1e9, k=1)
         return mask[np.newaxis, np.newaxis, :, :]  # (1, 1, seq_len, seq_len)
     
-    def forward(self, x: np.ndarray, mask: Optional[np.ndarray] = None) -> np.ndarray:
+    def forward(self, x: np.ndarray, mask: Optional[np.ndarray] = None, training: bool = True) -> np.ndarray:
         """
         x: (batch_size, seq_len, d_model)
         """
@@ -167,9 +189,12 @@ class MultiHeadAttention:
             mask = self._create_causal_mask(seq_len)
         scores = scores + mask[:, :, :seq_len, :seq_len]
         
-        # Softmax (стабильная версия)
+        # Softmax
         exp_scores = np.exp(scores - np.max(scores, axis=-1, keepdims=True))
         attn_probs = exp_scores / np.sum(exp_scores, axis=-1, keepdims=True)
+        
+        # Dropout на attention весах
+        attn_probs = self.dropout.forward(attn_probs, training)
         
         # Применение attention к значениям
         context = attn_probs @ V  # (batch, n_head, seq, head_dim)
@@ -194,20 +219,23 @@ class MultiHeadAttention:
         
         # Градиент по выходной проекции
         dcontext = dout @ self.W_o.T  # (batch, seq, d_model)
-        self.dW_o = (dout.reshape(-1, self.d_model).T @ 
-                     dout.reshape(-1, self.d_model)).reshape(self.dW_o.shape)
+        x_flat = x.reshape(-1, self.d_model)
+        dout_flat = dout.reshape(-1, self.d_model)
+        self.dW_o = x_flat.T @ dout_flat
         
         # Разделение на головы
         dcontext = dcontext.reshape(batch_size, seq_len, self.n_head, self.head_dim)
         dcontext = dcontext.transpose(0, 2, 1, 3)  # (batch, n_head, seq, head_dim)
         
+        # Backward через dropout
+        dattn_probs = self.dropout.backward(dcontext @ V.transpose(0, 1, 3, 2))
+        
         # Градиенты по V и attn_probs
-        dattn = dcontext @ V.transpose(0, 1, 3, 2)  # (batch, n_head, seq, seq)
         dV = attn_probs.transpose(0, 1, 3, 2) @ dcontext  # (batch, n_head, head_dim, seq)
         dV = dV.transpose(0, 1, 3, 2)  # (batch, n_head, seq, head_dim)
         
         # Градиент по attention scores
-        dscores = attn_probs * (dattn - np.sum(attn_probs * dattn, axis=-1, keepdims=True))
+        dscores = attn_probs * (dattn_probs - np.sum(attn_probs * dattn_probs, axis=-1, keepdims=True))
         
         # Градиенты по Q и K
         dQ = dscores @ K  # (batch, n_head, seq, head_dim)
@@ -224,7 +252,6 @@ class MultiHeadAttention:
         dV = dV.transpose(0, 2, 1, 3).reshape(batch_size, seq_len, self.d_model)
         
         # Градиенты по весам проекций
-        x_flat = x.reshape(-1, self.d_model)
         self.dW_q = x_flat.T @ dQ.reshape(-1, self.d_model)
         self.dW_k = x_flat.T @ dK.reshape(-1, self.d_model)
         self.dW_v = x_flat.T @ dV.reshape(-1, self.d_model)
@@ -234,9 +261,10 @@ class MultiHeadAttention:
         
         return dx
 
+
 class MLP:
-    """Двухслойный MLP с GELU активацией"""
-    def __init__(self, d_model: int, d_ff: int):
+    """Двухслойный MLP с GELU активацией и dropout"""
+    def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1):
         scale = 1.0 / np.sqrt(d_model)
         self.W1 = np.random.uniform(-scale, scale, (d_model, d_ff))
         self.b1 = np.zeros(d_ff)
@@ -248,6 +276,7 @@ class MLP:
         self.dW2 = np.zeros_like(self.W2)
         self.db2 = np.zeros_like(self.b2)
         
+        self.dropout = Dropout(dropout)
         self.cache = None
     
     def gelu(self, x: np.ndarray) -> np.ndarray:
@@ -260,13 +289,14 @@ class MLP:
         return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out**2) * \
                np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * x**2)
     
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, training: bool = True) -> np.ndarray:
         """
         x: (batch_size, seq_len, d_model)
         """
         # Первый слой
         hidden = x @ self.W1 + self.b1
         hidden_act = self.gelu(hidden)
+        hidden_act = self.dropout.forward(hidden_act, training)
         
         # Второй слой
         out = hidden_act @ self.W2 + self.b2
@@ -279,10 +309,11 @@ class MLP:
         dout: (batch_size, seq_len, d_model)
         """
         x, hidden, hidden_act = self.cache
-        batch_size, seq_len, _ = x.shape
         
         # Градиенты по второму слою
         dhidden_act = dout @ self.W2.T
+        dhidden_act = self.dropout.backward(dhidden_act)
+        
         self.dW2 = hidden_act.reshape(-1, hidden_act.shape[-1]).T @ dout.reshape(-1, dout.shape[-1])
         self.db2 = np.sum(dout, axis=(0, 1))
         
@@ -298,21 +329,25 @@ class MLP:
         
         return dx
 
+
 class TransformerBlock:
-    """Один блок Transformer"""
-    def __init__(self, d_model: int, n_head: int, d_ff: int):
+    """Один блок Transformer с dropout"""
+    def __init__(self, d_model: int, n_head: int, d_ff: int, dropout: float = 0.1):
         self.ln1 = LayerNorm(d_model)
-        self.attn = MultiHeadAttention(d_model, n_head)
+        self.attn = MultiHeadAttention(d_model, n_head, dropout)
         self.ln2 = LayerNorm(d_model)
-        self.mlp = MLP(d_model, d_ff)
+        self.mlp = MLP(d_model, d_ff, dropout)
+        self.dropout = Dropout(dropout)
         
-    def forward(self, x: np.ndarray, mask: Optional[np.ndarray] = None) -> np.ndarray:
+    def forward(self, x: np.ndarray, mask: Optional[np.ndarray] = None, training: bool = True) -> np.ndarray:
         # Self-attention с residual connection
-        attn_out = self.attn.forward(self.ln1.forward(x), mask)
+        attn_out = self.attn.forward(self.ln1.forward(x), mask, training)
+        attn_out = self.dropout.forward(attn_out, training)
         x = x + attn_out
         
         # MLP с residual connection
-        mlp_out = self.mlp.forward(self.ln2.forward(x))
+        mlp_out = self.mlp.forward(self.ln2.forward(x), training)
+        mlp_out = self.dropout.forward(mlp_out, training)
         x = x + mlp_out
         
         return x
@@ -320,20 +355,23 @@ class TransformerBlock:
     def backward(self, dout: np.ndarray) -> np.ndarray:
         # Backward для residual + MLP
         dout_mlp = self.mlp.backward(dout)
+        dout_mlp = self.dropout.backward(dout_mlp)
         dout_ln2 = self.ln2.backward(dout_mlp)
         dout = dout + dout_ln2
         
         # Backward для residual + attention
         dout_attn = self.attn.backward(dout)
+        dout_attn = self.dropout.backward(dout_attn)
         dout_ln1 = self.ln1.backward(dout_attn)
         dout = dout + dout_ln1
         
         return dout
 
+
 class TransformerLM:
     """Полная модель Transformer Language Model"""
     def __init__(self, vocab_size: int, d_model: int, n_head: int, n_layer: int, 
-                 max_seq_len: int, d_ff: Optional[int] = None):
+                 max_seq_len: int, dropout: float = 0.1, d_ff: Optional[int] = None):
         
         if d_ff is None:
             d_ff = 4 * d_model
@@ -341,14 +379,16 @@ class TransformerLM:
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.max_seq_len = max_seq_len
+        self.dropout = dropout
         
         # Слои
         self.token_embedding = Embedding(vocab_size, d_model)
         self.pos_encoding = PositionalEncoding(max_seq_len, d_model)
+        self.embed_dropout = Dropout(dropout)
         
         self.blocks = []
         for _ in range(n_layer):
-            self.blocks.append(TransformerBlock(d_model, n_head, d_ff))
+            self.blocks.append(TransformerBlock(d_model, n_head, d_ff, dropout))
         
         self.ln_final = LayerNorm(d_model)
         
@@ -360,8 +400,16 @@ class TransformerLM:
         self.dW_out = np.zeros_like(self.W_out)
         self.db_out = np.zeros_like(self.b_out)
         
-        # Для хранения промежуточных значений при forward
-        self.cache = {}
+        # Режим обучения
+        self.training = True
+    
+    def train(self):
+        """Переключение в режим обучения"""
+        self.training = True
+    
+    def eval(self):
+        """Переключение в режим оценки"""
+        self.training = False
     
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
@@ -371,10 +419,11 @@ class TransformerLM:
         # Эмбеддинги
         x = self.token_embedding.forward(x)  # (batch, seq, d_model)
         x = self.pos_encoding.forward(x)
+        x = self.embed_dropout.forward(x, self.training)
         
         # Трансформер блоки
-        for i, block in enumerate(self.blocks):
-            x = block.forward(x)
+        for block in self.blocks:
+            x = block.forward(x, training=self.training)
         
         # Финальная нормализация
         x = self.ln_final.forward(x)
@@ -409,6 +458,7 @@ class TransformerLM:
         
         # Backward через позиционные эмбеддинги (не обучаются)
         dout = self.pos_encoding.backward(dout)
+        dout = self.embed_dropout.backward(dout)
         
         # Backward через токен эмбеддинги
         self.token_embedding.backward(dout)
@@ -483,6 +533,29 @@ class TransformerLM:
         
         return grads
     
+    def zero_grad(self):
+        """Обнуление градиентов"""
+        self.token_embedding.dW.fill(0)
+        
+        for block in self.blocks:
+            block.attn.dW_q.fill(0)
+            block.attn.dW_k.fill(0)
+            block.attn.dW_v.fill(0)
+            block.attn.dW_o.fill(0)
+            block.mlp.dW1.fill(0)
+            block.mlp.db1.fill(0)
+            block.mlp.dW2.fill(0)
+            block.mlp.db2.fill(0)
+            block.ln1.dgamma = None
+            block.ln1.dbeta = None
+            block.ln2.dgamma = None
+            block.ln2.dbeta = None
+        
+        self.ln_final.dgamma = None
+        self.ln_final.dbeta = None
+        self.dW_out.fill(0)
+        self.db_out.fill(0)
+    
     def save(self, path: str):
         """Сохраняет модель"""
         params = self.get_parameters()
@@ -491,24 +564,25 @@ class TransformerLM:
                 'params': params,
                 'vocab_size': self.vocab_size,
                 'd_model': self.d_model,
-                'max_seq_len': self.max_seq_len
+                'max_seq_len': self.max_seq_len,
+                'dropout': self.dropout
             }, f)
     
     def load(self, path: str):
         """Загружает модель"""
         with open(path, 'rb') as f:
-            data = pickle.load(pickle)
+            data = pickle.load(f)
         # Здесь нужно сопоставить параметры
-        # Упрощенно: просто загружаем список параметров
         params = data['params']
         # ... код для загрузки параметров в слои
 
-def loss_fn(logits: np.ndarray, targets: np.ndarray) -> Tuple[float, np.ndarray]:
+
+def loss_and_accuracy(logits: np.ndarray, targets: np.ndarray) -> Tuple[float, np.ndarray, float]:
     """
-    Cross-entropy loss
+    Cross-entropy loss с расчетом accuracy
     logits: (batch_size, seq_len, vocab_size)
     targets: (batch_size, seq_len) - индексы правильных токенов
-    returns: loss (float), dlogits (np.ndarray)
+    returns: loss, dlogits, accuracy
     """
     batch_size, seq_len, vocab_size = logits.shape
     
@@ -526,6 +600,11 @@ def loss_fn(logits: np.ndarray, targets: np.ndarray) -> Tuple[float, np.ndarray]
     # Loss
     loss = -np.mean(np.log(probs_target + 1e-8))
     
+    # Расчет accuracy
+    predictions = np.argmax(logits, axis=-1)
+    correct = (predictions == targets)
+    accuracy = np.mean(correct)
+    
     # Градиент
     dlogits = probs.copy()
     dlogits[np.arange(batch_size)[:, np.newaxis], 
@@ -533,4 +612,4 @@ def loss_fn(logits: np.ndarray, targets: np.ndarray) -> Tuple[float, np.ndarray]
             targets] -= 1
     dlogits = dlogits / (batch_size * seq_len)
     
-    return loss, dlogits
+    return loss, dlogits, accuracy

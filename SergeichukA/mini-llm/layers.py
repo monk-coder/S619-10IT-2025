@@ -1,53 +1,58 @@
 import numpy as np
 
 class Module:
+    def __init__(self):
+        self._param_names = []
+    
+    def _register_param(self, name):
+        self._param_names.append(name)
+    
     def parameters(self):
-        return {name: val for name, val in self.__dict__.items() if isinstance(val, np.ndarray)}
+        return {name: getattr(self, name) for name in self._param_names if hasattr(self, name)}
     
     def zero_grad(self):
-        for name, param in self.parameters().items():
-            if hasattr(self, f'{name}_grad'):
-                getattr(self, f'{name}_grad')[:] = 0
+        for name in self._param_names:
+            grad_name = f'{name}_grad'
+            if hasattr(self, grad_name):
+                getattr(self, grad_name)[:] = 0
 
 class Linear(Module):
     def __init__(self, in_features, out_features):
+        super().__init__()
         scale = np.sqrt(2.0 / (in_features + out_features))
         self.w = np.random.randn(out_features, in_features) * scale
         self.b = np.zeros((1, out_features))
         self.w_grad = np.zeros_like(self.w)
         self.b_grad = np.zeros_like(self.b)
+        self._register_param('w')
+        self._register_param('b')
         self.cache = None
 
     def forward(self, x):
-        # x: (B, T, C_in)
         self.cache = x
         return x @ self.w.T + self.b
 
     def backward(self, dout):
-        # dout: (B, T, C_out)
         x = self.cache
-        self.w_grad = dout.transpose(0, 1, 2) @ x # (B, T, Out) -> (Out, B*T) @ (B*T, In) -> (Out, In) -- Wait shapes
-        # Correct shapes:
-        # x: (B, T, In). dout: (B, T, Out).
-        # We need sum over B, T.
-        # dw = dout.T @ x
-        # Reshape for matmul:
-        dout_flat = dout.reshape(-1, dout.shape[-1]) # (B*T, Out)
-        x_flat = x.reshape(-1, x.shape[-1]) # (B*T, In)
+        dout_flat = dout.reshape(-1, dout.shape[-1])
+        x_flat = x.reshape(-1, x.shape[-1])
         
         self.w_grad = dout_flat.T @ x_flat
         self.b_grad = dout_flat.sum(axis=0, keepdims=True)
         
-        dx = dout @ self.w # (B, T, Out) @ (Out, In) -> (B, T, In)
+        dx = dout @ self.w
         return dx
 
 class LayerNorm(Module):
     def __init__(self, dim, eps=1e-5):
+        super().__init__()
         self.gamma = np.ones((1, 1, dim))
         self.beta = np.zeros((1, 1, dim))
         self.eps = eps
         self.gamma_grad = np.zeros_like(self.gamma)
         self.beta_grad = np.zeros_like(self.beta)
+        self._register_param('gamma')
+        self._register_param('beta')
         self.cache = None
 
     def forward(self, x):
@@ -66,14 +71,14 @@ class LayerNorm(Module):
         
         dx_norm = dout * self.gamma
         dvar = (dx_norm * (x - mean) * -0.5 * (var + self.eps)**(-1.5)).sum(axis=-1, keepdims=True)
-        dmean = (dx_norm * -1 / np.sqrt(var + self.eps)).sum(axis=-1, keepdims=True) + \
-                dvar * (-2 * (x - mean).mean(axis=-1, keepdims=True))
+        dmean = (dx_norm * -1 / np.sqrt(var + self.eps)).sum(axis=-1, keepdims=True)
         
         dx = dx_norm / np.sqrt(var + self.eps) + dvar * 2 * (x - mean) / N + dmean / N
         return dx
 
 class MultiHeadAttention(Module):
     def __init__(self, d_model, n_head):
+        super().__init__()
         assert d_model % n_head == 0
         self.n_head = n_head
         self.d_head = d_model // n_head
@@ -85,30 +90,27 @@ class MultiHeadAttention(Module):
 
     def forward(self, x, causal_mask=True):
         B, T, C = x.shape
-        q = self.q_proj.forward(x) # (B, T, C)
+        q = self.q_proj.forward(x)
         k = self.k_proj.forward(x)
         v = self.v_proj.forward(x)
         
-        # Reshape for heads: (B, T, n_head, d_head) -> (B, n_head, T, d_head)
         q = q.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3)
         k = k.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3)
         v = v.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3)
         
-        # Attention scores
-        scores = (q @ k.transpose(0, 1, 3, 2)) / np.sqrt(self.d_head) # (B, h, T, T)
+        scores = (q @ k.transpose(0, 1, 3, 2)) / np.sqrt(self.d_head)
         
         if causal_mask:
             mask = np.triu(np.ones((T, T)), k=1) * -1e9
             scores = scores + mask
             
         attn = self.softmax(scores)
-        out = attn @ v # (B, h, T, d_head)
+        out = attn @ v
         
-        # Concatenate heads
         out = out.transpose(0, 2, 1, 3).reshape(B, T, C)
         out = self.out_proj.forward(out)
         
-        self.cache = (q, k, v, attn, scores)
+        self.cache = (q, k, v, attn, x)
         return out
 
     def softmax(self, x):
@@ -117,46 +119,48 @@ class MultiHeadAttention(Module):
 
     def backward(self, dout):
         B, T, C = dout.shape
-        q, k, v, attn, scores = self.cache
+        q, k, v, attn, x = self.cache
         
-        # Backprop through out_proj
-        dout = self.out_proj.backward(dout)
-        dout = dout.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3) # (B, h, T, d_head)
+        dout_out = self.out_proj.backward(dout)
+        dout_out = dout_out.reshape(B, T, self.n_head, self.d_head).transpose(0, 2, 1, 3)
         
-        # Backprop through attn @ v
-        dv = attn.transpose(0, 1, 3, 2) @ dout # (B, h, d_head, T) @ (B, h, T, d_head) -> (B, h, T, d_head)
-        dattn = dout @ v.transpose(0, 1, 3, 2) # (B, h, T, d_head) @ (B, h, d_head, T) -> (B, h, T, T)
+        dv = attn.transpose(0, 1, 3, 2) @ dout_out
+        dattn = dout_out @ v.transpose(0, 1, 3, 2)
         
-        # Backprop through softmax
-        dscores = dattn * attn * (1 - attn) # Simplified softmax grad (assuming standard softmax)
-        # Correct softmax grad: dscores = dattn * attn - attn * (dattn * attn).sum(-1, keepdims)
         dscores = dattn * attn - attn * (dattn * attn).sum(axis=-1, keepdims=True)
         dscores /= np.sqrt(self.d_head)
         
-        # Backprop through q @ k.T
-        dq = dscores @ k # (B, h, T, T) @ (B, h, T, d_head) -> (B, h, T, d_head)
+        dq = dscores @ k
         dk = dscores.transpose(0, 1, 3, 2) @ q
         
-        # Reshape back to (B, T, C)
         dq = dq.transpose(0, 2, 1, 3).reshape(B, T, C)
         dk = dk.transpose(0, 2, 1, 3).reshape(B, T, C)
         dv = dv.transpose(0, 2, 1, 3).reshape(B, T, C)
         
-        # Backprop through projections
         self.q_proj.backward(dq)
         self.k_proj.backward(dk)
         self.v_proj.backward(dv)
         
-        return np.zeros_like(dq) # Input x gradient not needed for decoder-only usually, but good practice
+        dx = dq + dk + dv
+        return dx
+
+    def zero_grad(self):
+        self.q_proj.zero_grad()
+        self.k_proj.zero_grad()
+        self.v_proj.zero_grad()
+        self.out_proj.zero_grad()
 
 class MLP(Module):
     def __init__(self, d_model):
+        super().__init__()
         self.fc1 = Linear(d_model, 4 * d_model)
         self.fc2 = Linear(4 * d_model, d_model)
+        self.cache_gelu = None
         self.cache = None
 
     def forward(self, x):
         x = self.fc1.forward(x)
+        self.cache_gelu = x
         x = self.gelu(x)
         self.cache = x
         x = self.fc2.forward(x)
@@ -166,40 +170,57 @@ class MLP(Module):
         return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
 
     def backward(self, dout):
-        # Backprop fc2
         dout = self.fc2.backward(dout)
         
-        # Backprop GELU
-        x = self.cache
-        tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3))
-        dx = 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out**2) * np.sqrt(2/np.pi) * (1 + 3 * 0.044715 * x**2)
+        x_pre_gelu = self.cache_gelu
+        tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x_pre_gelu + 0.044715 * x_pre_gelu**3))
+        dx = 0.5 * (1 + tanh_out) + 0.5 * x_pre_gelu * (1 - tanh_out**2) * np.sqrt(2/np.pi) * (1 + 3 * 0.044715 * x_pre_gelu**2)
         dout = dout * dx
         
-        # Backprop fc1
-        self.fc1.backward(dout)
-        return np.zeros_like(dout)
+        dx = self.fc1.backward(dout)
+        return dx
+
+    def zero_grad(self):
+        self.fc1.zero_grad()
+        self.fc2.zero_grad()
 
 class TransformerBlock(Module):
     def __init__(self, d_model, n_head):
+        super().__init__()
         self.ln1 = LayerNorm(d_model)
         self.attn = MultiHeadAttention(d_model, n_head)
         self.ln2 = LayerNorm(d_model)
         self.mlp = MLP(d_model)
 
     def forward(self, x):
-        x = x + self.attn.forward(self.ln1.forward(x))
-        x = x + self.mlp.forward(self.ln2.forward(x))
+        x_norm1 = self.ln1.forward(x)
+        x_attn = self.attn.forward(x_norm1)
+        x = x + x_attn
+        
+        x_norm2 = self.ln2.forward(x)
+        x_mlp = self.mlp.forward(x_norm2)
+        x = x + x_mlp
+        
+        self.cache = (x_norm1, x_norm2)
         return x
 
     def backward(self, dout):
-        # Residual 2
-        dout_mlp = self.mlp.backward(dout)
-        dout_ln2 = self.ln2.backward(dout) # Gradient flows to ln2 input
-        dout = dout + dout_mlp + dout_ln2 # Gradient flows to block input
+        x_norm1, x_norm2 = self.cache
         
-        # Residual 1
+        dout_mlp = self.mlp.backward(dout)
+        dout_ln2 = self.ln2.backward(dout_mlp)
+        
+        dout = dout + dout_ln2
+        
         dout_attn = self.attn.backward(dout)
-        dout_ln1 = self.ln1.backward(dout)
-        dout = dout + dout_attn + dout_ln1
+        dout_ln1 = self.ln1.backward(dout_attn)
+        
+        dout = dout + dout_ln1
         
         return dout
+
+    def zero_grad(self):
+        self.ln1.zero_grad()
+        self.attn.zero_grad()
+        self.ln2.zero_grad()
+        self.mlp.zero_grad()

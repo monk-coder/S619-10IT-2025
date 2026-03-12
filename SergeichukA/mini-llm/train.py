@@ -4,7 +4,7 @@ from tokenizer import SimpleBPETokenizer
 from model import TransformerLM
 import matplotlib.pyplot as plt
 
-# 🔧 МАЛЕНЬКИЕ ПАРАМЕТРЫ ДЛЯ БЫСТРОГО ТЕСТА
+
 BLOCK_SIZE = 32
 BATCH_SIZE = 4
 MAX_ITERS = 500
@@ -31,7 +31,7 @@ print(f"✓ Tokenizer trained (actual vocab: {len(tokenizer.vocab)})")
 data = np.array(tokenizer.encode(text), dtype=np.int32)
 print(f"Encoded {len(data)} tokens")
 
-# Проверка размера данных
+
 min_required = BLOCK_SIZE * 4
 if len(data) < min_required:
     print(f"⚠ Warning: Data too small ({len(data)} tokens)")
@@ -89,7 +89,8 @@ def loss_fn_grad(logits, targets):
 print(f"\nInitializing model: d_model={D_MODEL}, n_layer={N_LAYER}, n_head={N_HEAD}")
 model = TransformerLM(vocab_size, D_MODEL, N_LAYER, N_HEAD, BLOCK_SIZE)
 
-# 🔧 Оптимизатор Adam (исправленный)
+
+
 class Adam:
     def __init__(self, model, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
         self.model = model
@@ -173,3 +174,4 @@ params = model.get_all_params_with_grads()
 weights = {name: param for name, (param, grad) in params.items()}
 np.savez('model_weights.npz', **weights)
 print("Model weights saved to model_weights.npz")
+

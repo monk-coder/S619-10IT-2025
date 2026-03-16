@@ -2,7 +2,6 @@ import telebot
 
 bot = telebot.TeleBot('8653855195:AAESBBa8LpQEWoY8FO4Q_0JDAlD8QaNifoQ')
 
-# Словарь для хранения имен
 user_names = {}
 
 @bot.message_handler(commands=['start'])

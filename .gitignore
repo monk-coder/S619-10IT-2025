@@ -300,6 +300,8 @@ cython_debug/
 **/log.*
 **/docker-compose.*.yml
 /.junie/
+pyproject.toml
+uv.lock
 
 ### Unignore
 !.env.example

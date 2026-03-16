@@ -1,0 +1,325 @@
+import tkinter as tk
+from tkinter import ttk, scrolledtext, messagebox
+from deep_translator import GoogleTranslator, constants
+import threading
+
+
+class TranslatorApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("🌐 Умный переводчик")
+        self.root.geometry("800x600")
+        self.root.resizable(True, True)
+        self.root.configure(bg="#f5f7fa")
+
+        self.languages = {
+            'auto': 'Автоопределение',
+            'en': 'Английский',
+            'ru': 'Русский',
+            'es': 'Испанский',
+            'fr': 'Французский',
+            'de': 'Немецкий',
+            'it': 'Итальянский',
+            'pt': 'Португальский',
+            'zh-CN': 'Китайский',
+            'ja': 'Японский',
+            'ko': 'Корейский',
+            'ar': 'Арабский',
+            'hi': 'Хинди',
+            'tr': 'Турецкий',
+            'pl': 'Польский',
+            'uk': 'Украинский',
+            'nl': 'Нидерландский',
+            'sv': 'Шведский',
+            'fi': 'Финский',
+            'cs': 'Чешский',
+            'el': 'Греческий',
+            'he': 'Иврит',
+            'th': 'Тайский',
+            'vi': 'Вьетнамский'
+        }
+
+        self.source_lang_var = tk.StringVar(value='auto')
+        self.target_lang_var = tk.StringVar(value='ru')
+
+        self.create_widgets()
+        self.setup_layout()
+
+    def create_widgets(self):
+        self.title_label = tk.Label(
+            self.root,
+            text="🌐 Умный переводчик",
+            font=("Arial", 24, "bold"),
+            bg="#f5f7fa",
+            fg="#2c3e50"
+        )
+
+        self.lang_frame = tk.Frame(self.root, bg="#f5f7fa", pady=10)
+
+        self.source_label = tk.Label(
+            self.lang_frame,
+            text="Откуда:",
+            font=("Arial", 11, "bold"),
+            bg="#f5f7fa",
+            fg="#2c3e50"
+        )
+        self.source_combo = ttk.Combobox(
+            self.lang_frame,
+            textvariable=self.source_lang_var,
+            values=list(self.languages.values()),
+            state="readonly",
+            width=25,
+            font=("Arial", 10)
+        )
+
+        self.swap_button = tk.Button(
+            self.lang_frame,
+            text="⇄",
+            command=self.swap_languages,
+            bg="#3498db",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            width=4,
+            relief="flat",
+            cursor="hand2"
+        )
+
+        self.target_label = tk.Label(
+            self.lang_frame,
+            text="Куда:",
+            font=("Arial", 11, "bold"),
+            bg="#f5f7fa",
+            fg="#2c3e50"
+        )
+        self.target_combo = ttk.Combobox(
+            self.lang_frame,
+            textvariable=self.target_lang_var,
+            values=list(self.languages.values()),
+            state="readonly",
+            width=25,
+            font=("Arial", 10)
+        )
+
+        self.input_label = tk.Label(
+            self.root,
+            text="Введите текст:",
+            font=("Arial", 11, "bold"),
+            bg="#f5f7fa",
+            fg="#2c3e50",
+            anchor="w"
+        )
+        self.input_text = scrolledtext.ScrolledText(
+            self.root,
+            wrap=tk.WORD,
+            width=70,
+            height=8,
+            font=("Arial", 12),
+            padx=10,
+            pady=10,
+            relief="solid",
+            borderwidth=1,
+            bg="white"
+        )
+
+        self.output_label = tk.Label(
+            self.root,
+            text="Перевод:",
+            font=("Arial", 11, "bold"),
+            bg="#f5f7fa",
+            fg="#2c3e50",
+            anchor="w"
+        )
+        self.output_text = scrolledtext.ScrolledText(
+            self.root,
+            wrap=tk.WORD,
+            width=70,
+            height=8,
+            font=("Arial", 12),
+            padx=10,
+            pady=10,
+            relief="solid",
+            borderwidth=1,
+            bg="#e8f4fc",
+            state="disabled"
+        )
+
+        self.button_frame = tk.Frame(self.root, bg="#f5f7fa", pady=10)
+
+        self.translate_btn = tk.Button(
+            self.button_frame,
+            text="🔄 Перевести",
+            command=self.start_translation,
+            bg="#27ae60",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=25,
+            pady=10,
+            relief="flat",
+            cursor="hand2",
+            activebackground="#219653"
+        )
+
+        self.clear_btn = tk.Button(
+            self.button_frame,
+            text="🗑 Очистить",
+            command=self.clear_texts,
+            bg="#e74c3c",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            padx=25,
+            pady=10,
+            relief="flat",
+            cursor="hand2",
+            activebackground="#c0392b"
+        )
+
+        self.status_label = tk.Label(
+            self.root,
+            text="Готово к переводу",
+            font=("Arial", 9),
+            bg="#f5f7fa",
+            fg="#7f8c8d",
+            anchor="w"
+        )
+
+    def setup_layout(self):
+        self.title_label.pack(pady=(20, 10))
+
+        self.lang_frame.pack(fill="x", padx=50)
+        self.source_label.grid(row=0, column=0, padx=(0, 5), sticky="e")
+        self.source_combo.grid(row=0, column=1, padx=(0, 10), sticky="w")
+        self.swap_button.grid(row=0, column=2, padx=5)
+        self.target_label.grid(row=0, column=3, padx=(10, 5), sticky="e")
+        self.target_combo.grid(row=0, column=4, sticky="w")
+
+        self.input_label.pack(fill="x", padx=50, pady=(20, 5), anchor="w")
+        self.input_text.pack(fill="both", expand=False, padx=50, pady=(0, 10))
+
+        self.output_label.pack(fill="x", padx=50, pady=(10, 5), anchor="w")
+        self.output_text.pack(fill="both", expand=False, padx=50, pady=(0, 10))
+
+        self.button_frame.pack(fill="x", padx=50)
+        self.translate_btn.pack(side="left", padx=(0, 15))
+        self.clear_btn.pack(side="left")
+
+        self.status_label.pack(fill="x", padx=50, pady=(10, 15), anchor="w")
+
+        self.root.bind('<Return>', lambda e: self.start_translation())
+        self.root.bind('<Control-l>', lambda e: self.clear_texts())
+
+        style = ttk.Style()
+        style.configure("TCombobox", fieldbackground="white", background="white")
+
+    def get_lang_code(self, lang_name):
+        """Получает код языка по названию"""
+        for code, name in self.languages.items():
+            if name == lang_name:
+                return code
+        return lang_name
+
+    def swap_languages(self):
+        """Меняет местами языки и тексты"""
+        src_text = self.input_text.get("1.0", tk.END).strip()
+        tgt_text = self.output_text.get("1.0", tk.END).strip()
+
+        src_lang = self.source_lang_var.get()
+        tgt_lang = self.target_lang_var.get()
+        self.source_lang_var.set(tgt_lang)
+        self.target_lang_var.set(src_lang)
+
+        self.input_text.delete("1.0", tk.END)
+        self.input_text.insert("1.0", tgt_text)
+        self.set_output_text(src_text)
+
+    def set_output_text(self, text):
+        """Устанавливает текст в поле вывода (с защитой от редактирования)"""
+        self.output_text.config(state="normal")
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert("1.0", text)
+        self.output_text.config(state="disabled")
+
+    def clear_texts(self):
+        """Очищает поля ввода и вывода"""
+        self.input_text.delete("1.0", tk.END)
+        self.set_output_text("")
+        self.status_label.config(text="Поля очищены", fg="#7f8c8d")
+
+    def start_translation(self):
+        """Запускает перевод в отдельном потоке (чтобы не блокировать UI)"""
+        text = self.input_text.get("1.0", tk.END).strip()
+        if not text:
+            messagebox.showwarning("Внимание", "Введите текст для перевода!")
+            return
+
+        self.translate_btn.config(state="disabled", text="⏳ Переводим...")
+        self.status_label.config(text="Идёт перевод...", fg="#3498db")
+        self.root.update()
+
+        threading.Thread(target=self.translate_thread, args=(text,), daemon=True).start()
+
+    def translate_thread(self, text):
+        """Функция перевода (выполняется в отдельном потоке)"""
+        try:
+            src_lang_name = self.source_lang_var.get()
+            tgt_lang_name = self.target_lang_var.get()
+
+            src_lang = self.get_lang_code(src_lang_name)
+            tgt_lang = self.get_lang_code(tgt_lang_name)
+
+            if src_lang == 'auto':
+                translator = GoogleTranslator(source='auto', target=tgt_lang)
+                detected = translator.detect(text)
+                src_lang_display = detected if detected in self.languages else detected
+                src_lang_display_name = self.languages.get(detected, detected.upper())
+            else:
+                translator = GoogleTranslator(source=src_lang, target=tgt_lang)
+                src_lang_display_name = self.languages.get(src_lang, src_lang.upper())
+
+            tgt_lang_display_name = self.languages.get(tgt_lang, tgt_lang.upper())
+
+            translated = translator.translate(text)
+
+            self.root.after(0, lambda: self.on_translation_success(
+                text, translated, src_lang_display_name, tgt_lang_display_name
+            ))
+
+        except Exception as e:
+            error_msg = str(e)
+            if "too many requests" in error_msg.lower():
+                error_msg = "Слишком много запросов. Подождите 1-2 минуты."
+            elif "No support for the provided language" in error_msg:
+                error_msg = "Выбранный язык не поддерживается для перевода."
+            self.root.after(0, lambda: self.on_translation_error(error_msg))
+
+    def on_translation_success(self, original, translated, src_lang_name, tgt_lang_name):
+        """Обработчик успешного перевода"""
+        self.set_output_text(translated)
+        self.status_label.config(
+            text=f"✓ Переведено: {src_lang_name} → {tgt_lang_name}",
+            fg="#27ae60"
+        )
+        self.translate_btn.config(state="normal", text="🔄 Перевести")
+
+    def on_translation_error(self, error_msg):
+        """Обработчик ошибки перевода"""
+        self.set_output_text(f"❌ Ошибка: {error_msg}")
+        self.status_label.config(text=f"Ошибка перевода", fg="#e74c3c")
+        self.translate_btn.config(state="normal", text="🔄 Перевести")
+        messagebox.showerror("Ошибка перевода", error_msg)
+
+
+def main():
+    try:
+        import deep_translator
+    except ImportError:
+        print("❌ Библиотека 'deep-translator' не установлена.")
+        print("Установите командой: pip install deep-translator")
+        return
+
+    root = tk.Tk()
+    app = TranslatorApp(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

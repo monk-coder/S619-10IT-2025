@@ -1,0 +1,8 @@
+Test Accuracy: 97.27%
+Final Training Loss: 0.0808
+Final Validation Loss: 0.0989
+
+Model Architecture:
+Input layer: 784 neurons
+Hidden layer: 128 neurons
+Output layer: 10 neurons

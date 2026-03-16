@@ -1,0 +1,50 @@
+import numpy as np
+
+# Данные для логической функции AND
+X = np.array([
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1]
+])
+y = np.array([0, 0, 0, 1])
+
+# Инициализация весов и смещения (лучше начинать с нулей или малых значений)
+np.random.seed(42)
+weights = np.zeros(2)      # или np.random.randn(2) * 0.01
+bias = 0.0                 # явно задаём начальное смещение = 0
+learning_rate = 0.1
+epochs = 100
+
+def step_function(x):
+    return 1 if x >= 0 else 0
+
+# Обучение
+for epoch in range(epochs):
+    total_error = 0
+    for i in range(len(X)):
+        linear_output = np.dot(weights, X[i]) + bias
+        prediction = step_function(linear_output)
+        error = y[i] - prediction
+        total_error += abs(error)
+
+        # Обновление весов и смещения
+        weights += learning_rate * error * X[i]
+        bias += learning_rate * error
+
+    if total_error == 0:
+        print(f"Обучение завершено на эпохе {epoch + 1}")
+        break
+else:
+    print("Обучение не сошлось за указанное число эпох")
+
+# Вывод результатов
+print("\nОбученные параметры:")
+print("Веса:", weights)
+print("Смещение (bias):", bias)
+
+print("\nПроверка предсказаний:")
+for i in range(len(X)):
+    output = np.dot(weights, X[i]) + bias
+    pred = step_function(output)
+    print(f"Вход: {X[i]} → Предсказание: {pred} (ожидание: {y[i]})")

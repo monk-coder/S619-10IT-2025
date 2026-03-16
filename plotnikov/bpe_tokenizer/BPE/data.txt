@@ -1,0 +1,17 @@
+This is a sample text corpus for training BPE tokenizer.
+It contains multiple lines of English text.
+Each line is treated as a separate document during training.
+BPE tokenizer learns subword units from character-level initialization.
+Rare words are split into frequent subword components.
+For example supercalifragilisticexpialidocious might be split into pieces.
+The algorithm iteratively merges the most frequent adjacent pairs.
+After training we can encode any text into token IDs.
+Decoding should perfectly reconstruct the original text.
+This guarantees lossless tokenization for NLP pipelines.
+Machine learning models benefit from subword tokenization.
+It handles unknown words gracefully by composing from known subwords.
+Unicode characters are supported through UTF-8 encoding.
+Punctuation and numbers are treated as separate tokens.
+The quick brown fox jumps over the lazy dog.
+Pack my box with five dozen liquor jugs.
+How vexingly quick daft zebras jump!

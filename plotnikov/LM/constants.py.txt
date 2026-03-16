@@ -1,0 +1,25 @@
+SPECIAL_TOKENS = {
+    "<PAD>": 0,
+    "<UNK>": 1,
+    "<BOS>": 2,
+    "<EOS>": 3
+}
+
+WORD_END_MARKER = "</w>"
+WORD_PATTERN = r"'s|'t|'re|'ve|'m|'ll|'d| ?[a-zA-Z]+| ?[0-9]+| ?[^\s\w]+|\s+"
+
+VOCAB_SIZE = None
+N_LAYERS = 3
+N_HEADS = 4
+D_MODEL = 192
+D_FF = 768
+MAX_SEQ_LEN = 128
+DROPOUT_RATE = 0.1
+
+BATCH_SIZE = 32
+LEARNING_RATE = 3e-4
+BETA1 = 0.9
+BETA2 = 0.999
+EPSILON = 1e-8
+NUM_EPOCHS = 15
+WARMUP_STEPS = 100

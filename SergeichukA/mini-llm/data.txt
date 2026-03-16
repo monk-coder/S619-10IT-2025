@@ -1,0 +1,16 @@
+Once upon a time, there was a small language model.
+It learned to predict the next token in a sequence.
+The model was trained on many examples of text.
+After training, it could generate new sentences.
+This is the story of a mini-LLM.
+
+The quick brown fox jumps over the lazy dog.
+Pack my box with five dozen liquor jugs.
+How vexingly quick daft zebras jump!
+
+Hello, world! This is a test of the emergency broadcast system.
+If this were a real emergency, you would be instructed where to go.
+This is only a test.
+
+In a hole in the ground there lived a hobbit.
+Not a nasty, dirty, wet hole, but a comfortable hobbit-hole.

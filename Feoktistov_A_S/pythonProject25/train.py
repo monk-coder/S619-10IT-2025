@@ -1,167 +1,233 @@
 # train.py
+import torch
+import torch.nn as nn
 import numpy as np
 import os
-import sys
+import time
+from tqdm import tqdm
+import pickle
+
+from config import get_args
 from model import TransformerLM
-from utils import (
-    Adam, DataLoader, cross_entropy_loss, cross_entropy_gradient,
-    load_text, create_vocab, text_to_indices, save_checkpoint, plot_losses
-)
+from data import load_data, create_dataloaders
+from utils import compute_perplexity, save_checkpoint, plot_metrics
+
+
+def train_epoch(model, train_loader, optimizer, criterion, device, grad_clip):
+    """Train for one epoch"""
+    model.train()
+    total_loss = 0
+    n_batches = 0
+
+    for batch_idx, (x, y) in enumerate(train_loader):
+        x, y = x.to(device), y.to(device)
+
+        # Forward pass
+        logits = model(x)
+        loss = criterion(logits.view(-1, logits.size(-1)), y.view(-1))
+
+        # Backward pass
+        optimizer.zero_grad()
+        loss.backward()
+
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
+        optimizer.step()
+
+        total_loss += loss.item()
+        n_batches += 1
+
+        if batch_idx % 50 == 0:
+            print(f"  Batch {batch_idx}/{len(train_loader)}, Loss: {loss.item():.4f}")
+
+    return total_loss / n_batches
+
+
+def evaluate(model, val_loader, criterion, device):
+    """Evaluate model on validation set"""
+    model.eval()
+    total_loss = 0
+    n_batches = 0
+
+    with torch.no_grad():
+        for x, y in val_loader:
+            x, y = x.to(device), y.to(device)
+
+            logits = model(x)
+            loss = criterion(logits.view(-1, logits.size(-1)), y.view(-1))
+
+            total_loss += loss.item()
+            n_batches += 1
+
+    avg_loss = total_loss / n_batches
+    perplexity = np.exp(avg_loss)
+
+    return avg_loss, perplexity
 
 
 def main():
-    # ==================== ПАРАМЕТРЫ ====================
-    # Параметры модели
-    D_MODEL = 128  # размер эмбеддингов
-    N_HEAD = 4  # количество голов внимания
-    N_LAYER = 2  # количество слоев трансформера
-    MAX_SEQ_LEN = 64  # максимальная длина последовательности
+    args = get_args()
 
-    # Параметры обучения
-    BATCH_SIZE = 16  # размер батча
-    LR = 0.001  # learning rate
-    EPOCHS = 10  # количество эпох
+    # Set device
+    if args.device == 'cuda' and not torch.cuda.is_available():
+        print("⚠️  CUDA не доступна, использую CPU")
+        args.device = 'cpu'
 
-    # Параметры данных
-    DATA_FILE = 'data.txt'  # файл с текстом
+    device = torch.device(args.device)
+    print(f"Using device: {device}")
 
-    # ==================== ПРОВЕРКА ФАЙЛА ====================
-    if not os.path.exists(DATA_FILE):
-        print(f"ОШИБКА: Файл {DATA_FILE} не найден!")
-        print("Создайте файл data.txt с текстом для обучения.")
-        print("\nПример создания файла:")
-        print('echo "Привет мир! Это текст для обучения." > data.txt')
-        return
+    # Set random seed
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
-    # ==================== ЗАГРУЗКА ДАННЫХ ====================
-    print("=" * 60)
-    print("ЗАГРУЗКА ДАННЫХ")
+    # Create output directory
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # Load data
+    print("\n" + "=" * 60)
+    print("LOADING DATA")
     print("=" * 60)
 
-    # Загружаем текст
-    text = load_text(DATA_FILE)
-    print(f"Загружено {len(text)} символов")
-    print(f"Первые 200 символов:\n{text[:200]}\n")
+    train_tokens, val_tokens, tokenizer = load_data(
+        args.data_path, args.tokenizer_path, train_split=0.9
+    )
 
-    # Создаем словарь
-    char_to_idx, idx_to_char, vocab_size = create_vocab(text)
-    print(f"Размер словаря: {vocab_size} уникальных символов")
-    print(f"Примеры символов: {list(char_to_idx.keys())[:20]}\n")
+    train_loader, val_loader = create_dataloaders(
+        train_tokens, val_tokens, args.max_seq_len,
+        args.batch_size, args.device
+    )
 
-    # Преобразуем текст в индексы
-    data = text_to_indices(text, char_to_idx)
-    print(f"Данные преобразованы в {len(data)} индексов")
+    print(f"Train batches: {len(train_loader)}")
+    print(f"Val batches: {len(val_loader)}")
 
-    # ==================== СОЗДАНИЕ МОДЕЛИ ====================
-    print("=" * 60)
-    print("СОЗДАНИЕ МОДЕЛИ")
+    # Create model
+    print("\n" + "=" * 60)
+    print("CREATING MODEL")
     print("=" * 60)
 
     model = TransformerLM(
-        vocab_size=vocab_size,
-        d_model=D_MODEL,
-        n_head=N_HEAD,
-        n_layer=N_LAYER,
-        max_seq_len=MAX_SEQ_LEN
+        vocab_size=tokenizer.vocab_size,
+        d_model=args.d_model,
+        n_head=args.n_head,
+        n_layer=args.n_layer,
+        max_seq_len=args.max_seq_len,
+        dropout=args.dropout
+    ).to(device)
+
+    print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
+
+    # Optimizer
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=args.lr,
+        betas=(args.beta1, args.beta2),
+        weight_decay=args.weight_decay
     )
 
-    # Считаем количество параметров
-    params = model.get_params()
-    total_params = sum(p[0].size for p in params)
-    print(f"Всего параметров: {total_params:,}")
+    # Loss function
+    criterion = nn.CrossEntropyLoss()
 
-    # Создаем оптимизатор и загрузчик данных
-    optimizer = Adam(params, lr=LR)
-    dataloader = DataLoader(data, BATCH_SIZE, MAX_SEQ_LEN)
-    print(f"Количество батчей за эпоху: {len(dataloader)}")
-
-    # ==================== ОБУЧЕНИЕ ====================
-    print("=" * 60)
-    print("ОБУЧЕНИЕ")
-    print("=" * 60)
-
-    losses = []
-
-    for epoch in range(EPOCHS):
-        epoch_loss = 0
-        n_batches = 0
-
-        print(f"\n--- Эпоха {epoch + 1}/{EPOCHS} ---")
-
-        for batch_idx, (x, y) in enumerate(dataloader):
-            # Forward pass
-            logits = model.forward(x)
-            loss = cross_entropy_loss(logits, y)
-            epoch_loss += loss
-
-            # Backward pass
-            dlogits = cross_entropy_gradient(logits, y)
-            model.backward(dlogits)
-
-            # Update weights
-            optimizer.step()
-            optimizer.zero_grad()
-            model.zero_grad()
-
-            n_batches += 1
-
-            # Выводим прогресс каждые 10 батчей
-            if (batch_idx + 1) % 10 == 0:
-                print(f"  Батч {batch_idx + 1}/{len(dataloader)}, Loss: {loss:.4f}")
-
-        avg_loss = epoch_loss / n_batches
-        losses.append(avg_loss)
-        print(f"✓ Средний Loss за эпоху: {avg_loss:.4f}")
-
-        # Генерируем пример текста после каждой эпохи
-        if epoch == 0 or (epoch + 1) % 2 == 0:
-            prompt = data[:20]  # первые 20 символов как промпт
-            generated = model.generate(prompt, max_new_tokens=100, temperature=0.8, top_k=40)
-
-            # Преобразуем индексы обратно в текст
-            generated_text = ''.join([idx_to_char.get(i, '?') for i in generated])
-            print(f"\nСгенерированный текст после эпохи {epoch + 1}:")
-            print(f"{generated_text[:200]}...\n")
-
-        # Сохраняем чекпоинт после каждой эпохи
-        save_checkpoint(model, char_to_idx, idx_to_char, losses, f'checkpoint_epoch_{epoch + 1}.pkl')
-
-    # ==================== СОХРАНЕНИЕ РЕЗУЛЬТАТОВ ====================
-    print("=" * 60)
-    print("СОХРАНЕНИЕ РЕЗУЛЬТАТОВ")
-    print("=" * 60)
-
-    # Сохраняем финальную модель
-    save_checkpoint(model, char_to_idx, idx_to_char, losses, 'final_model.pkl')
-
-    # Рисуем график потерь
-    plot_losses(losses, 'training_loss.png')
-
-    # ==================== ФИНАЛЬНАЯ ГЕНЕРАЦИЯ ====================
-    print("=" * 60)
-    print("ФИНАЛЬНАЯ ГЕНЕРАЦИЯ")
-    print("=" * 60)
-
-    # Генерируем финальный пример
-    prompt = data[:30]  # первые 30 символов как промпт
-    generated = model.generate(prompt, max_new_tokens=200, temperature=0.7, top_k=40)
-    generated_text = ''.join([idx_to_char.get(i, '?') for i in generated])
-
-    print(f"\nПромпт: {text[:30]}")
-    print(f"\nСгенерированный текст (первые 500 символов):")
-    print(f"{generated_text[:500]}...")
-
-    # Сохраняем сгенерированный текст в файл
-    with open('generated.txt', 'w', encoding='utf-8') as f:
-        f.write(generated_text)
-    print("\nПолный текст сохранен в generated.txt")
-
+    # Training loop
     print("\n" + "=" * 60)
-    print("ОБУЧЕНИЕ ЗАВЕРШЕНО!")
+    print("TRAINING")
     print("=" * 60)
-    print(f"Финальный loss: {losses[-1]:.4f}")
-    print(f"Модель сохранена в final_model.pkl")
-    print(f"График потерь сохранен в training_loss.png")
+
+    train_losses = []
+    val_losses = []
+    val_perplexities = []
+
+    best_val_loss = float('inf')
+
+    for step in range(args.max_iters):
+        # Train one batch
+        try:
+            x, y = next(iter(train_loader))
+        except StopIteration:
+            # Recreate iterator
+            train_loader, _ = create_dataloaders(
+                train_tokens, val_tokens, args.max_seq_len,
+                args.batch_size, args.device
+            )
+            x, y = next(iter(train_loader))
+
+        x, y = x.to(device), y.to(device)
+
+        # Forward
+        logits = model(x)
+        loss = criterion(logits.view(-1, logits.size(-1)), y.view(-1))
+
+        # Backward
+        optimizer.zero_grad()
+        loss.backward()
+
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+
+        optimizer.step()
+
+        train_losses.append(loss.item())
+
+        # Evaluation
+        if step % args.eval_interval == 0:
+            val_loss, val_perplexity = evaluate(model, val_loader, criterion, device)
+            val_losses.append(val_loss)
+            val_perplexities.append(val_perplexity)
+
+            print(f"\nStep {step}/{args.max_iters}")
+            print(f"  Train Loss: {loss.item():.4f}")
+            print(f"  Val Loss: {val_loss:.4f}")
+            print(f"  Val Perplexity: {val_perplexity:.2f}")
+
+            # Save best model
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                checkpoint = {
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'step': step,
+                    'loss': val_loss,
+                    'perplexity': val_perplexity,
+                    'config': vars(args)
+                }
+
+                os.makedirs('checkpoints', exist_ok=True)
+                torch.save(checkpoint, 'checkpoints/best_model.pt')
+                print(f"  ✅ Best model saved (perplexity: {val_perplexity:.2f})")
+
+        # Save checkpoint
+        if step % args.save_interval == 0 and step > 0:
+            checkpoint = {
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'step': step,
+                'loss': loss.item(),
+                'config': vars(args)
+            }
+            torch.save(checkpoint, f'checkpoints/checkpoint_{step:06d}.pt')
+            print(f"  💾 Checkpoint saved at step {step}")
+
+        if step % 100 == 0:
+            print(f"Step {step}, Loss: {loss.item():.4f}")
+
+    # Plot metrics
+    print("\n" + "=" * 60)
+    print("SAVING RESULTS")
+    print("=" * 60)
+
+    plot_metrics(train_losses, val_losses, val_perplexities)
+
+    # Save training history
+    history = {
+        'train_losses': train_losses,
+        'val_losses': val_losses,
+        'val_perplexities': val_perplexities
+    }
+    with open('training_history.pkl', 'wb') as f:
+        pickle.dump(history, f)
+
+    print(f"\nBest validation perplexity: {min(val_perplexities):.2f}")
+    print("Training completed!")
 
 
 if __name__ == "__main__":

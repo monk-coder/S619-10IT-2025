@@ -1,397 +1,183 @@
 # model.py
-import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
 
 
-# ==================== УТИЛИТЫ МОДЕЛИ ====================
-def softmax(x, axis=-1):
-    x_max = np.max(x, axis=axis, keepdims=True)
-    exp_x = np.exp(x - x_max)
-    return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
-
-
-def gelu(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x ** 3)))
-
-
-def gelu_derivative(x):
-    tanh_out = np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x ** 3))
-    return 0.5 * (1 + tanh_out) + 0.5 * x * (1 - tanh_out ** 2) * np.sqrt(2 / np.pi) * (1 + 3 * 0.044715 * x ** 2)
-
-
-def create_causal_mask(size):
-    mask = np.triu(np.ones((size, size)) * -1e9, k=1)
-    return mask
-
-
-# ==================== LAYER NORM ====================
-class LayerNorm:
+class LayerNorm(nn.Module):
     def __init__(self, dim, eps=1e-5):
+        super().__init__()
         self.eps = eps
-        self.gamma = np.ones(dim)
-        self.beta = np.zeros(dim)
-        self.dgamma = np.zeros_like(self.gamma)
-        self.dbeta = np.zeros_like(self.beta)
-        self.cache = {}
+        self.weight = nn.Parameter(torch.ones(dim))
+        self.bias = nn.Parameter(torch.zeros(dim))
 
     def forward(self, x):
-        self.cache['x'] = x
-        self.cache['mean'] = np.mean(x, axis=-1, keepdims=True)
-        self.cache['var'] = np.var(x, axis=-1, keepdims=True)
-        self.cache['x_norm'] = (x - self.cache['mean']) / np.sqrt(self.cache['var'] + self.eps)
-        return self.gamma * self.cache['x_norm'] + self.beta
-
-    def backward(self, dout):
-        x = self.cache['x']
-        mean = self.cache['mean']
-        var = self.cache['var']
-        x_norm = self.cache['x_norm']
-
-        N = x.shape[-1]
-        self.dgamma = np.sum(dout * x_norm, axis=(0, 1))
-        self.dbeta = np.sum(dout, axis=(0, 1))
-
-        dx_norm = dout * self.gamma
-        dvar = np.sum(dx_norm * (x - mean) * -0.5 * (var + self.eps) ** (-1.5), axis=-1, keepdims=True)
-        dmean = np.sum(dx_norm * -1 / np.sqrt(var + self.eps), axis=-1, keepdims=True) + \
-                dvar * np.mean(-2 * (x - mean), axis=-1, keepdims=True)
-
-        dx = dx_norm / np.sqrt(var + self.eps) + dvar * 2 * (x - mean) / N + dmean / N
-        return dx
-
-    def get_params(self):
-        return [(self.gamma, self.dgamma), (self.beta, self.dbeta)]
-
-    def zero_grad(self):
-        self.dgamma.fill(0)
-        self.dbeta.fill(0)
+        mean = x.mean(-1, keepdim=True)
+        var = x.var(-1, keepdim=True, unbiased=False)
+        x_norm = (x - mean) / torch.sqrt(var + self.eps)
+        return self.weight * x_norm + self.bias
 
 
-# ==================== ATTENTION ====================
-class MultiHeadAttention:
-    def __init__(self, d_model, n_head):
+class CausalSelfAttention(nn.Module):
+    def __init__(self, d_model, n_head, dropout=0.1):
+        super().__init__()
         assert d_model % n_head == 0
         self.d_model = d_model
         self.n_head = n_head
-        self.d_k = d_model // n_head
+        self.head_dim = d_model // n_head
 
-        scale = 1 / np.sqrt(d_model)
-        self.W_q = np.random.randn(d_model, d_model) * scale
-        self.W_k = np.random.randn(d_model, d_model) * scale
-        self.W_v = np.random.randn(d_model, d_model) * scale
-        self.W_o = np.random.randn(d_model, d_model) * scale
+        self.qkv = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.proj = nn.Linear(d_model, d_model)
+        self.dropout = nn.Dropout(dropout)
 
-        self.dW_q = np.zeros_like(self.W_q)
-        self.dW_k = np.zeros_like(self.W_k)
-        self.dW_v = np.zeros_like(self.W_v)
-        self.dW_o = np.zeros_like(self.W_o)
-        self.cache = {}
-
-    def _reshape_for_heads(self, x):
-        B, T, D = x.shape
-        x = x.reshape(B, T, self.n_head, self.d_k)
-        return x.transpose(0, 2, 1, 3)
-
-    def _reshape_from_heads(self, x):
-        B, n_head, T, d_k = x.shape
-        x = x.transpose(0, 2, 1, 3)
-        return x.reshape(B, T, self.d_model)
-
-    def forward(self, x, mask=None):
-        B, T, D = x.shape
-        self.cache['x'] = x
-        self.cache['mask'] = mask
-        self.cache['B'] = B
-        self.cache['T'] = T
-
-        Q = x @ self.W_q
-        K = x @ self.W_k
-        V = x @ self.W_v
-        self.cache['Q'] = Q
-        self.cache['K'] = K
-        self.cache['V'] = V
-
-        Q = self._reshape_for_heads(Q)
-        K = self._reshape_for_heads(K)
-        V = self._reshape_for_heads(V)
-        self.cache['Q_heads'] = Q
-        self.cache['K_heads'] = K
-        self.cache['V_heads'] = V
-
-        scores = (Q @ K.transpose(0, 1, 3, 2)) / np.sqrt(self.d_k)
-        if mask is not None:
-            scores = scores + mask
-
-        attn_weights = softmax(scores, axis=-1)
-        self.cache['attn_weights'] = attn_weights
-
-        context = attn_weights @ V
-        self.cache['context_heads'] = context
-        context = self._reshape_from_heads(context)
-        self.cache['context'] = context
-
-        output = context @ self.W_o
-        return output
-
-    def backward(self, dout):
-        B = self.cache['B']
-        T = self.cache['T']
-        D = self.d_model
-
-        context = self.cache['context']
-        self.dW_o = context.reshape(-1, D).T @ dout.reshape(-1, D)
-
-        dcontext = dout @ self.W_o.T
-        dcontext = self._reshape_for_heads(dcontext)
-
-        attn_weights = self.cache['attn_weights']
-        V_heads = self.cache['V_heads']
-        Q_heads = self.cache['Q_heads']
-        K_heads = self.cache['K_heads']
-
-        dV = attn_weights.transpose(0, 1, 3, 2) @ dcontext
-        dattn = dcontext @ V_heads.transpose(0, 1, 3, 2)
-
-        dscores = attn_weights * (dattn - np.sum(dattn * attn_weights, axis=-1, keepdims=True))
-        dscores = dscores / np.sqrt(self.d_k)
-
-        dQ = dscores @ K_heads
-        dK = dscores.transpose(0, 1, 3, 2) @ Q_heads
-
-        dQ = self._reshape_from_heads(dQ)
-        dK = self._reshape_from_heads(dK)
-        dV = self._reshape_from_heads(dV)
-
-        x = self.cache['x']
-        self.dW_q = x.reshape(-1, D).T @ dQ.reshape(-1, D)
-        self.dW_k = x.reshape(-1, D).T @ dK.reshape(-1, D)
-        self.dW_v = x.reshape(-1, D).T @ dV.reshape(-1, D)
-
-        dx = (dQ @ self.W_q.T) + (dK @ self.W_k.T) + (dV @ self.W_v.T)
-        return dx
-
-    def get_params(self):
-        return [(self.W_q, self.dW_q), (self.W_k, self.dW_k), (self.W_v, self.dW_v), (self.W_o, self.dW_o)]
-
-    def zero_grad(self):
-        self.dW_q.fill(0)
-        self.dW_k.fill(0)
-        self.dW_v.fill(0)
-        self.dW_o.fill(0)
-
-
-# ==================== MLP ====================
-class MLP:
-    def __init__(self, d_model, d_ff):
-        scale1 = 1 / np.sqrt(d_model)
-        scale2 = 1 / np.sqrt(d_ff)
-
-        self.W1 = np.random.randn(d_model, d_ff) * scale1
-        self.b1 = np.zeros(d_ff)
-        self.W2 = np.random.randn(d_ff, d_model) * scale2
-        self.b2 = np.zeros(d_model)
-
-        self.dW1 = np.zeros_like(self.W1)
-        self.db1 = np.zeros_like(self.b1)
-        self.dW2 = np.zeros_like(self.W2)
-        self.db2 = np.zeros_like(self.b2)
-        self.cache = {}
+        # Causal mask
+        self.register_buffer('mask', torch.tril(torch.ones(1, 1, 512, 512)))
 
     def forward(self, x):
-        self.cache['x'] = x
-        hidden = x @ self.W1 + self.b1
-        self.cache['hidden'] = hidden
-        act = gelu(hidden)
-        self.cache['act'] = act
-        output = act @ self.W2 + self.b2
-        return output
+        B, T, C = x.shape
 
-    def backward(self, dout):
-        x = self.cache['x']
-        hidden = self.cache['hidden']
-        act = self.cache['act']
+        # Q, K, V projections
+        qkv = self.qkv(x)  # (B, T, 3*C)
+        q, k, v = qkv.chunk(3, dim=-1)
 
-        self.dW2 = act.reshape(-1, act.shape[-1]).T @ dout.reshape(-1, dout.shape[-1])
-        self.db2 = np.sum(dout, axis=(0, 1))
+        # Reshape for multi-head
+        q = q.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
+        k = k.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
+        v = v.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
 
-        dact = dout @ self.W2.T
-        dhidden = dact * gelu_derivative(hidden)
+        # Scaled dot-product attention
+        attn = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(self.head_dim))
 
-        self.dW1 = x.reshape(-1, x.shape[-1]).T @ dhidden.reshape(-1, dhidden.shape[-1])
-        self.db1 = np.sum(dhidden, axis=(0, 1))
+        # Apply causal mask
+        causal_mask = self.mask[:, :, :T, :T]
+        attn = attn.masked_fill(causal_mask == 0, float('-inf'))
 
-        dx = dhidden @ self.W1.T
-        return dx
+        attn = F.softmax(attn, dim=-1)
+        attn = self.dropout(attn)
 
-    def get_params(self):
-        return [(self.W1, self.dW1), (self.b1, self.db1), (self.W2, self.dW2), (self.b2, self.db2)]
+        y = attn @ v
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        y = self.proj(y)
+        y = self.dropout(y)
 
-    def zero_grad(self):
-        self.dW1.fill(0)
-        self.db1.fill(0)
-        self.dW2.fill(0)
-        self.db2.fill(0)
+        return y
 
 
-# ==================== TRANSFORMER BLOCK ====================
-class TransformerBlock:
-    def __init__(self, d_model, n_head, d_ff):
-        self.ln1 = LayerNorm(d_model)
-        self.attn = MultiHeadAttention(d_model, n_head)
-        self.ln2 = LayerNorm(d_model)
-        self.mlp = MLP(d_model, d_ff)
+class MLP(nn.Module):
+    def __init__(self, d_model, expansion_factor=4, dropout=0.1):
+        super().__init__()
+        d_ff = int(d_model * expansion_factor)
+        self.fc1 = nn.Linear(d_model, d_ff)
+        self.fc2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.gelu = nn.GELU()
 
-    def forward(self, x, mask=None):
-        attn_out = self.attn.forward(self.ln1.forward(x), mask)
-        x = x + attn_out
-        mlp_out = self.mlp.forward(self.ln2.forward(x))
-        x = x + mlp_out
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.gelu(x)
+        x = self.fc2(x)
+        x = self.dropout(x)
         return x
 
-    def backward(self, dout):
-        dmlp = dout
-        dln2 = self.mlp.backward(dmlp)
-        dresidual2 = self.ln2.backward(dln2)
-        dout = dout + dresidual2
 
-        dattn = dout
-        dln1 = self.attn.backward(dattn)
-        dresidual1 = self.ln1.backward(dln1)
-        dout = dout + dresidual1
-        return dout
-
-    def get_params(self):
-        params = []
-        params.extend(self.ln1.get_params())
-        params.extend(self.attn.get_params())
-        params.extend(self.ln2.get_params())
-        params.extend(self.mlp.get_params())
-        return params
-
-    def zero_grad(self):
-        self.ln1.zero_grad()
-        self.attn.zero_grad()
-        self.ln2.zero_grad()
-        self.mlp.zero_grad()
-
-
-# ==================== MAIN MODEL ====================
-class TransformerLM:
-    def __init__(self, vocab_size, d_model=128, n_head=4, n_layer=2, max_seq_len=64, d_ff=None):
-        self.vocab_size = vocab_size
-        self.d_model = d_model
-        self.n_head = n_head
-        self.n_layer = n_layer
-        self.max_seq_len = max_seq_len
-        self.d_ff = d_ff if d_ff is not None else 4 * d_model
-
-        # Эмбеддинги
-        scale = 1 / np.sqrt(d_model)
-        self.token_embedding = np.random.randn(vocab_size, d_model) * scale
-        self.pos_embedding = np.random.randn(max_seq_len, d_model) * scale
-
-        # Блоки
-        self.blocks = [TransformerBlock(d_model, n_head, self.d_ff) for _ in range(n_layer)]
-
-        # Выходной слой
-        self.ln_final = LayerNorm(d_model)
-        self.output_proj = np.random.randn(d_model, vocab_size) * scale
-
-        # Градиенты
-        self.d_token_embedding = np.zeros_like(self.token_embedding)
-        self.d_pos_embedding = np.zeros_like(self.pos_embedding)
-        self.d_output_proj = np.zeros_like(self.output_proj)
-
-        self.cache = {}
-        self.causal_mask = create_causal_mask(max_seq_len)
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, n_head, dropout=0.1):
+        super().__init__()
+        self.ln1 = LayerNorm(d_model)
+        self.attn = CausalSelfAttention(d_model, n_head, dropout)
+        self.ln2 = LayerNorm(d_model)
+        self.mlp = MLP(d_model, dropout=dropout)
 
     def forward(self, x):
-        B, T = x.shape
+        x = x + self.attn(self.ln1(x))
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+
+class TransformerLM(nn.Module):
+    def __init__(self, vocab_size, d_model=256, n_head=8, n_layer=6,
+                 max_seq_len=512, dropout=0.1):
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.d_model = d_model
+        self.max_seq_len = max_seq_len
+
+        # Embeddings
+        self.token_embedding = nn.Embedding(vocab_size, d_model)
+        self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, d_model))
+
+        # Transformer blocks
+        self.blocks = nn.ModuleList([
+            TransformerBlock(d_model, n_head, dropout)
+            for _ in range(n_layer)
+        ])
+
+        # Output layer
+        self.ln_final = LayerNorm(d_model)
+        self.output_proj = nn.Linear(d_model, vocab_size, bias=False)
+
+        # Weight tying
+        self.token_embedding.weight = self.output_proj.weight
+
+        # Initialize weights
+        self.apply(self._init_weights)
+
+        # Initialize positional embeddings
+        nn.init.normal_(self.pos_embedding, std=0.02)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            nn.init.normal_(module.weight, mean=0.0, std=0.02)
+
+    def forward(self, idx):
+        B, T = idx.shape
         assert T <= self.max_seq_len
 
-        self.cache['x'] = x
-        self.cache['T'] = T
-        self.cache['B'] = B
-
-        token_emb = self.token_embedding[x]
-        pos_emb = self.pos_embedding[:T].reshape(1, T, self.d_model)
+        # Get embeddings
+        token_emb = self.token_embedding(idx)
+        pos_emb = self.pos_embedding[:, :T, :]
         x = token_emb + pos_emb
 
-        self.cache['token_emb'] = token_emb
-        self.cache['pos_emb'] = pos_emb
-        self.cache['embed_out'] = x
+        # Transformer blocks
+        for block in self.blocks:
+            x = block(x)
 
-        for i, block in enumerate(self.blocks):
-            x = block.forward(x, self.causal_mask[:T, :T])
-            self.cache[f'block_{i}_out'] = x
+        # Final layer norm and projection
+        x = self.ln_final(x)
+        logits = self.output_proj(x)
 
-        x = self.ln_final.forward(x)
-        self.cache['final_norm'] = x
-        logits = x @ self.output_proj
         return logits
 
-    def backward(self, dlogits):
-        B, T, V = dlogits.shape
-        D = self.d_model
+    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
+        """Generate new tokens"""
+        self.eval()
+        with torch.no_grad():
+            for _ in range(max_new_tokens):
+                # Crop to max_seq_len
+                idx_cond = idx[:, -self.max_seq_len:]
 
-        final_norm = self.cache['final_norm']
-        self.d_output_proj = final_norm.reshape(-1, D).T @ dlogits.reshape(-1, V)
+                # Forward pass
+                logits = self(idx_cond)
+                logits = logits[:, -1, :] / temperature
 
-        dx = dlogits @ self.output_proj.T
-        dx = self.ln_final.backward(dx)
+                # Top-k filtering
+                if top_k is not None:
+                    v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                    logits[logits < v[:, [-1]]] = -float('Inf')
 
-        for i in reversed(range(self.n_layer)):
-            dx = self.blocks[i].backward(dx)
+                # Softmax and sample
+                probs = F.softmax(logits, dim=-1)
+                idx_next = torch.multinomial(probs, num_samples=1)
 
-        x_indices = self.cache['x']
-        T = self.cache['T']
-        B = self.cache['B']
+                # Append
+                idx = torch.cat((idx, idx_next), dim=1)
 
-        self.d_pos_embedding[:T] += np.sum(dx, axis=0)
+        return idx
 
-        for b in range(B):
-            for t in range(T):
-                self.d_token_embedding[x_indices[b, t]] += dx[b, t]
-
-        return dx
-
-    def get_params(self):
-        params = [
-            (self.token_embedding, self.d_token_embedding),
-            (self.pos_embedding, self.d_pos_embedding),
-            (self.output_proj, self.d_output_proj)
-        ]
-        params.extend(self.ln_final.get_params())
-        for block in self.blocks:
-            params.extend(block.get_params())
-        return params
-
-    def zero_grad(self):
-        self.d_token_embedding.fill(0)
-        self.d_pos_embedding.fill(0)
-        self.d_output_proj.fill(0)
-        self.ln_final.zero_grad()
-        for block in self.blocks:
-            block.zero_grad()
-        self.cache = {}
-
-    def generate(self, prompt, max_new_tokens=100, temperature=0.8, top_k=40):
-        generated = list(prompt)
-
-        for _ in range(max_new_tokens):
-            context = generated[-self.max_seq_len:]
-            x = np.array([context])
-            logits = self.forward(x)
-
-            next_token_logits = logits[0, -1, :] / temperature
-
-            if top_k is not None:
-                indices = np.argsort(next_token_logits)[-top_k:]
-                mask = np.ones_like(next_token_logits) * -1e9
-                mask[indices] = 0
-                next_token_logits = next_token_logits + mask
-
-            probs = softmax(next_token_logits)
-            next_token = np.random.choice(len(probs), p=probs)
-            generated.append(next_token)
-
-        return np.array(generated)
+    def get_num_params(self):
+        return sum(p.numel() for p in self.parameters())

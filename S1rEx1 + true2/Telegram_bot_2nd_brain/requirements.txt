@@ -9,12 +9,12 @@ greenlet==3.0.3
 # PDF processing
 pypdf2==3.0.1
 # Image processing
-pillow==10.3.0
+pillow==12.1.1
 pytesseract==0.3.10
 # Environment variables
 python-dotenv==1.0.1
 # Async support
-aiohttp==3.9.5
+aiohttp==3.13.4
 # Data validation
 pydantic==2.7.0
 # Logging

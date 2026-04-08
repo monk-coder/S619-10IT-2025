@@ -1,1 +1,9 @@
-
+transformers>=4.40.0
+datasets
+peft
+bitsandbytes
+accelerate
+torch
+nltk
+scikit-learn
+huggingface_hub

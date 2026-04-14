@@ -1,0 +1,11 @@
+# LoRA Configuration
+r: 16
+lora_alpha: 32
+target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+lora_dropout: 0.1
+bias: "none"
+task_type: "QUESTION_ANS"

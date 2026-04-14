@@ -1,0 +1,11 @@
+# Training Arguments
+max_steps: 500
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 2
+learning_rate: 2.0e-4
+warmup_ratio: 0.1
+logging_steps: 25
+eval_steps: 100
+save_steps: 500
+fp16: true

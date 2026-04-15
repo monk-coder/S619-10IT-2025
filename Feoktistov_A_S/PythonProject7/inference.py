@@ -4,6 +4,8 @@
 import torch
 from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 from peft import PeftModel
+from google.colab import userdata
+from huggingface_hub import login
 
 
 def predict_answer(model, tokenizer, context, question):
@@ -42,7 +44,7 @@ def main():
     # Загружаем LoRA адаптер с Hugging Face
     model = PeftModel.from_pretrained(
         base_model,
-        "ваш-username/llama-3.2-1b-squad-lora"  # Замените на ваш username
+        "ваш-username/Alexander584"  # Замените на ваш username
     )
 
     tokenizer = AutoTokenizer.from_pretrained("ваш-username/llama-3.2-1b-squad-lora")

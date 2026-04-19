@@ -1,3 +1,8 @@
+
+##перенесен в main
+
+
+
 import matplotlib.pyplot as plt
 from nn import NeuralNetwork
 from utils import load_data

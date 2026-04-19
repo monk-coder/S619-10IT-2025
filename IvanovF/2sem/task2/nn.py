@@ -1,14 +1,19 @@
 import numpy as np
 
+INPUT_SIZE = 784
+HIDDEN_SIZE = 128
+OUTPUT_SIZE = 10
+DEFAULT_LR = 0.01
+WEIGHT_INIT_SCALE = 0.01
+
+
 class NeuralNetwork:
-    def __init__(self, input_size=784, hidden_size=128, output_size=10, lr=0.01):
+    def __init__(self, lr=DEFAULT_LR):
         self.lr = lr
-
-        self.W1 = np.random.randn(input_size, hidden_size) * 0.01
-        self.b1 = np.zeros((1, hidden_size))
-
-        self.W2 = np.random.randn(hidden_size, output_size) * 0.01
-        self.b2 = np.zeros((1, output_size))
+        self.W1 = np.random.randn(INPUT_SIZE, HIDDEN_SIZE) * WEIGHT_INIT_SCALE
+        self.b1 = np.zeros((1, HIDDEN_SIZE))
+        self.W2 = np.random.randn(HIDDEN_SIZE, OUTPUT_SIZE) * WEIGHT_INIT_SCALE
+        self.b2 = np.zeros((1, OUTPUT_SIZE))
 
     def relu(self, x):
         return np.maximum(0, x)
@@ -17,16 +22,14 @@ class NeuralNetwork:
         return (x > 0).astype(float)
 
     def softmax(self, x):
-        exp = np.exp(x - np.max(x, axis=1, keepdims=True))
-        return exp / np.sum(exp, axis=1, keepdims=True)
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
     def forward(self, X):
         self.Z1 = X @ self.W1 + self.b1
         self.A1 = self.relu(self.Z1)
-
         self.Z2 = self.A1 @ self.W2 + self.b2
         self.A2 = self.softmax(self.Z2)
-
         return self.A2
 
     def compute_loss(self, y_true, y_pred):
@@ -36,7 +39,6 @@ class NeuralNetwork:
 
     def backward(self, X, y_true):
         m = X.shape[0]
-
         y_one = np.zeros_like(self.A2)
         y_one[np.arange(m), y_true] = 1
 

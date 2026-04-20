@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<head>
+    <title>Главная</title>
+</head>
+<body>
+    <h1>Привет, {{ name }}!</h1>
+    <p>Это главная страница</p>
+    <ul>
+        <li><a href="/weather/{{ name }}">Узнать погоду</a></li>
+        <li><a href="/">Выйти и ввести другое имя</a></li>
+    </ul>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<head>
+    <title>Вход</title>
+</head>
+<body>
+    <h1>Добро пожаловать!</h1>
+    <p>Как тебя зовут?</p>
+
+    <form method="post">
+        <input type="text" name="username" placeholder="Введите ваше имя:" required/>
+        <button type="submit">Войти</button>
+    </form>
+</body>
+</html>

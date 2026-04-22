@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Главная</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🌤️</span>
+                <span>WeatherApp</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/" class="nav-link">Выход</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>Добро пожаловать, <span class="hero-name">{{ name }}</span>! 👋</h1>
+            <p>Ваш персональный помощник в мире погоды</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-value">10.000+</div>
+                <div class="stat-label">Городов в базе</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Точность прогноза</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Довольных пользователей</div>
+            </div>
+        </div>
+
+        <div class="action-prompt">
+            <p>Выберите действие, чтобы продолжить</p>
+        </div>
+
+        <div class="actions-grid">
+            <a href="/weather/{{ name }}" class="action-card">
+                <div class="action-icon">🌤️</div>
+                <h3>Узнать погоду</h3>
+                <p>Проверьте прогноз в любом городе мира</p>
+            </a>
+            <a href="/" class="action-card">
+                <div class="action-icon">🔄</div>
+                <h3>Сменить пользователя</h3>
+                <p>Войти под другим именем</p>
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>🌤️ WeatherApp — ваш надёжный помощник</p>
+            <p>⚡ Данные обновляются в реальном времени</p>
+        </div>
+    </footer>
+</body>
+</html>

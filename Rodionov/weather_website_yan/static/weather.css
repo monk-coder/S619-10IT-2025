@@ -1,0 +1,308 @@
+:root {
+    --primary: #6366f1;
+    --white: #ffffff;
+    --dark: #1e293b;
+    --gray: #64748b;
+    --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --border-radius: 24px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.logo span:first-child {
+    font-size: 2rem;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--gray);
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+/* ОСНОВНОЙ КОНТЕЙНЕР — НОРМАЛЬНЫЕ РАЗМЕРЫ */
+.container {
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    flex: 1;
+}
+
+/* ПРИВЕТСТВИЕ */
+.weather-hero {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+}
+
+.weather-hero h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+}
+
+.weather-hero span {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.weather-hero p {
+    color: var(--gray);
+    font-size: 1rem;
+}
+
+/* ФОРМА ПОИСКА */
+.search-card {
+    background: var(--white);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.search-form {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.search-form input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-form button {
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+}
+
+.search-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+/* КАРТОЧКА ПОГОДЫ — ФИКСИРОВАННЫЕ РАЗМЕРЫ */
+.weather-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-xl);
+}
+
+.weather-card h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* СЕТКА 2x2 — НЕ РАЗЪЕЗЖАЕТСЯ */
+.weather-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.weather-item {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 1rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.weather-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.weather-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+.weather-desc {
+    grid-column: span 2;
+    text-align: center;
+    padding-top: 1rem;
+    font-size: 1rem;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 1rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* ОШИБКА */
+.error-card {
+    background: #fee;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #ef4444;
+    font-weight: 500;
+}
+
+/* КНОПКИ НАВИГАЦИИ */
+.nav-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    flex: 1;
+    text-decoration: none;
+    padding: 1rem;
+    text-align: center;
+    border-radius: 1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-back {
+    background: var(--white);
+    color: var(--primary);
+}
+
+.btn-exit {
+    background: #ef4444;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* ФУТЕР — БЕЗ КОПИРАЙТА */
+.footer {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--gray);
+    margin-top: 2rem;
+}
+
+/* АДАПТИВНОСТЬ */
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .weather-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .weather-desc {
+        grid-column: span 1;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
+
+    .nav-buttons {
+        flex-direction: column;
+    }
+
+    .weather-card h2 {
+        font-size: 1.4rem;
+    }
+
+    .weather-value {
+        font-size: 1.2rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .nav-links {
+        justify-content: center;
+    }
+}

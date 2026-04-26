@@ -1,129 +1,131 @@
-#!/usr/bin/env python3
-import argparse, os, json, time
 import numpy as np
-from tqdm import tqdm
+import argparse
+import json
+import os
+import sys
+import time
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-from data import load_data, TokenDataset, get_dataloader, train_tokenizer, load_tokenizer
-from transformer import TransformerLM
-from optim import Adam
-from utils import cross_entropy_loss, cross_entropy_backward
+_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _DIR)
+sys.path.insert(0, os.path.join(_DIR, "task3"))
+from model import TransformerLM, loss_fn, AdamOptimizer
+from dataset import build_dataset
+from bpe_tokenizer import BPETokenizer
+from utils import load_data, split_corpus
 
 
-def train(model: TransformerLM, train_ds, val_ds, args):
-    opt = Adam(model.params(), lr=args.lr)
-    history = {'train_loss': [], 'val_loss': [], 'time': []}
-    
-    for epoch in range(args.epochs):
-        model_train_loss = 0
-        n_batches = 0
-        start = time.time()
-        
-        for xb, yb in tqdm(get_dataloader(train_ds, args.batch_size), desc=f'Epoch {epoch+1}'):
-            logits = model.forward(xb, training=True)
-            loss, probs = cross_entropy_loss(logits, yb)
-            grad = cross_entropy_backward(probs, yb)
-            grads = model.backward(grad)
-            opt.step(model.params(), grads)
-            model_train_loss += loss
-            n_batches += 1
-        
-        val_loss = 0
-        n_val = 0
-        for xb, yb in get_dataloader(val_ds, args.batch_size, shuffle=False):
-            logits = model.forward(xb, training=False)
-            loss, _ = cross_entropy_loss(logits, yb)
-            val_loss += loss * len(xb)
-            n_val += len(xb)
-        val_loss /= max(1, n_val)
-        
-        avg_train_loss = model_train_loss / max(1, n_batches)
-        history['train_loss'].append(avg_train_loss)
-        history['val_loss'].append(val_loss)
-        history['time'].append(time.time() - start)
-        print(f"Epoch {epoch+1}: train={avg_train_loss:.4f}, val={val_loss:.4f}, t={history['time'][-1]:.1f}s")
-        
-        if (epoch + 1) % args.save_every == 0:
-            np.savez(os.path.join(args.out_dir, f'ckpt_ep{epoch+1}.npz'), **model.params())
-            with open(os.path.join(args.out_dir, 'history.json'), 'w') as f:
-                json.dump(history, f)
-    
-    plt.figure()
-    plt.plot(history['train_loss'], label='train')
-    plt.plot(history['val_loss'], label='val')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid()
-    plt.savefig(os.path.join(args.out_dir, 'loss.png'))
-    plt.close()
-    return history
+def get_batch(x, y, batch_size, rng):
+    idx = rng.randint(0, len(x), size=batch_size)
+    return x[idx], y[idx]
+
+
+def eval_loss(model, x, y, batch_size=32, n_batches=10, rng=None):
+    if rng is None:
+        rng = np.random.RandomState(0)
+    losses = []
+    for _ in range(n_batches):
+        xb, yb = get_batch(x, y, batch_size, rng)
+        logits = model.forward(xb)
+        loss, _ = loss_fn(logits, yb)
+        losses.append(float(loss))
+    return float(np.mean(losses))
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default='data.txt')
-    parser.add_argument('--out_dir', type=str, default='out')
-    parser.add_argument('--seq_len', type=int, default=128)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--lr', type=float, default=3e-4)
-    parser.add_argument('--d_model', type=int, default=128)
-    parser.add_argument('--n_layer', type=int, default=2)
-    parser.add_argument('--n_head', type=int, default=2)
-    parser.add_argument('--d_ff', type=int, default=256)
-    parser.add_argument('--save_every', type=int, default=5)
-    parser.add_argument('--vocab_size', type=int, default=1000)
-    parser.add_argument('--tokenizer_path', type=str, default='tokenizer.json')
-    parser.add_argument('--force_retrain', action='store_true', help='Force retrain tokenizer')
+    parser.add_argument("--data", type=str, default="data.txt")
+    parser.add_argument("--tokenizer", type=str, default="bpe_model.json")
+    parser.add_argument("--n_merges", type=int, default=2000)
+    parser.add_argument("--d_model", type=int, default=128)
+    parser.add_argument("--n_head", type=int, default=4)
+    parser.add_argument("--n_layer", type=int, default=2)
+    parser.add_argument("--T", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--steps_per_epoch", type=int, default=100)
+    parser.add_argument("--save", type=str, default="gpt_model")
+    parser.add_argument("--plot", type=str, default="loss_curve.png")
     args = parser.parse_args()
-    
-    os.makedirs(args.out_dir, exist_ok=True)
-    
-    print("Loading data...")
-    text = load_data(args.data)
-    
-    # Force retrain if requested
-    if args.force_retrain and os.path.exists(args.tokenizer_path):
-        print(f"Removing old tokenizer: {args.tokenizer_path}")
-        os.remove(args.tokenizer_path)
-    
-    if os.path.exists(args.tokenizer_path):
-        print(f"Loading tokenizer from {args.tokenizer_path}")
-        tokenizer = load_tokenizer(args.tokenizer_path)
-    else:
-        print("Training new tokenizer...")
-        tokenizer = train_tokenizer(text, args.vocab_size, args.tokenizer_path)
-    
-    print(f"'\\n' in vocab: {'\\n' in tokenizer.token2id}")
-    print(f"Vocab size: {len(tokenizer)}")
-    
-    print("Tokenizing data...")
-    all_tokens = np.array(tokenizer.encode(text), dtype=np.int32)
-    print(f"Total tokens: {len(all_tokens)}")
-    
-    split = int(len(all_tokens) * 0.9)
-    train_tokens = all_tokens[:split]
-    val_tokens = all_tokens[split:]
-    
-    train_ds = TokenDataset(train_tokens, args.seq_len)
-    val_ds = TokenDataset(val_tokens, args.seq_len)
-    
-    print(f"Train samples: {len(train_ds)}, Val samples: {len(val_ds)}")
-    
-    model = TransformerLM(
-        vocab_size=len(tokenizer),
-        max_seq_len=args.seq_len,
-        d_model=args.d_model,
-        n_layer=args.n_layer,
-        n_head=args.n_head,
-        d_ff=args.d_ff,
-        dropout=0.1
-    )
-    
-    print(f"Model params: {sum(p.size for p in model.params().values()):,}")
-    train(model, train_ds, val_ds, args)
+
+    if not os.path.exists(args.tokenizer):
+        print(f"токенайзер не найден, обучаем BPE ({args.n_merges} merges)...")
+        from bpe_tokenizer import BPETokenizer
+        lines = load_data(args.data)
+        train_lines, _ = split_corpus(lines)
+        tok = BPETokenizer()
+        tok.train(train_lines, num_merges=args.n_merges)
+        tok.save(args.tokenizer)
+        print(f"токенайзер сохранён: {args.tokenizer}, vocab={len(tok.vocab)}")
+
+    print("строим датасет...")
+    x_train, y_train, x_val, y_val, tokenizer = build_dataset(args.data, args.tokenizer, args.T)
+    print(f"train blocks: {len(x_train)}, val blocks: {len(x_val)}")
+
+    vocab_size = len(tokenizer.vocab)
+    print(f"vocab_size={vocab_size}, d_model={args.d_model}, n_head={args.n_head}, n_layer={args.n_layer}, T={args.T}")
+
+    rng = np.random.RandomState(42)
+    model = TransformerLM(vocab_size, args.d_model, args.n_head, args.n_layer, args.T)
+    optimizer = AdamOptimizer(model.params(), lr=args.lr, weight_decay=1e-2)
+
+    train_losses = []
+    val_losses = []
+
+    print("начинаем обучение...")
+    for epoch in range(1, args.epochs + 1):
+        t0 = time.time()
+        ep_losses = []
+
+        for step in tqdm(range(args.steps_per_epoch), desc=f"epoch {epoch}"):
+            xb, yb = get_batch(x_train, y_train, args.batch_size, rng)
+
+            logits = model.forward(xb)
+            loss, dlogits = loss_fn(logits, yb)
+
+            model.zero_grad()
+            model.backward(dlogits)
+            optimizer.step()
+
+            ep_losses.append(float(loss))
+
+        train_loss = float(np.mean(ep_losses))
+        val_loss = eval_loss(model, x_val, y_val, rng=rng)
+
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+
+        dt = time.time() - t0
+        print(f"epoch {epoch:3d} | train_loss={train_loss:.4f} | val_loss={val_loss:.4f} | {dt:.1f}s")
+
+    model.save(args.save)
+    print(f"модель сохранена: {args.save}.npz")
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(train_losses, label="train loss")
+    plt.plot(val_losses, label="val loss")
+    plt.xlabel("epoch")
+    plt.ylabel("loss")
+    plt.title("Training curve")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(args.plot)
+    print(f"график сохранён: {args.plot}")
+
+    cfg = {
+        "vocab_size": vocab_size,
+        "d_model": args.d_model,
+        "n_head": args.n_head,
+        "n_layer": args.n_layer,
+        "T": args.T,
+    }
+    with open(args.save + "_config.json", "w") as f:
+        json.dump(cfg, f, indent=2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

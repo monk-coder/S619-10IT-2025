@@ -1,0 +1,7 @@
+{
+  "vocab_size": 2129,
+  "d_model": 128,
+  "n_head": 4,
+  "n_layer": 2,
+  "T": 64
+}

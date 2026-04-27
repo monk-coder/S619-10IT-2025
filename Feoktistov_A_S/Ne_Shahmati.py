@@ -73,6 +73,7 @@ class Pieces:
     def __init__(self, i, j, widgets):
         self.able = []
         widgets = widgets
+
     def pawn(self, i, j, widgets):
         button = widgets[i][j]
         text = button.text()
@@ -92,8 +93,9 @@ class Pieces:
             if button.text() != "":
                 pass
             else:
-                button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                self.append(button)
+                if  str(widgets[i+t][j].text()) == "":
+                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
+                    self.append(button)
 
         for l in range(3):
             button = widgets[i+t][j + l - 1]
@@ -317,6 +319,7 @@ class Pieces:
                 if check == True:
                     button.setStyleSheet("""background-color: red;font-size: 40px;""")
                     self.append(button)
+
     def piece_last(self,i,j,widgets):
         button = widgets[i][j]
         self.append(button)
@@ -439,10 +442,11 @@ class Desk(QWidget):
                                                                                                      pieces, able))
                 self.layout.addWidget(button, i, j)
 
-
     def movement(self, i, j, widgets, button, clicked, pieces, able):
         piece = str(widgets[i][j].text())
         print(piece, "movement")
+        white = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️", "👮🏻‍♂️"]
+        black = ["👨🏿‍🦽", "🐎", "🚴🏿‍♂️", "🧕🏿", "🤴🏿","👳🏿‍♂️"]
         global doubleClick, turn
 
         def reset():
@@ -455,11 +459,11 @@ class Desk(QWidget):
                     else:
                         color = "#B58863"
                     button.setStyleSheet(f"""
-                        background-color: {color};
-                        font-size: 40px;
-                        font-weight: bold;
-                        text-align: center;
-                    """)
+                            background-color: {color};
+                            font-size: 40px;
+                            font-weight: bold;
+                            text-align: center;
+                        """)
                     button.setFixedSize(50, 50)
 
         def is_able(able, i, j, is_able):
@@ -479,34 +483,37 @@ class Desk(QWidget):
                 print("пусто")
                 pass
             else:
-                doubleClick = True
                 button = widgets[i][j]
                 text = button.text()
-                clicked.append(text)
-                clicked.append([i, j])
+                if (turn == True and text in white) or (turn == False and text in black):
+                    print("")
+                    clicked.append(text)
+                    clicked.append([i, j])
 
-                if text == "👳🏿‍♂️" or text == "👮🏻‍♂️":
-                    Pieces.pawn(able,i, j, widgets)
+                    if text == "👳🏿‍♂️" or text == "👮🏻‍♂️":
+                        Pieces.pawn(able,i,j,widgets)
 
-                if text == "🐎" or text == "🔫":
-                    Pieces.horse(able,i,j,widgets)
+                    if text == "🐎" or text == "🔫":
+                        Pieces.horse(able,i,j,widgets)
 
-                if text == "🚔" or text == "👨🏿‍🦽":
-                    Pieces.rook(able,i,j,widgets)
+                    if text == "🚔" or text == "👨🏿‍🦽":
+                        Pieces.rook(able,i,j,widgets)
 
-                if text == "🧕🏿" or text == "👩🏻‍🍳":
-                    Pieces.queen(able,i,j,widgets)
+                    if text == "🧕🏿" or text == "👩🏻‍🍳":
+                        Pieces.queen(able,i,j,widgets)
 
-                if text == "🤴🏿" or text == "👨🏻‍⚖️":
-                    Pieces.king(able,i,j,widgets)
+                    if text == "🤴🏿" or text == "👨🏻‍⚖️":
+                        Pieces.king(able,i,j,widgets)
 
-                if text == "🚴🏿‍♂️" or text == "💂🏻‍♂️":
-                    Pieces.piece_last(able,i,j,widgets)
+                    if text == "🚴🏿‍♂️" or text == "💂🏻‍♂️":
+                        Pieces.piece_last(able,i,j,widgets)
 
-                button.setText("*")
-                turn = False
-                if text == "":
-                    print("ergefd")
+                    button.setText("*")
+                    doubleClick = True
+                    if text == "":
+                        print("ergefd")
+                else:
+                    print("Чужой ход")
 
         else:
             is_able_to = is_able(able, i, j, is_able)
@@ -520,17 +527,16 @@ class Desk(QWidget):
                 button = widgets[i][j]
                 text2 = str(clicked[0])
                 if button.text() == "🤴🏿" or button.text() == "👨🏻‍⚖️":
-                    print("GAME OVER")
+                    print("GAME OVER.")
                     if  button.text() == "👨🏻‍⚖️":
-                        t = "niggers"
+                        t = "NIGGERS"
                     else:
-                        t = "Good guys"
-
+                        t = "GOOD GUYS"
                     msg_box = QMessageBox()
                     msg_box.setWindowTitle("SYSTEM")
-                    msg_box.setText(f"GAME OVER  TEAM {t} WON")
+                    msg_box.setText(f"GAME OVER. TEAM {t} WON")
                     msg_box.exec()
-
+                turn = not turn
 
                 button.setText(text2)
                 print(clicked)

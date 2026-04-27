@@ -5,11 +5,13 @@ from PySide6.QtWidgets import QLabel, QPushButton, QGridLayout, QProgressBar, QS
 from symtable import Class
 import time
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QGridLayout, QLabel
+from PySide6.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 import random
 
 doubleClick = False
+widgets = [[],[],[],[],[],[],[],[]]
+turn = True
 
 pieces = [
     ["👨🏿‍🦽", "🐎", "🚴🏿‍♂️", "🧕🏿", "🤴🏿", "🚴🏿‍♂️", "🐎", "👨🏿‍🦽"],
@@ -21,42 +23,6 @@ pieces = [
     ["👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️", "👮🏻‍♂️"],
     ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️", "💂🏻‍♂️", "🔫", "🚔"]
 ]
-
-
-class window(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setGeometry(300, 200, 200, 50)
-        self.setWindowTitle("НЕ Шахматы")
-        self.layout = QGridLayout()
-        self.layout.setSpacing(0)
-        self.setLayout(self.layout)
-        button = QPushButton("ДЕПОРТИРОВАТЬ")
-        button.setStyleSheet(f"""
-                            background-color: red;
-                            font-size: 10px;
-                            font-weight: bold;
-                            text-align: center;
-                        """)
-        button.setFixedSize(200, 50)
-        button.clicked.connect(lambda: deportirovat(pieces, widgets))
-        self.layout.addWidget(button, 0, 0)
-
-
-def deportirovat(pieces, widgets):
-    print("ДЕПОРТИРОВАН")
-    r = random.randint(0, 64)
-    print(r)
-    print(pieces)
-    piece = pieces[r // 8][r % 8]
-    print(piece)
-    if piece == "️👨🏿‍🦽" or piece == "🐎" or piece == "🚴🏿‍♂️" or piece == "🧕🏿" or piece == "🤴🏿" or piece == "👳🏿‍♂️":
-        pieces[r // 8].pop(r % 8)
-        pieces[r // 8].insert(r % 8, "")
-    else:
-        pass
-    desk = Desk()
-    return pieces, desk
 
 
 def able_check(t, button,i,j):
@@ -74,16 +40,44 @@ def able_check(t, button,i,j):
                 print("Выход за пределы поля")
     return check
 
+def deportirovat():
+    global widgets
+    print("ДЕПОРТИРОВАН")
+    cicle = True
+    n = 0
+    while cicle == True:
+        n = n + 1
+        if n > 47:
+            break
+        else:
+            r = random.randint(0, 7)
+            col = random.randint(0, 7)
+            print(r)
+            button = widgets[r][col]
+            print(button.text())
+            if button.text() == "💂🏻‍♂️" or button.text() == "🚔" or button.text() == "🔫" or button.text() == "👩🏻‍🍳" or button.text() == "👮🏻‍♂️" or button.text() == "" or button.text() == "👨🏻‍⚖️" or button.text() == "🤴🏿":
+                text = "Нет фигур для депортации"
+                button_text = "-"
+            else:
+                text = "Фигура депортирована"
+                cicle = False
+                button_text = button.text()
+                button.setText("")
+
+    msg_box = QMessageBox()
+    msg_box.setWindowTitle("⚠️ ДЕПОРТАЦИЯ")
+    msg_box.setText(f"{text} {button_text}")
+    msg_box.exec()
 
 class Pieces:
     def __init__(self, i, j, widgets):
         self.able = []
-
+        widgets = widgets
     def pawn(self, i, j, widgets):
         button = widgets[i][j]
         text = button.text()
         self.append(button)
-        if text == "🐎" or text == "🚴🏿‍♂️" or text == "🧕🏿" or text == "🤴🏿" or text == "👳🏿‍♂️" or text == "👨🏿‍🦽":
+        if text == "👳🏿‍♂️":
             t = 1
         else:
             t = -1
@@ -93,6 +87,14 @@ class Pieces:
         else:
             print("self.team = -1")
         print(self,"able1")
+        if i == 1 and t == 1 or i == 6 and t == -1:
+            button = widgets[i+(2*t)][j]
+            if button.text() != "":
+                pass
+            else:
+                button.setStyleSheet("""background-color: red;font-size: 40px;""")
+                self.append(button)
+
         for l in range(3):
             button = widgets[i+t][j + l - 1]
             if l-1 == 0:
@@ -315,7 +317,6 @@ class Pieces:
                 if check == True:
                     button.setStyleSheet("""background-color: red;font-size: 40px;""")
                     self.append(button)
-
     def piece_last(self,i,j,widgets):
         button = widgets[i][j]
         self.append(button)
@@ -372,7 +373,6 @@ class Pieces:
             if button.text() != "":
                 break
 
-
     def able_check(self,t,button):
         if t == 1:
             able = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️","👮🏻‍♂️",""]
@@ -382,6 +382,27 @@ class Pieces:
             if button.text() == able[g]:
                 check = True
         return check
+
+class window(QWidget):
+    def __init__(self):
+        super().__init__()
+        global able, widgets
+        self.setGeometry(600, 200, 200, 50)
+        self.setWindowTitle("НЕ Шахматы")
+        self.layout = QGridLayout()
+        self.layout.setSpacing(0)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.setLayout(self.layout)
+        button = QPushButton("ДЕПОРТИРОВАТЬ")
+        button.setStyleSheet(f"""
+                            background-color: red;
+                            font-size: 10px;
+                            font-weight: bold;
+                            text-align: center;
+                        """)
+        button.setFixedSize(200, 50)
+        button.clicked.connect(deportirovat)
+        self.layout.addWidget(button, 0, 0)
 
 class Desk(QWidget):
     print(doubleClick)
@@ -394,7 +415,6 @@ class Desk(QWidget):
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
         clicked = []
-        widgets = [[],[],[],[],[],[],[],[]]
         able = []
         print(doubleClick)
         for i in range(8):
@@ -419,10 +439,11 @@ class Desk(QWidget):
                                                                                                      pieces, able))
                 self.layout.addWidget(button, i, j)
 
+
     def movement(self, i, j, widgets, button, clicked, pieces, able):
         piece = str(widgets[i][j].text())
         print(piece, "movement")
-        global doubleClick
+        global doubleClick, turn
 
         def reset():
             print("reset")
@@ -451,6 +472,8 @@ class Desk(QWidget):
                     print("НЕТ")
             return is_able_to
 
+        text = button.text()
+        print("turn1",turn)
         if doubleClick == False:
             if piece == "":
                 print("пусто")
@@ -481,7 +504,7 @@ class Desk(QWidget):
                     Pieces.piece_last(able,i,j,widgets)
 
                 button.setText("*")
-
+                turn = False
                 if text == "":
                     print("ergefd")
 
@@ -496,6 +519,19 @@ class Desk(QWidget):
                 button0.setText("")
                 button = widgets[i][j]
                 text2 = str(clicked[0])
+                if button.text() == "🤴🏿" or button.text() == "👨🏻‍⚖️":
+                    print("GAME OVER")
+                    if  button.text() == "👨🏻‍⚖️":
+                        t = "niggers"
+                    else:
+                        t = "Good guys"
+
+                    msg_box = QMessageBox()
+                    msg_box.setWindowTitle("SYSTEM")
+                    msg_box.setText(f"GAME OVER  TEAM {t} WON")
+                    msg_box.exec()
+
+
                 button.setText(text2)
                 print(clicked)
                 reset()
@@ -507,9 +543,9 @@ class Desk(QWidget):
                 print(i,j)
                 print("2305738947934845769834765")
 
-
 game = QApplication()
 desk = Desk()
-window = window()
 desk.show()
+window = window()
+window.show()
 sys.exit(game.exec())

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Регистрация</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="logo">🌤️</div>
+            <h1>Создать аккаунт</h1>
+            <p>Зарегистрируйтесь, чтобы пользоваться погодой</p>
+
+            {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                <div class="input-group">
+                    <label>👤 Имя пользователя</label>
+                    <input type="text" name="username" placeholder="Придумайте имя" required>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Пароль</label>
+                    <input type="password" name="password" placeholder="Не менее 4 символов" required>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Подтверждение пароля</label>
+                    <input type="password" name="confirm_password" placeholder="Повторите пароль" required>
+                </div>
+                <button type="submit" class="auth-btn">✨ Зарегистрироваться</button>
+            </form>
+
+            <div class="auth-link">
+                Уже есть аккаунт? <a href="/login">Войти</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

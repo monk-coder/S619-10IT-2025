@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Погода</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='weather.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-emoji">🌤️</span>
+                <span>WeatherApp</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/profile/{{ name }}" class="nav-link">Профиль</a>
+                <a href="/logout" class="nav-link">🚪 Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>
+                <span class="hero-text">Прогноз погоды</span>
+                <span class="hero-emoji">🌡️</span>
+            </h1>
+            <p>{{ name }}, узнайте погоду в любом городе мира</p>
+        </div>
+
+        <div class="search-card">
+            <form method="post" class="search-form">
+                <input type="text" name="city" placeholder="Введите город, например: Moscow, London, Tokyo" required value="{{ city if city else '' }}">
+                <button type="submit" class="search-btn">🔍 Найти</button>
+            </form>
+        </div>
+
+        {% if weather %}
+            <div class="weather-result-card">
+                <h2>📍 {{ city }}</h2>
+                <div class="weather-info-grid">
+                    <div class="weather-info-item">
+                        <div class="weather-info-label">🌡️ Температура</div>
+                        <div class="weather-info-value">{{ weather.temp }}°C</div>
+                    </div>
+                    <div class="weather-info-item">
+                        <div class="weather-info-label">🤔 Ощущается как</div>
+                        <div class="weather-info-value">{{ weather.feels_like }}°C</div>
+                    </div>
+                    <div class="weather-info-item">
+                        <div class="weather-info-label">💧 Влажность</div>
+                        <div class="weather-info-value">{{ weather.humidity }}%</div>
+                    </div>
+                    <div class="weather-info-item">
+                        <div class="weather-info-label">📊 Давление</div>
+                        <div class="weather-info-value">{{ weather.pressure }} мм рт. ст.</div>
+                    </div>
+                    <div class="weather-description">
+                        {{ weather.description }}
+                    </div>
+                </div>
+            </div>
+        {% elif error %}
+            <div class="empty-state-card">
+                <div class="empty-icon">⚠️</div>
+                <h3>{{ error }}</h3>
+                <p>Попробуйте ввести другое название города</p>
+            </div>
+        {% else %}
+            <div class="empty-state-card">
+                <div class="empty-icon">🔍</div>
+                <h3>Начните поиск погоды</h3>
+                <p>Введите название города выше, чтобы увидеть прогноз</p>
+                <div class="popular-cities">
+                    <span>Популярные города:</span>
+                    <div class="city-chips">
+                        <a href="#" onclick="setCity('Moscow')">Москва</a>
+                        <a href="#" onclick="setCity('London')">Лондон</a>
+                        <a href="#" onclick="setCity('Tokyo')">Токио</a>
+                        <a href="#" onclick="setCity('Paris')">Париж</a>
+                        <a href="#" onclick="setCity('New York')">Нью-Йорк</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tips-card">
+                <h3>💡 Советы по погоде</h3>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <span>☀️</span>
+                        <span>Не забудьте солнцезащитный крем</span>
+                    </div>
+                    <div class="tip-item">
+                        <span>🌧️</span>
+                        <span>Возьмите зонт на всякий случай</span>
+                    </div>
+                    <div class="tip-item">
+                        <span>❄️</span>
+                        <span>Одевайтесь теплее</span>
+                    </div>
+                    <div class="tip-item">
+                        <span>🌡️</span>
+                        <span>Пейте больше воды</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="action-buttons">
+            <a href="/profile/{{ name }}" class="btn btn-primary">👤 Мой профиль</a>
+            <a href="/main/{{ name }}" class="btn btn-secondary">← На главную</a>
+            <a href="/logout" class="btn btn-exit">🚪 Выйти</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>🌤️ WeatherApp — ваш надёжный помощник</p>
+            <p>⚡ Данные обновляются в реальном времени</p>
+        </div>
+    </footer>
+
+    <script>
+        function setCity(city) {
+            document.querySelector('input[name="city"]').value = city;
+            document.querySelector('.search-form button').click();
+        }
+    </script>
+</body>
+</html>

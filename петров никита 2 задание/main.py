@@ -4,6 +4,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 from bpe_tokenizer import BPETokenizer
 
+def find_data_file(start_dir, target_folder='0', target_file='data.txt'):
+    """
+    Ищет файл target_folder/target_file, поднимаясь вверх по дереву каталогов.
+    Возвращает абсолютный путь или None, если не найден.
+    """
+    current = os.path.abspath(start_dir)
+    while True:
+        candidate = os.path.join(current, target_folder, target_file)
+        if os.path.exists(candidate):
+            return candidate
+        parent = os.path.dirname(current)
+        if parent == current:  # Достигли корня файловой системы
+            break
+        current = parent
+    return None
+
 def load_data(filepath):
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"Файл не найден: {filepath}")
@@ -22,11 +38,10 @@ def evaluate_tokenizer(tokenizer, val_data):
     lengths = []
     errors = 0
 
-    for text in val_data:
+    for text in val_
         encoded = tokenizer.encode(text)
         decoded = tokenizer.decode(encoded)
         
-        # Строгая проверка условия
         if decoded != text:
             errors += 1
             
@@ -65,39 +80,4 @@ def plot_results(results):
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(merges, avg_lengths, marker='o', color='b')
-    plt.title('Average Token Length vs Num Merges')
-    plt.xlabel('Num Merges'); plt.ylabel('Avg Tokens per Sentence'); plt.grid(True)
-
-    plt.subplot(1, 2, 2)
-    plt.plot(merges, vocab_sizes, marker='s', color='orange')
-    plt.title('Vocabulary Size vs Num Merges')
-    plt.xlabel('Num Merges'); plt.ylabel('Vocab Size'); plt.grid(True)
-
-    plt.tight_layout()
-    plt.savefig('bpe_metrics.png')
-    plt.show()
-    print("График сохранен как bpe_metrics.png")
-
-def main():
-    # 📍 Надежное определение пути к data.txt
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.dirname(os.path.dirname(script_dir)) # BPE -> Личная папка -> Корень
-    data_path = os.path.join(repo_root, '0', 'data.txt')
-
-    print(f"🔍 Поиск данных: {data_path}")
-    if not os.path.exists(data_path):
-        local_path = os.path.join(script_dir, '0', 'data.txt')
-        if os.path.exists(local_path):
-            data_path = local_path
-        else:
-            print("❌ Ошибка: data.txt не найден. Проверьте структуру папок.")
-            return
-
-    print("📥 Загрузка данных...")
-    lines = load_data(data_path)
-    train_data, val_data = split_data(lines)
-    print(f"✅ Train: {len(train_data)} | Val: {len(val_data)}")
-
-    # 1. Финальное обучение
-    print("\n🚀 Обучение финальной
+   

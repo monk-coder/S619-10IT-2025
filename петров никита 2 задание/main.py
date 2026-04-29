@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from bpe_tokenizer import BPETokenizer
 
-
 def load_data(filepath):
     """Загрузка данных из файла."""
     if not os.path.exists(filepath):
@@ -16,16 +15,14 @@ def load_data(filepath):
     lines = [line.strip() for line in lines if line.strip()]
     return lines
 
-
 def split_data(lines, test_ratio=0.1):
     """Разбиение данных на обучающую и валидационную выборки."""
-    random.seed(42)  # Фиксируем seed для воспроизводимости
+    random.seed(42) # Фиксируем seed для воспроизводимости
     random.shuffle(lines)
     split_idx = int(len(lines) * (1 - test_ratio))
     train_data = lines[:split_idx]
     val_data = lines[split_idx:]
     return train_data, val_data
-
 
 def evaluate_tokenizer(tokenizer, val_data):
     """
@@ -35,8 +32,6 @@ def evaluate_tokenizer(tokenizer, val_data):
     lengths = []
     errors = 0
 
-    # Для демонстрации можно проверить первые 1000 строк, чтобы не ждать долго,
-    # но для строгой проверки лучше пройти по всем.
     for text in val_data:
         encoded = tokenizer.encode(text)
         decoded = tokenizer.decode(encoded)
@@ -44,8 +39,6 @@ def evaluate_tokenizer(tokenizer, val_data):
         # Строгая проверка равенства
         if decoded != text:
             errors += 1
-            # Можно раскомментировать для отладки конкретных ошибок:
-            # print(f"Error: Original: '{text}' | Decoded: '{decoded}'")
 
         total_len += len(encoded)
         lengths.append(len(encoded))
@@ -66,7 +59,6 @@ def evaluate_tokenizer(tokenizer, val_data):
         "long_tokenization_ratio": long_ratio
     }
 
-
 def experiment_with_merges(train_data, val_data, merge_counts=[0, 100, 500, 1000]):
     """Эксперимент с разным количеством слияний (merges)."""
     results = []
@@ -86,7 +78,6 @@ def experiment_with_merges(train_data, val_data, merge_counts=[0, 100, 500, 1000
         print(f"Errors (decode!=encode): {metrics['errors']}")
 
     return results
-
 
 def plot_results(results):
     """Построение графиков зависимости метрик от количества слияний."""
@@ -117,18 +108,29 @@ def plot_results(results):
     plt.show()
     print("График сохранен как bpe_metrics.png")
 
-
 def main():
-    # Путь к файлу данных согласно заданию (папка '0')
-    data_path = os.path.join('0', 'data.txt')
+    # --- НАДЕЖНОЕ ОПРЕДЕЛЕНИЕ ПУТИ К DATA.TXT ---
+    # Получаем абсолютный путь к текущему файлу (main.py)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Поднимаемся на 2 уровня вверх: 
+    # 1 уровень: из папки BPE -> в твою личную папку
+    # 2 уровень: из личной папки -> в корень репозитория (где лежит папка '0')
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    data_path = os.path.join(repo_root, '0', 'data.txt')
 
     print(f"Поиск данных по пути: {data_path}")
 
     if not os.path.exists(data_path):
-        print(f"Ошибка: Файл '{data_path}' не найден.")
-        print("Убедитесь, что вы запустили скрипт из корневой папки проекта,")
-        print("и что папка '0' с файлом 'data.txt' находится рядом с main.py.")
-        return
+        # Запасной вариант: если папка '0' лежит рядом с main.py (для локальных тестов)
+        local_path = os.path.join(script_dir, '0', 'data.txt')
+        if os.path.exists(local_path):
+            data_path = local_path
+            print(f"Файл найден локально: {data_path}")
+        else:
+            print(f"Ошибка: Файл '{data_path}' не найден.")
+            print("Убедитесь, что папка '0' с файлом 'data.txt' находится в корне репозитория.")
+            return
 
     print("Загрузка данных...")
     try:
@@ -179,7 +181,6 @@ def main():
     exp_results = experiment_with_merges(train_data, val_data, merge_counts=[0, 200, 500, 1000])
 
     plot_results(exp_results)
-
 
 if __name__ == "__main__":
     main()

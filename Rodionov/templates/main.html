@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Главная</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="particle-container" id="particles"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🌤️</span>
+                <span>WeatherApp</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link active">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/profile/{{ name }}" class="nav-link">Профиль</a>
+                <a href="/game/{{ name }}" class="nav-link">Игра 🎮</a>
+                <a href="/logout" class="nav-link">🚪 Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>Добро пожаловать, <span class="hero-name">{{ name }}</span>! <span class="emoji-fix">👋</span></h1>
+            <p>Ваш персональный помощник в мире погоды</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon">🪙</div>
+                <div class="stat-value">{{ coins }}</div>
+                <div class="stat-label">Монет</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔍</div>
+                <div class="stat-value">{{ remaining_searches }}/3</div>
+                <div class="stat-label">Поисков сегодня</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">😊</div>
+                <div class="stat-value" id="happy-users">{{ happy_users }}+</div>
+                <div class="stat-label">Довольных пользователей</div>
+            </div>
+        </div>
+
+        <div class="action-prompt">
+            <p>✨ Выберите действие, чтобы продолжить ✨</p>
+        </div>
+
+        <div class="actions-grid">
+            <a href="/weather/{{ name }}" class="action-card">
+                <div class="action-icon">🌤️</div>
+                <h3>Узнать погоду</h3>
+                <p>Проверьте прогноз в любом городе мира</p>
+            </a>
+            <a href="/profile/{{ name }}" class="action-card">
+                <div class="action-icon">👤</div>
+                <h3>Мой профиль</h3>
+                <p>Настройки и статистика</p>
+            </a>
+            <a href="/game/{{ name }}" class="action-card">
+                <div class="action-icon">🎮</div>
+                <h3>Мини-игра</h3>
+                <p>Заработай монеты для поиска погоды!</p>
+            </a>
+        </div>
+
+        <div class="rating-section">
+            <h3>⭐ Оцените наше приложение ⭐</h3>
+            <div class="average-rating">
+                <span class="average-stars" id="average-stars">
+                    {% for i in range((avg_rating|round(0))|int) %}★{% endfor %}
+                    {% for i in range(5 - (avg_rating|round(0))|int) %}☆{% endfor %}
+                </span>
+                <span class="average-score" id="average-score">{{ '%.1f'|format(avg_rating) if avg_rating else '0.0' }}</span>
+                <span class="vote-count" id="vote-count">({{ vote_count }} оценок)</span>
+            </div>
+            <div class="stars" id="stars">
+                <span data-value="1" class="star">★</span>
+                <span data-value="2" class="star">★</span>
+                <span data-value="3" class="star">★</span>
+                <span data-value="4" class="star">★</span>
+                <span data-value="5" class="star">★</span>
+            </div>
+            <p class="rating-message" id="rating-message"></p>
+            {% if user_voted %}
+                <p class="already-voted">✅ Вы уже оценили приложение</p>
+            {% endif %}
+        </div>
+
+        <div class="info-banner">
+            <div class="info-item">
+                <span>💡</span>
+                <span>У вас закончились поиски? Сыграйте в игру и заработайте монеты!</span>
+            </div>
+            <div class="info-item">
+                <span>🎮</span>
+                <span>5 монет = 1 дополнительный поиск погоды</span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>🌤️ WeatherApp — ваш надёжный помощник</p>
+            <p>⚡ Данные обновляются в реальном времени</p>
+            <p>🎮 Играйте и получайте больше прогнозов!</p>
+        </div>
+    </footer>
+
+    <script>
+        let userVoted = {{ user_voted|tojson|safe }};
+
+        if (!userVoted) {
+            const stars = document.querySelectorAll('.star');
+            const ratingMessage = document.getElementById('rating-message');
+
+            stars.forEach(star => {
+                star.addEventListener('click', async function() {
+                    if (userVoted) {
+                        ratingMessage.textContent = '❌ Вы уже голосовали!';
+                        ratingMessage.style.display = 'block';
+                        setTimeout(() => {
+                            ratingMessage.style.display = 'none';
+                        }, 2000);
+                        return;
+                    }
+
+                    const rating = this.getAttribute('data-value');
+
+                    stars.forEach(s => {
+                        s.classList.remove('active');
+                        if(parseInt(s.getAttribute('data-value')) <= parseInt(rating)) {
+                            s.classList.add('active');
+                        }
+                    });
+
+                    const response = await fetch('/rate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            rating: parseInt(rating),
+                            username: '{{ name }}'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    const messages = {
+                        1: '😔 Спасибо за честность!',
+                        2: '🙁 Спасибо за отзыв!',
+                        3: '😐 Спасибо!',
+                        4: '😊 Спасибо! Рады, что вам нравится',
+                        5: '🎉 Спасибо за высокую оценку!'
+                    };
+
+                    ratingMessage.textContent = messages[rating];
+                    ratingMessage.style.display = 'block';
+
+                    let starsHtml = '';
+                    for(let i = 0; i < Math.round(data.new_avg); i++) starsHtml += '★';
+                    for(let i = 0; i < 5 - Math.round(data.new_avg); i++) starsHtml += '☆';
+                    document.getElementById('average-stars').innerHTML = starsHtml;
+                    document.getElementById('average-score').textContent = data.new_avg.toFixed(1);
+                    document.getElementById('vote-count').textContent = `(${data.new_count} оценок)`;
+                    document.getElementById('happy-users').textContent = data.happy_users + '+';
+
+                    userVoted = true;
+
+                    setTimeout(() => {
+                        ratingMessage.style.display = 'none';
+                    }, 3000);
+                });
+            });
+        } else {
+            const starsElements = document.querySelectorAll('.star');
+            starsElements.forEach(star => {
+                star.style.cursor = 'not-allowed';
+                star.style.opacity = '0.5';
+            });
+        }
+
+        // Партиклы
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.setProperty('--duration', Math.random() * 10 + 5 + 's');
+                particle.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+</body>
+</html>

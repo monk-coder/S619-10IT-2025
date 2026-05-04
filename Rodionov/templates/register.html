@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Регистрация</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="logo">🌤️</div>
+            <h1>Создать аккаунт</h1>
+            <p>Зарегистрируйтесь, чтобы пользоваться погодой</p>
+
+            {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" id="registerForm">
+                <div class="input-group">
+                    <label>👤 Имя пользователя</label>
+                    <input type="text" name="username" placeholder="Придумайте имя" required id="username">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Пароль</label>
+                    <input type="password" name="password" placeholder="Не менее 8 символов" required id="password">
+                    <div class="password-strength" id="passwordStrength"></div>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Подтверждение пароля</label>
+                    <input type="password" name="confirm_password" placeholder="Повторите пароль" required id="confirmPassword">
+                    <div class="password-strength" id="confirmMessage"></div>
+                </div>
+                <button type="submit" class="auth-btn" id="submitBtn">✨ Зарегистрироваться</button>
+            </form>
+
+            <div class="auth-link">
+                Уже есть аккаунт? <a href="/login">Войти</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirmPassword');
+        const strengthDiv = document.getElementById('passwordStrength');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            let message = '';
+            let className = '';
+
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            if (password.length === 0) {
+                message = '';
+                className = '';
+            } else if (strength <= 2) {
+                message = '⚠️ Слабый пароль (минимум 8 символов)';
+                className = 'strength-weak';
+            } else if (strength <= 3) {
+                message = '⚠️ Средний пароль';
+                className = 'strength-medium';
+            } else {
+                message = '✅ Надёжный пароль';
+                className = 'strength-strong';
+            }
+
+            return { message, className, strength };
+        }
+
+        function checkPasswordsMatch() {
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
+
+            if (confirm.length === 0) {
+                confirmMessage.textContent = '';
+                return false;
+            }
+
+            if (password === confirm) {
+                confirmMessage.textContent = '✅ Пароли совпадают';
+                confirmMessage.className = 'password-strength strength-strong';
+                return true;
+            } else {
+                confirmMessage.textContent = '❌ Пароли не совпадают';
+                confirmMessage.className = 'password-strength strength-weak';
+                return false;
+            }
+        }
+
+        function updateSubmitButton() {
+            const password = passwordInput.value;
+            const strength = checkPasswordStrength(password);
+            const passwordsMatch = checkPasswordsMatch();
+
+            const isStrong = password.length >= 8 && strength.strength >= 3;
+            const isValid = isStrong && passwordsMatch && password.length > 0;
+
+            submitBtn.disabled = !isValid;
+        }
+
+        passwordInput.addEventListener('input', function() {
+            const strength = checkPasswordStrength(this.value);
+            strengthDiv.textContent = strength.message;
+            strengthDiv.className = 'password-strength ' + strength.className;
+            updateSubmitButton();
+        });
+
+        confirmInput.addEventListener('input', function() {
+            updateSubmitButton();
+        });
+
+        // Начальное состояние
+        updateSubmitButton();
+    </script>
+</body>
+</html>

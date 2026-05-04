@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Угадай флаг 🎮</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="particle-container" id="particles"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🎮</span>
+                <span>WeatherApp Game</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/profile/{{ name }}" class="nav-link">Профиль</a>
+                <a href="/game/{{ name }}" class="nav-link active">Игра 🎮</a>
+                <a href="/logout" class="nav-link">🚪 Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="two-columns">
+            <!-- Левая колонка - игра -->
+            <div class="game-column">
+                <div class="game-header">
+                    <div class="stat-card coin-card">
+                        <div class="stat-icon">🪙</div>
+                        <div class="stat-value" id="coinCount">{{ coins }}</div>
+                        <div class="stat-label">Монеты</div>
+                    </div>
+                    <div class="stat-card score-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="scoreCount">{{ game_score }}</div>
+                        <div class="stat-label">Правильных ответов</div>
+                    </div>
+                </div>
+
+                <div class="game-card">
+                    <h1 class="game-title">🌍 Угадай страну по флагу!</h1>
+                    <p class="game-desc">Правильный ответ = 🪙 <strong>5-15 монет</strong> | За ошибку тоже даём <strong>1-3 монеты</strong> 😊</p>
+
+                    <div class="flag-container">
+                        <div class="flag-display" id="flagDisplay">🇷🇺</div>
+                    </div>
+
+                    <div class="options-grid" id="optionsGrid">
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                    </div>
+
+                    <div id="message" class="message" style="display: none;"></div>
+
+                    <div class="action-buttons" id="actionButtons">
+                        <button class="next-btn" onclick="loadNextQuestion()" style="display: none;">
+                            <span>➡️</span> Следующий вопрос
+                        </button>
+                        <button class="reset-btn" onclick="resetGame()" style="display: none;">
+                            <span>🔄</span> Играть сначала
+                        </button>
+                    </div>
+                </div>
+
+                <div class="shop-card">
+                    <h3>🏪 Магазин погоды</h3>
+                    <p>Купи дополнительный поиск погоды за монеты</p>
+                    <button class="shop-btn" onclick="buySearch()">
+                        🪙 Купить поиск (5 монет)
+                    </button>
+                    <div id="shopMessage" class="shop-message"></div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - топ игроков -->
+            <div class="leaderboard-column">
+                <div class="leaderboard-card">
+                    <h2 class="leaderboard-title">🏆 Топ игроков</h2>
+                    <div class="leaderboard-list">
+                        {% for player in top_players %}
+                        <div class="leaderboard-item {% if player.username == name %}current-user{% endif %}">
+                            <div class="rank">{{ loop.index }}</div>
+                            <div class="player-info">
+                                <div class="player-name">
+                                    {% if player.username == name %}
+                                    👑 {{ player.username }}
+                                    {% else %}
+                                    👤 {{ player.username }}
+                                    {% endif %}
+                                </div>
+                                <div class="player-stats">
+                                    <span class="stat-badge">🏆 {{ player.game_score }}</span>
+                                    <span class="stat-badge">🪙 {{ player.coins }}</span>
+                                    <span class="stat-badge">🔍 {{ player.searches }}</span>
+                                </div>
+                            </div>
+                            {% if loop.index == 1 %}
+                            <div class="medal">🥇</div>
+                            {% elif loop.index == 2 %}
+                            <div class="medal">🥈</div>
+                            {% elif loop.index == 3 %}
+                            <div class="medal">🥉</div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="leaderboard-empty">
+                            <p>😢 Пока нет игроков</p>
+                            <p>Стань первым!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="leaderboard-footer">
+                        <div class="legend">
+                            <span>🏆 Правильные ответы</span>
+                            <span>🪙 Монеты</span>
+                            <span>🔍 Поисков</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <span>💡</span>
+                        <span>Монеты можно потратить на дополнительные поиски погоды!</span>
+                    </div>
+                    <div class="info-item">
+                        <span>⭐</span>
+                        <span>1 дополнительный поиск = 5 монет</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🎯</span>
+                        <span>В игре более 100 флагов разных стран мира!</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🏆</span>
+                        <span>Чем больше правильных ответов - тем выше в топе!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>🎮 Играй, зарабатывай монеты и получай больше прогнозов погоды!</p>
+    </footer>
+
+    <script>
+        let currentCorrectAnswer = '';
+        let canAnswer = true;
+        let coinCount = {{ coins }};
+        let scoreCount = {{ game_score }};
+
+        async function loadNextQuestion() {
+            canAnswer = true;
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message';
+
+            const nextBtn = document.querySelector('.next-btn');
+            const resetBtn = document.querySelector('.reset-btn');
+            nextBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'wrong');
+                btn.style.transform = '';
+            });
+
+            try {
+                const response = await fetch('/get_question');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('flagDisplay').textContent = data.flag_emoji;
+                    currentCorrectAnswer = data.correct;
+
+                    const options = data.options;
+                    const btns = document.querySelectorAll('.option-btn');
+                    btns.forEach((btn, index) => {
+                        btn.textContent = options[index];
+                        btn.setAttribute('data-value', options[index]);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading question:', error);
+                messageDiv.className = 'message message-error';
+                messageDiv.innerHTML = '⚠️ Ошибка загрузки вопроса. Попробуйте ещё раз.';
+                messageDiv.style.display = 'block';
+                canAnswer = true;
+            }
+        }
+
+        async function checkAnswer(selected, selectedElement) {
+            if (!canAnswer) return;
+
+            canAnswer = false;
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+
+            try {
+                const response = await fetch('/check_answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: '{{ name }}',
+                        selected: selected,
+                        correct: currentCorrectAnswer
+                    })
+                });
+
+                const data = await response.json();
+                const messageDiv = document.getElementById('message');
+                messageDiv.style.display = 'block';
+
+                buttons.forEach(btn => {
+                    if (btn.getAttribute('data-value') === currentCorrectAnswer) {
+                        btn.classList.add('correct');
+                    }
+                    if (btn.getAttribute('data-value') === selected && !data.is_correct) {
+                        btn.classList.add('wrong');
+                    }
+                });
+
+                if (data.is_correct) {
+                    messageDiv.className = 'message message-success';
+                    messageDiv.innerHTML = `
+                        <span class="message-icon">✅</span>
+                        <div class="message-content">
+                            <strong>Правильно!</strong> +${data.coins_earned} 🪙
+                            <small>Продолжай в том же духе!</small>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.className = 'message message-error';
+                    messageDiv.innerHTML = `
+                        <span class="message-icon">❌</span>
+                        <div class="message-content">
+                            <strong>Неправильно!</strong> Правильный ответ: ${data.correct_answer}
+                            <small>+${data.coins_earned} 🪙 за старание!</small>
+                        </div>
+                    `;
+                }
+
+                coinCount = data.new_coins;
+                scoreCount = data.new_score;
+                document.getElementById('coinCount').textContent = coinCount;
+                document.getElementById('scoreCount').textContent = scoreCount;
+
+                document.querySelector('.next-btn').style.display = 'inline-flex';
+                document.querySelector('.reset-btn').style.display = 'inline-flex';
+
+                const coinCard = document.querySelector('.coin-card');
+                coinCard.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    coinCard.style.transform = '';
+                }, 300);
+
+                // Обновляем топ игроков через 1 секунду
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error checking answer:', error);
+                canAnswer = true;
+                const messageDiv = document.getElementById('message');
+                messageDiv.className = 'message message-error';
+                messageDiv.innerHTML = '⚠️ Ошибка при проверке ответа';
+                messageDiv.style.display = 'block';
+            }
+        }
+
+        function resetGame() {
+            loadNextQuestion();
+        }
+
+        async function buySearch() {
+            try {
+                const response = await fetch('/buy_searches', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: '{{ name }}'
+                    })
+                });
+
+                const data = await response.json();
+                const shopMessage = document.getElementById('shopMessage');
+
+                if (data.success) {
+                    coinCount = data.new_coins;
+                    document.getElementById('coinCount').textContent = coinCount;
+                    shopMessage.className = 'shop-message shop-success';
+                    shopMessage.innerHTML = `✅ Покупка успешна! У вас осталось ${data.new_coins} 🪙. Доступно поисков: ${data.new_remaining}`;
+                    setTimeout(() => {
+                        shopMessage.innerHTML = '';
+                        shopMessage.className = 'shop-message';
+                    }, 5000);
+                } else {
+                    shopMessage.className = 'shop-message shop-error';
+                    shopMessage.innerHTML = `❌ ${data.error}`;
+                    setTimeout(() => {
+                        shopMessage.innerHTML = '';
+                        shopMessage.className = 'shop-message';
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error('Error buying search:', error);
+                const shopMessage = document.getElementById('shopMessage');
+                shopMessage.className = 'shop-message shop-error';
+                shopMessage.innerHTML = '❌ Ошибка при покупке';
+                setTimeout(() => {
+                    shopMessage.innerHTML = '';
+                    shopMessage.className = 'shop-message';
+                }, 5000);
+            }
+        }
+
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (canAnswer) {
+                    checkAnswer(this.getAttribute('data-value'), this);
+                }
+            });
+        });
+
+        loadNextQuestion();
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.setProperty('--duration', Math.random() * 10 + 5 + 's');
+                particle.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+</body>
+</html>

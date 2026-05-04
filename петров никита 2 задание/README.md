@@ -1,15 +1,12 @@
-# Byte Pair Encoding (BPE) Tokenizer Implementation
+# Neural Network from Scratch: MNIST Digit Classification
 
-This project implements a subword tokenizer using the Byte Pair Encoding algorithm from scratch using Python and NumPy.
+Реализация полносвязной нейронной сети для классификации рукописных цифр (0-9) на датасете MNIST. Все алгоритмы (forward, backprop, SGD, softmax, cross-entropy) реализованы вручную на `numpy`.
 
-## Requirements
+## 🚀 Быстрый старт
 
-- Python 3.8+
-- Dependencies listed in `requirements.txt`
+```bash
+# 1. Установите зависимости
+pip install -r requirements.txt
 
-## Installation
-
-1. Clone the repository.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+# 2. Запустите обучение
+python main.py

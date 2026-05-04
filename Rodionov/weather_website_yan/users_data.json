@@ -1,0 +1,37 @@
+{
+  "ян": {
+    "password": "ffe883ef27a53b0962d7be1044534475687916e398d7a1c1cd6e22d7bc1c95da",
+    "searches": 9,
+    "cities": [
+      "London",
+      "калище",
+      "Moscow",
+      "санкт петербург",
+      "Москва",
+      "Лондон"
+    ],
+    "favorite_city": null,
+    "registration_date": "04.05.2026",
+    "user_id": "67",
+    "coins": 100000045,
+    "daily_searches": 1,
+    "last_search_date": "04.05.2026",
+    "game_score": 20,
+    "free_searches": 0,
+    "last_daily_bonus": "04.05.2026"
+  },
+  "yanchikprime": {
+    "password": "488ba517ecbe334d80d9b03835604247e2415b5c7a64150bf10edc3505b477b3",
+    "searches": 4,
+    "cities": [
+      "New York"
+    ],
+    "favorite_city": "москва",
+    "registration_date": "04.05.2026",
+    "user_id": "9748",
+    "coins": 0,
+    "free_searches": 0,
+    "last_daily_bonus": "04.05.2026",
+    "game_score": 10
+  }
+}

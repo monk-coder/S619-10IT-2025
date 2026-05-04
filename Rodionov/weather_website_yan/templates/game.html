@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Угадай флаг 🎮</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/flag-service.js') }}"></script>
+    <style>
+        .flag-container {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 2rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .flag-image {
+            max-width: 100%;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+            transition: transform 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .flag-image:hover {
+            transform: scale(1.05);
+        }
+
+        .flag-emoji-fallback {
+            font-size: 8rem;
+            text-align: center;
+            animation: bounce 0.5s ease-out;
+        }
+
+        .flag-loading {
+            font-size: 1rem;
+            color: #64748b;
+            text-align: center;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            80% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .leaderboard-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .stats-mini {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-mini {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+        }
+
+        .shop-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: var(--transition);
+        }
+
+        .shop-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .shop-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .shop-card p {
+            color: var(--gray);
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .shop-btn {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .shop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .shop-message {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+        }
+
+        .shop-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .shop-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="particle-container" id="particles"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🎮</span>
+                <span>WeatherApp Game</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/profile/{{ name }}" class="nav-link">Профиль</a>
+                <a href="/game/{{ name }}" class="nav-link active">Игра 🎮</a>
+                <a href="/logout" class="nav-link">🚪 Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="two-columns">
+            <!-- Левая колонка - игра -->
+            <div class="game-column">
+                <div class="game-header">
+                    <div class="stat-card coin-card">
+                        <div class="stat-icon">🪙</div>
+                        <div class="stat-value" id="coinCount">{{ coins }}</div>
+                        <div class="stat-label">Монеты</div>
+                    </div>
+                    <div class="stat-card score-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="scoreCount">{{ game_score }}</div>
+                        <div class="stat-label">Правильных ответов</div>
+                    </div>
+                </div>
+
+                <div class="game-card">
+                    <h1 class="game-title">🌍 Угадай страну по флагу!</h1>
+                    <p class="game-desc">Правильный ответ = 🪙 <strong>10 монет</strong></p>
+
+                    <div class="flag-container">
+                        <img id="flagImage" class="flag-image" src="" alt="Country flag" style="display: none;">
+                        <div id="flagEmoji" class="flag-emoji-fallback" style="display: none;"></div>
+                        <div id="flagLoading" class="flag-loading">🏁 Загрузка флага...</div>
+                    </div>
+
+                    <div class="options-grid" id="optionsGrid">
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                        <button class="option-btn" data-value="">-</button>
+                    </div>
+
+                    <div id="message" class="message" style="display: none;"></div>
+
+                    <div class="action-buttons" id="actionButtons">
+                        <button class="next-btn" onclick="loadNextQuestion()" style="display: none;">
+                            <span>➡️</span> Следующий вопрос
+                        </button>
+                        <button class="reset-btn" onclick="resetGame()" style="display: none;">
+                            <span>🔄</span> Играть сначала
+                        </button>
+                    </div>
+                </div>
+
+                <div class="shop-card">
+                    <h3>🏪 Магазин погоды</h3>
+                    <p>Купи дополнительный поиск погоды за монеты</p>
+                    <button class="shop-btn" onclick="buySearch()">
+                        🪙 +1 поиск (100 монет)
+                    </button>
+                    <div id="shopMessage" class="shop-message"></div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - топ игроков -->
+            <div class="leaderboard-column">
+                <div class="leaderboard-card">
+                    <h2 class="leaderboard-title">🏆 Топ игроков</h2>
+                    <div class="leaderboard-list">
+                        {% for player in top_players %}
+                        <div class="leaderboard-item {% if player.username == name %}current-user{% endif %}">
+                            <div class="rank">{{ loop.index }}</div>
+                            <div class="player-info">
+                                <div class="player-name">
+                                    {% if player.username == name %}
+                                    👑 {{ player.username }}
+                                    {% else %}
+                                    👤 {{ player.username }}
+                                    {% endif %}
+                                </div>
+                                <div class="player-stats">
+                                    <span class="stat-badge">🏆 {{ player.game_score }}</span>
+                                    <span class="stat-badge">🪙 {{ player.coins }}</span>
+                                    <span class="stat-badge">🔍 {{ player.searches }}</span>
+                                </div>
+                            </div>
+                            {% if loop.index == 1 %}
+                            <div class="medal">🥇</div>
+                            {% elif loop.index == 2 %}
+                            <div class="medal">🥈</div>
+                            {% elif loop.index == 3 %}
+                            <div class="medal">🥉</div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="leaderboard-empty">
+                            <p>😢 Пока нет игроков</p>
+                            <p>Стань первым!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="leaderboard-footer">
+                        <div class="legend">
+                            <span>🏆 Правильные ответы</span>
+                            <span>🪙 Монеты</span>
+                            <span>🔍 Поисков</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <span>💡</span>
+                        <span>Монеты можно потратить на дополнительные поиски погоды!</span>
+                    </div>
+                    <div class="info-item">
+                        <span>⭐</span>
+                        <span>1 дополнительный поиск = 100 монет</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🎯</span>
+                        <span>В игре более 100 флагов разных стран мира!</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🏆</span>
+                        <span>Чем больше правильных ответов - тем выше в топе!</span>
+                    </div>
+                    <div class="info-item">
+                        <span>📦</span>
+                        <span>Можно накопить до 20 бесплатных поисков!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>🎮 Играй, зарабатывай монеты и получай больше прогнозов погоды!</p>
+        <p>📦 Каждый день +3 бесплатных поиска!</p>
+    </footer>
+
+    <script>
+        let currentCorrectAnswer = '';
+        let currentIsoCode = '';
+        let canAnswer = true;
+        let coinCount = {{ coins }};
+        let scoreCount = {{ game_score }};
+
+        async function loadNextQuestion() {
+            canAnswer = true;
+
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message';
+
+            const nextBtn = document.querySelector('.next-btn');
+            const resetBtn = document.querySelector('.reset-btn');
+            nextBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+
+            // Показываем загрузку
+            const flagImg = document.getElementById('flagImage');
+            const flagEmoji = document.getElementById('flagEmoji');
+            const flagLoading = document.getElementById('flagLoading');
+
+            flagImg.style.display = 'none';
+            flagEmoji.style.display = 'none';
+            flagLoading.style.display = 'block';
+            flagLoading.innerHTML = '🏁 Загрузка флага...';
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'wrong');
+                btn.style.transform = '';
+            });
+
+            try {
+                const response = await fetch('/get_question');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentCorrectAnswer = data.correct;
+                    currentIsoCode = data.flag_iso;
+
+                    // Пытаемся загрузить флаг через универсальный сервис
+                    if (typeof flagService !== 'undefined') {
+                        const flagUrl = await flagService.loadFlag(currentIsoCode, currentCorrectAnswer);
+
+                        if (flagUrl) {
+                            // Загружаем изображение
+                            flagImg.onload = () => {
+                                flagLoading.style.display = 'none';
+                                flagImg.style.display = 'block';
+                            };
+                            flagImg.onerror = () => {
+                                // Если картинка не грузится, показываем эмодзи
+                                flagEmoji.textContent = data.flag_emoji;
+                                flagLoading.style.display = 'none';
+                                flagEmoji.style.display = 'block';
+                            };
+                            flagImg.src = flagUrl;
+                        } else {
+                            // Если нет URL, показываем эмодзи
+                            flagEmoji.textContent = data.flag_emoji;
+                            flagLoading.style.display = 'none';
+                            flagEmoji.style.display = 'block';
+                        }
+                    } else {
+                        // Если сервис не загрузился, показываем эмодзи
+                        flagEmoji.textContent = data.flag_emoji;
+                        flagLoading.style.display = 'none';
+                        flagEmoji.style.display = 'block';
+                    }
+
+                    const options = data.options;
+                    const btns = document.querySelectorAll('.option-btn');
+                    btns.forEach((btn, index) => {
+                        btn.textContent = options[index];
+                        btn.setAttribute('data-value', options[index]);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading question:', error);
+                flagLoading.innerHTML = '⚠️ Ошибка загрузки вопроса';
+                showMessage('error', 'Ошибка загрузки вопроса. Попробуйте ещё раз.');
+                canAnswer = true;
+            }
+        }
+
+        function showMessage(type, text) {
+            const messageDiv = document.getElementById('message');
+            if (type === 'error') {
+                messageDiv.className = 'message message-error';
+            } else {
+                messageDiv.className = 'message message-success';
+            }
+            messageDiv.innerHTML = text;
+            messageDiv.style.display = 'block';
+        }
+
+        async function checkAnswer(selected, selectedElement) {
+            if (!canAnswer) return;
+
+            canAnswer = false;
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+
+            try {
+                const response = await fetch('/check_answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: '{{ name }}',
+                        selected: selected,
+                        correct: currentCorrectAnswer
+                    })
+                });
+
+                const data = await response.json();
+                const messageDiv = document.getElementById('message');
+                messageDiv.style.display = 'block';
+
+                buttons.forEach(btn => {
+                    if (btn.getAttribute('data-value') === currentCorrectAnswer) {
+                        btn.classList.add('correct');
+                    }
+                    if (btn.getAttribute('data-value') === selected && !data.is_correct) {
+                        btn.classList.add('wrong');
+                    }
+                });
+
+                if (data.is_correct) {
+                    messageDiv.className = 'message message-success';
+                    messageDiv.innerHTML = `
+                        <span class="message-icon">✅</span>
+                        <div class="message-content">
+                            <strong>Правильно!</strong> +${data.coins_earned} 🪙
+                            <small>Продолжай в том же духе!</small>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.className = 'message message-error';
+                    messageDiv.innerHTML = `
+                        <span class="message-icon">❌</span>
+                        <div class="message-content">
+                            <strong>Неправильно!</strong> Правильный ответ: ${data.correct_answer}
+
+                        </div>
+                    `;
+                }
+
+                coinCount = data.new_coins;
+                scoreCount = data.new_score;
+                document.getElementById('coinCount').textContent = coinCount;
+                document.getElementById('scoreCount').textContent = scoreCount;
+
+                document.querySelector('.next-btn').style.display = 'inline-flex';
+                document.querySelector('.reset-btn').style.display = 'inline-flex';
+
+                const coinCard = document.querySelector('.coin-card');
+                coinCard.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    coinCard.style.transform = '';
+                }, 300);
+
+                // Обновляем топ через 2 секунды
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error checking answer:', error);
+                canAnswer = true;
+                const messageDiv = document.getElementById('message');
+                messageDiv.className = 'message message-error';
+                messageDiv.innerHTML = '⚠️ Ошибка при проверке ответа';
+                messageDiv.style.display = 'block';
+            }
+        }
+
+        function resetGame() {
+            loadNextQuestion();
+        }
+
+        async function buySearch() {
+            try {
+                const response = await fetch('/buy_searches', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: '{{ name }}'
+                    })
+                });
+
+                const data = await response.json();
+                const shopMessage = document.getElementById('shopMessage');
+
+                if (data.success) {
+                    coinCount = data.new_coins;
+                    document.getElementById('coinCount').textContent = coinCount;
+                    shopMessage.className = 'shop-message shop-success';
+                    shopMessage.innerHTML = `✅ Покупка успешна! +1 поиск. У вас осталось ${data.new_coins} 🪙. Всего доступно: ${data.new_available} поисков`;
+                    setTimeout(() => {
+                        shopMessage.innerHTML = '';
+                        shopMessage.className = 'shop-message';
+                    }, 5000);
+                } else {
+                    shopMessage.className = 'shop-message shop-error';
+                    shopMessage.innerHTML = `❌ ${data.error}`;
+                    setTimeout(() => {
+                        shopMessage.innerHTML = '';
+                        shopMessage.className = 'shop-message';
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error('Error buying search:', error);
+                const shopMessage = document.getElementById('shopMessage');
+                shopMessage.className = 'shop-message shop-error';
+                shopMessage.innerHTML = '❌ Ошибка при покупке';
+                setTimeout(() => {
+                    shopMessage.innerHTML = '';
+                    shopMessage.className = 'shop-message';
+                }, 5000);
+            }
+        }
+
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (canAnswer) {
+                    checkAnswer(this.getAttribute('data-value'), this);
+                }
+            });
+        });
+
+        loadNextQuestion();
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.setProperty('--duration', Math.random() * 10 + 5 + 's');
+                particle.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherApp | Профиль</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🌤️</span>
+                <span>WeatherApp</span>
+            </div>
+            <div class="nav-links">
+                <a href="/main/{{ name }}" class="nav-link">Главная</a>
+                <a href="/weather/{{ name }}" class="nav-link">Погода</a>
+                <a href="/profile/{{ name }}" class="nav-link active">Профиль</a>
+                <a href="/game/{{ name }}" class="nav-link">Игра 🎮</a>
+                <a href="/logout" class="nav-link">🚪 Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="profile-header">
+            <div class="avatar">
+                👤
+            </div>
+            <h1>Профиль пользователя <span class="username">{{ name }}</span></h1>
+            <p class="member-since">📅 Зарегистрирован: {{ registration_date }}</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🔍</div>
+                <div class="stat-value">{{ searches }}</div>
+                <div class="stat-label">Всего запросов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-value">{{ cities_visited }}</div>
+                <div class="stat-label">Городов проверено</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎁</div>
+                <div class="stat-value">{{ free_searches }}</div>
+                <div class="stat-label">Доступно поисков</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value">
+                    {% if user_rating %}
+                        {{ user_rating }}.0
+                    {% else %}
+                        0.0
+                    {% endif %}
+                </div>
+                <div class="stat-label">Моя оценка</div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <h2 class="section-title">
+                <span>📋</span> Личная информация
+            </h2>
+            <div class="info-row">
+                <span class="info-label">👤 Имя пользователя</span>
+                <span class="info-value">{{ name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">🆔 ID пользователя</span>
+                <span class="info-value">#{{ user_id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">📅 Дата регистрации</span>
+                <span class="info-value">{{ registration_date }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">✅ Статус</span>
+                <span class="info-value">Активен</span>
+            </div>
+            <div class="info-row" id="favorite-row">
+                <span class="info-label">❤️ Любимый город</span>
+                <span class="info-value" id="favorite-city-display">{{ favorite_city if favorite_city else 'Не выбран' }}</span>
+                <button class="edit-btn" onclick="openCityModal()">Изменить</button>
+            </div>
+        </div>
+
+        <div class="profile-card" id="favorite-weather-card" style="display: none;">
+            <h2 class="section-title">
+                <span>🌡️</span> Погода в <span id="fav-city-name">{{ favorite_city }}</span>
+            </h2>
+            <div id="favorite-weather-content">
+                <div class="loading-spinner">⏳ Загрузка погоды...</div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <h2 class="section-title">
+                <span>📊</span> Статистика активности
+            </h2>
+            <div class="weather-stats">
+                <div class="weather-stat-item">
+                    <div class="weather-stat-label">🔥 Активность</div>
+                    <div class="weather-stat-value">
+                        {% if searches > 50 %}
+                            Очень высокая
+                        {% elif searches > 20 %}
+                            Высокая
+                        {% elif searches > 5 %}
+                            Средняя
+                        {% else %}
+                            Низкая
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="weather-stat-item">
+                    <div class="weather-stat-label">🌍 Уникальных городов</div>
+                    <div class="weather-stat-value">{{ cities_visited }}</div>
+                </div>
+                <div class="weather-stat-item">
+                    <div class="weather-stat-label">❤️ Любимый город</div>
+                    <div class="weather-stat-value">{{ favorite_city if favorite_city else 'Не указан' }}</div>
+                </div>
+                <div class="weather-stat-item">
+                    <div class="weather-stat-label">🎁 Накоплено поисков</div>
+                    <div class="weather-stat-value">{{ free_searches }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/weather/{{ name }}" class="btn btn-primary">🌤️ Узнать погоду</a>
+            <a href="/game/{{ name }}" class="btn btn-game">🎮 Играть и заработать</a>
+            <a href="/main/{{ name }}" class="btn btn-secondary">← На главную</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>🌤️ WeatherApp — твой надёжный помощник</p>
+        <p>🎮 Играй, зарабатывай монеты и получай больше прогнозов!</p>
+        <p>📦 Каждый день +3 бесплатных поиска!</p>
+        <p>💡 Смена любимого города стоит 1 поиск</p>
+    </footer>
+
+    <div id="cityModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:2rem; border-radius:20px; max-width:400px; width:90%;">
+            <h3 style="margin-bottom:1rem;">❤️ Выберите любимый город</h3>
+            <p style="margin-bottom:1rem; color:#64748b; font-size:0.9rem;">
+                💡 Смена города стоит <strong>1 поиск</strong><br>
+                У вас доступно: <strong id="availableSearches">{{ free_searches }}</strong> поисков
+            </p>
+            <input type="text" id="favoriteCityInput" placeholder="Введите название города" style="width:100%; padding:0.75rem; margin:1rem 0; border:2px solid #e2e8f0; border-radius:12px; font-size:1rem;">
+            <div id="changeError" style="color:#ef4444; font-size:0.85rem; margin-bottom:1rem; display:none;"></div>
+            <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                <button onclick="closeCityModal()" style="padding:0.5rem 1rem; background:#e2e8f0; border:none; border-radius:8px; cursor:pointer;">Отмена</button>
+                <button onclick="saveFavoriteCity()" id="saveCityBtn" style="padding:0.5rem 1rem; background:linear-gradient(135deg, #2563eb, #8b5cf6); color:white; border:none; border-radius:8px; cursor:pointer;">Сохранить (1 🎁)</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .btn-game {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white !important;
+        }
+        .btn-game:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+    </style>
+
+    <script>
+        const favoriteCity = '{{ favorite_city }}';
+        let currentFreeSearches = {{ free_searches }};
+
+        if (favoriteCity && favoriteCity !== 'None') {
+            document.getElementById('favorite-weather-card').style.display = 'block';
+            loadFavoriteWeather();
+        }
+
+        async function loadFavoriteWeather() {
+            const response = await fetch('/get_favorite_weather/{{ name }}');
+            const data = await response.json();
+
+            if (data.success) {
+                const weather = data.weather;
+                let iconHtml = '';
+
+                if (weather.description.includes('ясно')) iconHtml = '☀️';
+                else if (weather.description.includes('облач')) iconHtml = '⛅';
+                else if (weather.description.includes('дожд')) iconHtml = '🌧️';
+                else if (weather.description.includes('снег')) iconHtml = '❄️';
+                else iconHtml = '🌤️';
+
+                document.getElementById('favorite-weather-content').innerHTML = `
+                    <div class="favorite-weather-card">
+                        <div class="favorite-weather-icon">${iconHtml}</div>
+                        <div class="favorite-weather-temp">${weather.temp}°C</div>
+                        <div class="favorite-weather-desc">${weather.description}</div>
+                        <div class="favorite-weather-details">
+                            <span>🤔 ${weather.feels_like}°C</span>
+                            <span>💧 ${weather.humidity}%</span>
+                            <span>📊 ${weather.pressure} мм рт. ст.</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('favorite-weather-content').innerHTML = `
+                    <div class="error-message">⚠️ Не удалось загрузить погоду</div>
+                `;
+            }
+        }
+
+        function openCityModal() {
+            document.getElementById('availableSearches').textContent = currentFreeSearches;
+            document.getElementById('changeError').style.display = 'none';
+            document.getElementById('favoriteCityInput').value = '';
+            document.getElementById('cityModal').style.display = 'flex';
+        }
+
+        function closeCityModal() {
+            document.getElementById('cityModal').style.display = 'none';
+            document.getElementById('favoriteCityInput').value = '';
+        }
+
+        async function saveFavoriteCity() {
+            const city = document.getElementById('favoriteCityInput').value;
+            const errorDiv = document.getElementById('changeError');
+
+            if (!city) {
+                errorDiv.textContent = '❌ Введите название города';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (currentFreeSearches <= 0) {
+                errorDiv.innerHTML = '❌ Недостаточно поисков! Сыграйте в игру или подождите завтрашнего бонуса.<br><a href="/game/{{ name }}" style="color:#f59e0b;">🎮 Заработать монеты в игре</a>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            // Блокируем кнопку на время запроса
+            const saveBtn = document.getElementById('saveCityBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ Сохранение...';
+
+            const response = await fetch('/update_favorite_city', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: '{{ name }}',
+                    city: city
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentFreeSearches = data.new_available;
+                // Обновляем отображение доступных поисков на странице
+                document.querySelectorAll('.stat-value').forEach(el => {
+                    if (el.closest('.stat-card')?.querySelector('.stat-label')?.textContent === 'Доступно поисков') {
+                        el.textContent = currentFreeSearches;
+                    }
+                });
+                // Обновляем в статистике активности
+                document.querySelectorAll('.weather-stat-value').forEach(el => {
+                    if (el.closest('.weather-stat-item')?.querySelector('.weather-stat-label')?.textContent === '🎁 Накоплено поисков') {
+                        el.textContent = currentFreeSearches;
+                    }
+                });
+
+                closeCityModal();
+                alert(`✅ ${data.message}`);
+                location.reload();
+            } else {
+                errorDiv.innerHTML = `❌ ${data.error}`;
+                errorDiv.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Сохранить (1 🎁)';
+            }
+        }
+    </script>
+</body>
+</html>

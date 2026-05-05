@@ -6,7 +6,7 @@ import sys
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _DIR)
-sys.path.insert(0, os.path.join(_DIR, "task3"))
+sys.path.insert(0, os.path.join(_DIR, "..", "task3"))
 from model import TransformerLM, softmax
 from bpe_tokenizer import BPETokenizer
 
@@ -50,7 +50,7 @@ def generate(model, tokenizer, prompt, max_new_tokens=50, temperature=1.0, top_k
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="gpt_model")
-    parser.add_argument("--tokenizer", type=str, default="bpe_model.json")
+    parser.add_argument("--tokenizer", type=str, default="../task3/bpe_model.json")
     parser.add_argument("--prompt", type=str, default="the quick")
     parser.add_argument("--max_new_tokens", type=int, default=50)
     parser.add_argument("--temperature", type=float, default=0.8)

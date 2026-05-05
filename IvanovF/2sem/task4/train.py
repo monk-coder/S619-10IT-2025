@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _DIR)
-sys.path.insert(0, os.path.join(_DIR, "task3"))
+sys.path.insert(0, os.path.join(_DIR, "..", "task3"))
 from model import TransformerLM, loss_fn, AdamOptimizer
 from dataset import build_dataset
 from bpe_tokenizer import BPETokenizer
@@ -37,8 +37,8 @@ def eval_loss(model, x, y, batch_size=32, n_batches=10, rng=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="data.txt")
-    parser.add_argument("--tokenizer", type=str, default="bpe_model.json")
+    parser.add_argument("--data", type=str, default="../task3/data.txt")
+    parser.add_argument("--tokenizer", type=str, default="../task3/bpe_model.json")
     parser.add_argument("--n_merges", type=int, default=2000)
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--n_head", type=int, default=4)

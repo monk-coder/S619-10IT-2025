@@ -4,7 +4,7 @@ import os
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _DIR)
-sys.path.insert(0, os.path.join(_DIR, "task3"))
+sys.path.insert(0, os.path.join(_DIR, "..", "task3"))
 from bpe_tokenizer import BPETokenizer
 from utils import load_data, split_corpus
 

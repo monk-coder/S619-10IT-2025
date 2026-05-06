@@ -99,3 +99,6 @@ python sample.py --prompt "The" --tokens 50 --d_model 384 --n_layer 4
 · Использовался текст объёмом 4.8 млн токенов (данные учителя)
 
 ```
+
+
+https://drive.google.com/drive/folders/1PFdFIOW7PzSvaK7_rHcS2A2RbZgBLCUx

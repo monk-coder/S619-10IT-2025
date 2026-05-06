@@ -1,17 +1,13 @@
-"""
-Инструменты для ReAct Agent.
-Каждый инструмент — функция с декоратором @tool для регистрации.
-"""
 import re
 import ast
 import operator
 import requests
 import os
-from typing import Callable, Dict
+import inspect
 from duckduckgo_search import DDGS
 
 
-def tool(func: Callable) -> Callable:
+def tool(func):
     """Декоратор для регистрации инструментов."""
     func.is_tool = True
     return func
@@ -19,16 +15,7 @@ def tool(func: Callable) -> Callable:
 
 @tool
 def web_search(query: str, max_results: int = 3) -> str:
-    """
-    Поиск информации в интернете через DuckDuckGo.
-    
-    Args:
-        query: Поисковый запрос
-        max_results: Максимальное количество результатов (по умолчанию 3)
-    
-    Returns:
-        Строка с заголовками и сниппетами результатов
-    """
+    """Поиск информации в интернете через DuckDuckGo."""
     try:
         results = []
         with DDGS() as ddgs:
@@ -37,204 +24,93 @@ def web_search(query: str, max_results: int = 3) -> str:
                 snippet = r.get('body', 'No snippet')
                 href = r.get('href', '')
                 results.append(f"• {title}: {snippet} [{href}]")
-        
-        if not results:
-            return "Ничего не найдено по запросу."
-        return "\n".join(results)
+        return "\n".join(results) if results else "Ничего не найдено."
     except Exception as e:
         return f"Ошибка поиска: {str(e)}"
 
 
 @tool
 def calculator(expression: str) -> str:
-    """
-    Безопасное вычисление математических выражений.
-    
-    Поддерживает: +, -, *, /, **, %, (), числа с плавающей точкой.
-    НЕ поддерживает: eval, exec, импорт, вызов функций.
-    
-    Args:
-        expression: Математическое выражение как строка
-    
-    Returns:
-        Результат вычисления или сообщение об ошибке
-    """
-    # Разрешённые операторы
+    """Безопасное вычисление математических выражений (+, -, *, /, **, %)."""
     operators = {
-        ast.Add: operator.add,
-        ast.Sub: operator.sub,
-        ast.Mult: operator.mul,
-        ast.Div: operator.truediv,
-        ast.Pow: operator.pow,
-        ast.Mod: operator.mod,
-        ast.USub: operator.neg,  # унарный минус
+        ast.Add: operator.add, ast.Sub: operator.sub,
+        ast.Mult: operator.mul, ast.Div: operator.truediv,
+        ast.Pow: operator.pow, ast.Mod: operator.mod,
+        ast.USub: operator.neg,
     }
-    
-    def _eval_node(node):
-        if isinstance(node, ast.Constant):  # Python 3.8+
-            if isinstance(node.value, (int, float)):
-                return node.value
-            raise ValueError("Только числа разрешены")
-        elif isinstance(node, ast.Num):  # Python <3.8
-            return node.n
-        elif isinstance(node, ast.BinOp):
-            left = _eval_node(node.left)
-            right = _eval_node(node.right)
-            op_type = type(node.op)
-            if op_type not in operators:
-                raise ValueError(f"Оператор {op_type} не разрешён")
-            return operators[op_type](left, right)
-        elif isinstance(node, ast.UnaryOp):
-            operand = _eval_node(node.operand)
-            op_type = type(node.op)
-            if op_type not in operators:
-                raise ValueError(f"Оператор {op_type} не разрешён")
-            return operators[op_type](operand)
-        else:
-            raise ValueError(f"Неподдерживаемый элемент: {type(node)}")
-    
+    def _eval(node):
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)): return node.value
+            raise ValueError("Только числа")
+        if isinstance(node, ast.BinOp):
+            return operators[type(node.op)](_eval(node.left), _eval(node.right))
+        if isinstance(node, ast.UnaryOp):
+            return operators[type(node.op)](_eval(node.operand))
+        raise ValueError(f"Неподдерживаемый элемент: {type(node)}")
     try:
-        # Очистка выражения от лишних символов
-        expr = expression.strip()
-        if not re.match(r'^[\d\s\+\-\*\/\%\.\(\)\*\*]+$', expr):
-            return "Ошибка: выражение содержит недопустимые символы"
-        
-        tree = ast.parse(expr, mode='eval')
-        result = _eval_node(tree.body)
-        
-        # Форматирование результата
-        if isinstance(result, float):
-            if result == int(result):
-                return str(int(result))
-            return f"{result:.4f}".rstrip('0').rstrip('.')
-        return str(result)
+        if not re.match(r'^[\d\s\+\-\*\/\%\.\(\)\*\*]+$', expression.strip()):
+            return "Ошибка: недопустимые символы"
+        result = _eval(ast.parse(expression.strip(), mode='eval').body)
+        return str(int(result)) if isinstance(result, float) and result.is_integer() else f"{result:.4f}".rstrip('0').rstrip('.')
     except ZeroDivisionError:
         return "Ошибка: деление на ноль"
-    except SyntaxError:
-        return "Ошибка: неверный синтаксис выражения"
-    except ValueError as e:
-        return f"Ошибка: {str(e)}"
     except Exception as e:
-        return f"Неизвестная ошибка: {str(e)}"
+        return f"Ошибка вычисления: {str(e)}"
 
 
 @tool
 def get_weather(city: str, days: int = 3) -> str:
-    """
-    Получение прогноза погоды через OpenWeatherMap API.
-    
-    Args:
-        city: Название города (на английском или с кодом страны, напр. "Moscow,ru")
-        days: Количество дней прогноза (1-5, по умолчанию 3)
-    
-    Returns:
-        Строка с прогнозом погоды
-    """
+    """Прогноз погоды через OpenWeatherMap API."""
     api_key = os.getenv("OPENWEATHER_API_KEY")
     if not api_key:
-        return "Ошибка: OPENWEATHER_API_KEY не настроен в .env"
-    
+        return "Ошибка: OPENWEATHER_API_KEY не задан в .env"
     try:
-        # Текущая погода
-        current_url = "http://api.openweathermap.org/data/2.5/weather"
-        params = {
-            "q": city,
-            "appid": api_key,
-            "units": "metric",
-            "lang": "ru"
-        }
-        resp = requests.get(current_url, params=params, timeout=10)
+        resp = requests.get("http://api.openweathermap.org/data/2.5/weather", 
+                            params={"q": city, "appid": api_key, "units": "metric", "lang": "ru"}, timeout=10)
         if resp.status_code != 200:
-            return f"Ошибка API: {resp.status_code} — {resp.text}"
-        
+            return f"Ошибка API: {resp.status_code}"
         data = resp.json()
-        temp = data['main']['temp']
-        feels_like = data['main']['feels_like']
-        desc = data['weather'][0]['description']
-        humidity = data['main']['humidity']
-        wind = data['wind']['speed']
-        
-        result = [f"📍 {data['name']}, {data['sys']['country']}"]
-        result.append(f"🌡️ Сейчас: {temp}°C (ощущается как {feels_like}°C)")
-        result.append(f"☁️ {desc.capitalize()}, влажность: {humidity}%")
-        result.append(f"💨 Ветер: {wind} м/с")
-        
-        # Прогноз на несколько дней (если доступно)
-        forecast_url = "http://api.openweathermap.org/data/2.5/forecast"
-        params["cnt"] = days * 8  # 8 запросов на день (каждые 3 часа)
-        resp = requests.get(forecast_url, params=params, timeout=10)
-        
-        if resp.status_code == 200:
-            forecast = resp.json()
-            result.append("\n📅 Прогноз:")
-            # Группируем по дням
+        lines = [
+            f" {data['name']}, {data['sys']['country']}",
+            f"️ Сейчас: {data['main']['temp']}°C (ощущается {data['main']['feels_like']}°C)",
+            f"☁️ {data['weather'][0]['description'].capitalize()}, влажность {data['main']['humidity']}%",
+            f"💨 Ветер: {data['wind']['speed']} м/с"
+        ]
+        # Прогноз
+        f_resp = requests.get("http://api.openweathermap.org/data/2.5/forecast",
+                              params={"q": city, "appid": api_key, "units": "metric", "cnt": days*8}, timeout=10)
+        if f_resp.status_code == 200:
             from collections import defaultdict
             daily = defaultdict(list)
-            for item in forecast['list']:
-                date = item['dt_txt'].split()[0]
-                temp_f = item['main']['temp']
-                daily[date].append(temp_f)
-            
-            for date, temps in list(daily.items())[:days]:
-                avg = sum(temps) / len(temps)
-                result.append(f"  {date}: ~{avg:.1f}°C")
-        
-        return "\n".join(result)
-    
-    except requests.Timeout:
-        return "Ошибка: тайм-аут запроса к погодному сервису"
-    except requests.RequestException as e:
-        return f"Ошибка сети: {str(e)}"
-    except KeyError as e:
-        return f"Ошибка парсинга ответа: отсутствует поле {e}"
+            for item in f_resp.json()['list']:
+                daily[item['dt_txt'].split()[0]].append(item['main']['temp'])
+            lines.append("\n📅 Прогноз:")
+            for d, temps in list(daily.items())[:days]:
+                lines.append(f"  {d}: ~{sum(temps)/len(temps):.1f}°C")
+        return "\n".join(lines)
     except Exception as e:
-        return f"Неизвестная ошибка: {str(e)}"
+        return f"Ошибка погоды: {str(e)}"
 
 
-# Реестр инструментов для быстрого доступа
-TOOLS: Dict[str, Callable] = {
-    name: func for name, func in locals().items()
-    if hasattr(func, 'is_tool') and func.is_tool
-}
+# Реестр инструментов
+TOOLS = {name: func for name, func in locals().items() if hasattr(func, 'is_tool')}
 
 
-def get_tool_schema(name: str) -> Dict:
-    """Возвращает схему инструмента для Ollama tool calling."""
+def get_tool_schema(name: str) -> dict:
+    """Возвращает JSON-схему инструмента для Ollama."""
     func = TOOLS.get(name)
-    if not func:
-        raise ValueError(f"Инструмент '{name}' не найден")
-    
-    # Парсинг docstring для описания
-    doc = func.__doc__ or ""
-    description = doc.split('\n')[0].strip() if doc else ""
-    
-    # Параметры (упрощённо — все инструменты принимают строки)
-    params = {
-        "type": "object",
-        "properties": {},
-        "required": []
-    }
-    
-    import inspect
+    if not func: raise ValueError(f"Инструмент '{name}' не найден")
+    params = {"type": "object", "properties": {}, "required": []}
     sig = inspect.signature(func)
-    for param_name, param in sig.parameters.items():
-        if param_name in ('max_results', 'days'):  # опциональные параметры
-            params["properties"][param_name] = {
-                "type": "integer",
-                "description": f"Опциональный параметр: {param_name}"
-            }
-        else:
-            params["properties"][param_name] = {
-                "type": "string",
-                "description": f"Параметр: {param_name}"
-            }
-            params["required"].append(param_name)
-    
+    for pname, param in sig.parameters.items():
+        params["properties"][pname] = {"type": "string", "description": f"Параметр: {pname}"}
+        if param.default is inspect.Parameter.empty:
+            params["required"].append(pname)
     return {
         "type": "function",
         "function": {
             "name": name,
-            "description": description,
+            "description": (func.__doc__ or "").split('\n')[0].strip(),
             "parameters": params
         }
     }

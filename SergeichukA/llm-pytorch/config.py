@@ -1,0 +1,22 @@
+import argparse
+
+def get_config():
+    parser = argparse.ArgumentParser(description="Production GPT Training Pipeline")
+    parser.add_argument('--data', type=str, default='../data.txt')
+    parser.add_argument('--tokenizer_path', type=str, default='../tokenizer.pkl')
+    parser.add_argument('--block_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--max_iters', type=int, default=5000)
+    parser.add_argument('--eval_interval', type=int, default=500)
+    parser.add_argument('--eval_iters', type=int, default=200)
+    parser.add_argument('--lr', type=float, default=6e-4)
+    parser.add_argument('--weight_decay', type=float, default=0.1)
+    parser.add_argument('--beta1', type=float, default=0.9)
+    parser.add_argument('--beta2', type=float, default=0.95)
+    parser.add_argument('--grad_clip', type=float, default=1.0)
+    parser.add_argument('--warmup_iters', type=int, default=500)
+    parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--dtype', type=str, default='float16', choices=['float32', 'float16', 'bfloat16'])
+    parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
+    parser.add_argument('--seed', type=int, default=1337)
+    return parser.parse_args()

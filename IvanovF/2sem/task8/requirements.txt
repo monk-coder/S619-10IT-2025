@@ -1,0 +1,6 @@
+langchain
+langchain-community
+ollama
+python-dotenv
+requests
+duckduckgo-search

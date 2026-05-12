@@ -1,16 +1,10 @@
-from PySide6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QLabel, QPushButton, QGridLayout, QProgressBar, QStylePainter
-from symtable import Class
-import time
-import sys
-from PySide6.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QPushButton, QGridLayout, QMessageBox
 from PySide6.QtCore import Qt
 import random
+import sys
 
 doubleClick = False
-widgets = [[],[],[],[],[],[],[],[]]
+widgets = [[], [], [], [], [], [], [], []]
 turn = True
 
 pieces = [
@@ -25,7 +19,7 @@ pieces = [
 ]
 
 
-def able_check(t, button,i,j):
+def able_check(t, button, i, j):
     if t == 1:
         able = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️", "👮🏻‍♂️", ""]
     else:
@@ -33,12 +27,13 @@ def able_check(t, button,i,j):
     check = False
     for g in range(7):
         if button.text() == able[g]:
-            if i>=0 and j>=0:
+            if i >= 0 and j >= 0:
                 check = True
                 print("успех")
             else:
                 print("Выход за пределы поля")
     return check
+
 
 def deportirovat():
     global widgets
@@ -69,327 +64,239 @@ def deportirovat():
     msg_box.setText(f"{text} {button_text}")
     msg_box.exec()
 
-class Pieces:
+class Piece:
     def __init__(self, i, j, widgets):
+        self.i = i
+        self.j = j
+        self.widgets = widgets
         self.able = []
-        widgets = widgets
 
-    def pawn(self, i, j, widgets):
-        button = widgets[i][j]
+    def get_able_moves(self):
+        return self.able
+
+    def is_able(self):
+        for button in self.able:
+            button.setStyleSheet("background-color: red;font-size: 40px;")
+
+    def reset(self):
+        for i in range(8):
+            for j in range(8):
+                button = self.widgets[i][j]
+                if (i + j) % 2 == 0:
+                    color = "#F0D9B5"
+                else:
+                    color = "#B58863"
+                button.setStyleSheet(f"""
+                    background-color: {color};
+                    font-size: 40px;
+                    font-weight: bold;
+                    text-align: center;
+                """)
+
+
+class Pawn(Piece):
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
         text = button.text()
-        self.append(button)
+
         if text == "👳🏿‍♂️":
             t = 1
         else:
             t = -1
 
-        if t == 1:
-            print("self.team = 1")
-        else:
-            print("self.team = -1")
-        print(self,"able1")
-        if i == 1 and t == 1 or i == 6 and t == -1:
-            button = widgets[i+(2*t)][j]
-            if button.text() != "":
-                pass
-            else:
-                if  str(widgets[i+t][j].text()) == "":
-                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                    self.append(button)
+        self.able.append(button)
+        if 0 <= self.i + t < 8:
+            if self.widgets[self.i + t][self.j].text() == "":
+                self.able.append(self.widgets[self.i + t][self.j])
 
-        for l in range(3):
-            button = widgets[i+t][j + l - 1]
-            if l-1 == 0:
-                if button.text() == "":
-                    button.setStyleSheet("""background-color: orange;font-size: 40px;""")
-                    self.append(button)
-            else:
-                if (button.text() == "🐎" or button.text() == "🚴🏿‍♂️" or button.text() == "🧕🏿" or button.text() == "🤴🏿" or button.text() == "👳🏿‍♂️" or
-                    button.text() == "👨🏿‍🦽") and t == -1:
-                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                    self.append(button)
+        if (t == 1 and self.i == 1) or (t == -1 and self.i == 6):
+            if 0 <= self.i + 2 * t < 8:
+                if self.widgets[self.i + t][self.j].text() == "" and self.widgets[self.i + 2 * t][self.j].text() == "":
+                    button = self.widgets[self.i + 2 * t][self.j]
+                    self.able.append(button)
+                    button.setStyleSheet(f"""
+                            background-color: orange;
+                            font-size: 10px;
+                            font-weight: bold;
+                            text-align: center;""")
 
-                if (button.text() == "👮🏻‍♂️" or button.text() == "🚔" or button.text() == "👩🏻‍🍳" or button.text() == "👨🏻‍⚖️" or button.text() == "🔫" or
-                    button.text() == "💂🏻‍♂️") and t == 1:
-                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                    self.append(button)
+        for l in [-1, 1]:
+            if 0 <= self.i + t < 8 and 0 <= self.j + l < 8:
+                target = self.widgets[self.i + t][self.j + l]
+                if target.text() != "":
+                    check = able_check(t, target, self.i + t, self.j + l)
+                    if check:
+                        self.able.append(target)
 
-    def horse(self,i, j, widgets):
-        text = widgets[i][j].text()
-        self.append(widgets[i][j])
-        print("piece horse")
+        if 0 <= self.i + t < 8:
+            if self.widgets[self.i + t][self.j].text() == "":
+                self.able.append(self.widgets[self.i + t][self.j])
+
+
+class Knight(Piece):
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
+        text = button.text()
+
         if text == "🐎":
             t = 1
         else:
             t = -1
-        positions = [[i+1,j+2],[i-1,j+2],[i-1,j-2],[i+1,j-2],[i+2,j-1],[i+2,j+1],[i-2,j+1],[i-2,j-1]]
-        for k in range(8):
-            i = positions[k][0]
-            j = positions[k][1]
-            if 0 <= i < 8 and 0 <= j < 8:
-                print(i,j,"horse")
-                print(i,j)
-                button = widgets[i][j]
-                check = able_check(t,button,i,j)
-                if check == True:
-                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                    self.append(button)
+        self.able.append(button)
+        positions = [[self.i + 1, self.j + 2], [self.i - 1, self.j + 2], [self.i - 1, self.j - 2],
+                     [self.i + 1, self.j - 2],
+                     [self.i + 2, self.j - 1], [self.i + 2, self.j + 1], [self.i - 2, self.j + 1],
+                     [self.i - 2, self.j - 1]]
 
-        print("horse", self)
-        button = widgets[i][j]
-        self.append(button)
+        for pos in positions:
+            i0 = pos[0]
+            j0 = pos[1]
+            if 0 <= i0 < 8 and 0 <= j0 < 8:
+                button_target = self.widgets[i0][j0]
+                check = able_check(t, button_target, i0, j0)
+                if check:
+                    self.able.append(button_target)
 
-    def queen(self, i, j, widgets):
-        button = widgets[i][j]
+
+class Rook(Piece):
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
         text = button.text()
-        print("piece queen")
+
+        if text == "🚔":
+            t = -1
+        else:
+            t = 1
+        self.able.append(button)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        for di, dj in directions:
+            for step in range(1, 8):
+                i0 = self.i + di * step
+                j0 = self.j + dj * step
+                if not (0 <= i0 < 8 and 0 <= j0 < 8):
+                    break
+
+                button_target = self.widgets[i0][j0]
+                check = able_check(t, button_target, i0, j0)
+                if check:
+                    self.able.append(button_target)
+
+                if button_target.text() != "":
+                    break
+
+class Bishop(Piece):
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
+        text = button.text()
+        self.able.append(button)
+        if text == "🚴🏿‍♂️":
+            t = 1
+        else:
+            t = -1
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+        for di, dj in directions:
+            for step in range(1, 8):
+                i0 = self.i + di * step
+                j0 = self.j + dj * step
+                if not (0 <= i0 < 8 and 0 <= j0 < 8):
+                    break
+                button_target = self.widgets[i0][j0]
+                check = able_check(t, button_target, i0, j0)
+                if check:
+                    self.able.append(button_target)
+                if button_target.text() != "":
+                    break
+
+
+class Queen(Piece):
+
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
+        text = button.text()
+
         if text == "🧕🏿":
             t = 1
         else:
             t = -1
-        self.append(button)
-        print(i, j, "queen")
+        self.able.append(button)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        for k in range(1, 8):
-            i0 = i - k
-            if i0 < 0:
-                break
-            button = widgets[i0][j]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i + k
-            if i0 >= 8:
-                break
-            button = widgets[i0][j]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            j0 = j - k
-            if j0 < 0:
-                break
-            button = widgets[i][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
+        for di, dj in directions:
+            for step in range(1, 8):
+                i0 = self.i + di * step
+                j0 = self.j + dj * step
+                if not (0 <= i0 < 8 and 0 <= j0 < 8):
+                    break
 
-        for k in range(1, 8):
-            j0 = j + k
-            if j0 >= 8:
-                break
-            button = widgets[i][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i - k
-            j0 = j - k
-            if i0 < 0 or j0 < 0:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i - k
-            j0 = j + k
-            if i0 < 0 or j0 >= 8:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i + k
-            j0 = j - k
-            if i0 >= 8 or j0 < 0:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i + k
-            j0 = j + k
-            if i0 >= 8 or j0 >= 8:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
+                button_target = self.widgets[i0][j0]
+                check = able_check(t, button_target, i0, j0)
+                if check:
+                    self.able.append(button_target)
 
-    def rook(self,i,j,widgets):
-        button = widgets[i][j]
-        self.append(button)
-        button = widgets[i][j]
-        if button.text() == "🚔":
-            t = -1
-        else:
-            t = 1
-        self.append(button)
-        for k in range(1, 8):
-            i0 = i - k
-            if i0 < 0:
-                break
-            button = widgets[i0][j]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k1 in range(1, 8):
-            i0 = i + k1
-            if i0 >= 8:
-                break
-            button = widgets[i0][j]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k2 in range(1, 8):
-            j0 = j + k2
-            if j0 >= 8:
-                break
-            else:
-                button = widgets[i][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k3 in range(1, 8):
-            j0 = j - k3
-            if j0 < 0:
-                break
-            button = widgets[i][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
+                if button_target.text() != "":
+                    break
 
-    def king(self,i,j,widgets):
-        button = widgets[i][j]
-        self.append(button)
-        if button.text()== "🤴🏿":
+
+class King(Piece):
+    def __init__(self, i, j, widgets):
+        super().__init__(i, j, widgets)
+        self.able_moves()
+
+    def able_moves(self):
+        self.able = []
+        button = self.widgets[self.i][self.j]
+        text = button.text()
+
+        if text == "🤴🏿":
             t = 1
         else:
             t = -1
-        positions = [[i + 1, j + 1], [i + 1, j], [i + 1, j - 1], [i, j - 1], [i, j + 1], [i - 1, j + 1],
-                     [i - 1, j - 1], [i - 1, j]]
-        for k in range(8):
-            i0 = positions[k][0]
-            j0 = positions[k][1]
-            if 8 > i0 >= 0 and 0 <= j0 < 8:
-                print(i, j, "king")
-                print(i, j)
-                button = widgets[i0][j0]
-                check = able_check(t, button, i0, j0)
-                if check == True:
-                    button.setStyleSheet("""background-color: red;font-size: 40px;""")
-                    self.append(button)
 
-    def piece_last(self,i,j,widgets):
-        button = widgets[i][j]
-        self.append(button)
-        if button.text() == "🚴🏿‍♂️":
-            t = 1
-        else:
-            t = -1
-        for k in range(1, 8):
-            i0 = i - k
-            j0 = j - k
-            if i0 < 0 or j0 < 0:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i - k
-            j0 = j + k
-            if i0 < 0 or j0 >= 8:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i + k
-            j0 = j - k
-            if i0 >= 8 or j0 < 0:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
-        for k in range(1, 8):
-            i0 = i + k
-            j0 = j + k
-            if i0 >= 8 or j0 >= 8:
-                break
-            button = widgets[i0][j0]
-            check = able_check(t, button, i, j)
-            if check:
-                button.setStyleSheet("background-color: red;font-size: 40px;")
-                self.append(button)
-            if button.text() != "":
-                break
+        positions = [[self.i + 1, self.j + 1], [self.i + 1, self.j], [self.i + 1, self.j - 1], [self.i, self.j - 1],
+                     [self.i, self.j + 1], [self.i - 1, self.j + 1], [self.i - 1, self.j - 1], [self.i - 1, self.j]]
+        self.able.append(button)
+        for pos in positions:
+            i0 = pos[0]
+            j0 = pos[1]
+            if 0 <= i0 < 8 and 0 <= j0 < 8:
+                button_target = self.widgets[i0][j0]
+                check = able_check(t, button_target, i0, j0)
+                if check:
+                    self.able.append(button_target)
 
-    def able_check(self,t,button):
-        if t == 1:
-            able = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️","👮🏻‍♂️",""]
-        else:
-            able = ["👨🏿‍🦽", "🐎", "🚴🏿‍♂️", "🧕🏿", "🤴🏿","","👳🏿‍♂️"]
-        for g in range(7):
-            if button.text() == able[g]:
-                check = True
-        return check
 
 class window(QWidget):
     def __init__(self):
         super().__init__()
-        global able, widgets
         self.setGeometry(600, 200, 200, 50)
         self.setWindowTitle("НЕ Шахматы")
         self.layout = QGridLayout()
@@ -397,7 +304,7 @@ class window(QWidget):
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setLayout(self.layout)
         button = QPushButton("ДЕПОРТИРОВАТЬ")
-        button.setStyleSheet(f"""
+        button.setStyleSheet("""
                             background-color: red;
                             font-size: 10px;
                             font-weight: bold;
@@ -407,9 +314,8 @@ class window(QWidget):
         button.clicked.connect(deportirovat)
         self.layout.addWidget(button, 0, 0)
 
-class Desk(QWidget):
-    print(doubleClick)
 
+class Desk(QWidget):
     def __init__(self):
         super().__init__()
         self.setGeometry(300, 200, 400, 400)
@@ -417,9 +323,10 @@ class Desk(QWidget):
         self.layout = QGridLayout()
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
-        clicked = []
-        able = []
-        print(doubleClick)
+        self.clicked = []
+        self.piece = None
+        self.clicked_position = None
+
         for i in range(8):
             for j in range(8):
                 piece = str(pieces[i][j])
@@ -436,118 +343,101 @@ class Desk(QWidget):
                 """)
                 button.setFixedSize(50, 50)
                 widgets[i].append(button)
-                button.clicked.connect(lambda checked, i=i, j=j, widgets=widgets,
-                                              button=button, able=able, pieces=pieces: self.movement(i, j, widgets,
-                                                                                                     button, clicked,
-                                                                                                     pieces, able))
+                button.clicked.connect(lambda checked, i=i, j=j: self.movement(i, j))
                 self.layout.addWidget(button, i, j)
 
-    def movement(self, i, j, widgets, button, clicked, pieces, able):
-        piece = str(widgets[i][j].text())
-        print(piece, "movement")
-        white = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️", "👮🏻‍♂️"]
-        black = ["👨🏿‍🦽", "🐎", "🚴🏿‍♂️", "🧕🏿", "🤴🏿","👳🏿‍♂️"]
+    def reset(self):
+        for i in range(8):
+            for j in range(8):
+                button = widgets[i][j]
+                if (i + j) % 2 == 0:
+                    color = "#F0D9B5"
+                else:
+                    color = "#B58863"
+                button.setStyleSheet(f"""
+                    background-color: {color};
+                    font-size: 40px;
+                    font-weight: bold;
+                    text-align: center;
+                """)
+                button.setFixedSize(50, 50)
+
+    def is_able(self, i, j):
+        if self.piece:
+            button = widgets[i][j]
+            for able_button in self.piece.get_able_moves():
+                if able_button == button:
+                    return True
+        return False
+
+    def movement(self, i, j):
         global doubleClick, turn
 
-        def reset():
-            print("reset")
-            for i in range(8):
-                for j in range(8):
-                    button = widgets[i][j]
-                    if (i + j) % 2 == 0:
-                        color = "#F0D9B5"
-                    else:
-                        color = "#B58863"
-                    button.setStyleSheet(f"""
-                            background-color: {color};
-                            font-size: 40px;
-                            font-weight: bold;
-                            text-align: center;
-                        """)
-                    button.setFixedSize(50, 50)
+        piece = str(widgets[i][j].text())
+        white = ["🚔", "🔫", "💂🏻‍♂️", "👩🏻‍🍳", "👨🏻‍⚖️", "👮🏻‍♂️"]
+        black = ["👨🏿‍🦽", "🐎", "🚴🏿‍♂️", "🧕🏿", "🤴🏿", "👳🏿‍♂️"]
 
-        def is_able(able, i, j, is_able):
-            button = widgets[i][j]
-            is_able_to = False
-            for k in range(len(able)):
-                if able[k] == button:
-                    is_able_to = True
-                else:
-                    print("НЕТ")
-            return is_able_to
-
-        text = button.text()
-        print("turn1",turn)
         if doubleClick == False:
             if piece == "":
-                print("пусто")
                 pass
             else:
-                button = widgets[i][j]
-                text = button.text()
-                if (turn == True and text in white) or (turn == False and text in black):
-                    print("")
-                    clicked.append(text)
-                    clicked.append([i, j])
+                if (turn == True and piece in white) or (turn == False and piece in black):
+                    self.clicked = [piece, [i, j]]
 
-                    if text == "👳🏿‍♂️" or text == "👮🏻‍♂️":
-                        Pieces.pawn(able,i,j,widgets)
+                    if piece == "👳🏿‍♂️" or piece == "👮🏻‍♂️":
+                        self.piece = Pawn(i, j, widgets)
+                    if piece == "🐎" or piece == "🔫":
+                        self.piece = Knight(i, j, widgets)
+                    if piece == "🚔" or piece == "👨🏿‍🦽":
+                        self.piece = Rook(i, j, widgets)
+                    if piece == "🧕🏿" or piece == "👩🏻‍🍳":
+                        self.piece = Queen(i, j, widgets)
+                    if piece == "🤴🏿" or piece == "👨🏻‍⚖️":
+                        self.piece = King(i, j, widgets)
+                    if piece == "🚴🏿‍♂️" or piece == "💂🏻‍♂️":
+                        self.piece = Bishop(i, j, widgets)
 
-                    if text == "🐎" or text == "🔫":
-                        Pieces.horse(able,i,j,widgets)
-
-                    if text == "🚔" or text == "👨🏿‍🦽":
-                        Pieces.rook(able,i,j,widgets)
-
-                    if text == "🧕🏿" or text == "👩🏻‍🍳":
-                        Pieces.queen(able,i,j,widgets)
-
-                    if text == "🤴🏿" or text == "👨🏻‍⚖️":
-                        Pieces.king(able,i,j,widgets)
-
-                    if text == "🚴🏿‍♂️" or text == "💂🏻‍♂️":
-                        Pieces.piece_last(able,i,j,widgets)
-
-                    button.setText("*")
+                    self.piece.is_able()
+                    widgets[i][j].setText("*")
                     doubleClick = True
-                    if text == "":
-                        print("ergefd")
                 else:
                     print("Чужой ход")
-
         else:
-            is_able_to = is_able(able, i, j, is_able)
-            if is_able_to == True:
-                print("oeirthgp9eripug")
-                print(clicked[0])
-                i0 = clicked[1][0]
-                j0 = clicked[1][1]
-                button0 = widgets[i0][j0]
-                button0.setText("")
-                button = widgets[i][j]
-                text2 = str(clicked[0])
-                if button.text() == "🤴🏿" or button.text() == "👨🏻‍⚖️":
-                    print("GAME OVER.")
-                    if  button.text() == "👨🏻‍⚖️":
-                        t = "NIGGERS"
-                    else:
-                        t = "GOOD GUYS"
-                    msg_box = QMessageBox()
-                    msg_box.setWindowTitle("SYSTEM")
-                    msg_box.setText(f"GAME OVER. TEAM {t} WON")
-                    msg_box.exec()
-                turn = not turn
+            if self.is_able(i, j):
+                i0 = self.clicked[1][0]
+                j0 = self.clicked[1][1]
 
-                button.setText(text2)
-                print(clicked)
-                reset()
-                clicked.clear()
-                able.clear()
-                doubleClick = False
-                is_able = False
-            else:
-                print(i,j)
-                print("2305738947934845769834765")
+                if i0 == i and j0 == j:
+                    widgets[i0][j0].setText(str(self.clicked[0]))
+                    doubleClick = False
+                    self.piece.reset()
+                    self.reset()
+                    self.clicked.clear()
+                    self.piece = None
+                else:
+                    widgets[i0][j0].setText("")
+                    button = widgets[i][j]
+                    text2 = str(self.clicked[0])
+
+                    if button.text() == "🤴🏿" or button.text() == "👨🏻‍⚖️":
+                        print("GAME OVER.")
+                        if button.text() == "👨🏻‍⚖️":
+                            t = "NIGGERS"
+                        else:
+                            t = "GOOD GUYS"
+                        msg_box = QMessageBox()
+                        msg_box.setWindowTitle("SYSTEM")
+                        msg_box.setText(f"GAME OVER. TEAM {t} WON")
+                        msg_box.exec()
+
+                    turn = not turn
+                    button.setText(text2)
+                    self.piece.reset()
+                    self.reset()
+                    self.clicked.clear()
+                    self.piece = None
+                    doubleClick = False
+
 
 game = QApplication()
 desk = Desk()

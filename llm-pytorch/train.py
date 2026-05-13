@@ -161,3 +161,24 @@ with torch.no_grad():
     result = ''.join([itos[int(i)] for i in idx[0]])
     print(f"Промпт: {prompt}")
     print(f"Результат: {result[:200]}...")
+    # В конце train.py, после обучения, замените сохранение модели на:
+
+# Сохраняем модель с метаданными
+checkpoint = {
+    'model_state_dict': model.state_dict(),
+    'args': type('Args', (), {
+        'n_embd': 128,
+        'n_head': 4,
+        'n_layer': 4,
+        'block_size': block_size,
+        'vocab_size': vocab_size
+    })(),
+    'stoi': tokenizer_info['stoi'],
+    'itos': tokenizer_info['itos']
+}
+
+torch.save(checkpoint, 'checkpoints/best_model.pt')
+torch.save(checkpoint, 'checkpoints/final_model.pt')
+
+print("\n✅ Обучение завершено!")
+print(f"🏆 Лучшая Perplexity: {best_val_ppl:.2f}")

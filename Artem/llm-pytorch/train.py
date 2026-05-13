@@ -1,5 +1,4 @@
-# train.py
-import os, math, time, sys, itertools
+import os, math, time, itertools
 import torch
 from torch.optim import AdamW
 from torch.amp import autocast, GradScaler
@@ -7,11 +6,11 @@ from config import parse_train_args
 from data import load_data, get_tokenizer
 from model import GPT
 
-def cosine_warmup(optimizer, warmup_steps, total_steps):
-    def lr_lambda(step):
-        if step < warmup_steps:
-            return step / max(1, warmup_steps)
-        progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+def cosine_warmup(optimizer, num_warmup_steps, num_training_steps):
+    def lr_lambda(current_step):
+        if current_step < num_warmup_steps:
+            return float(current_step) / float(max(1, num_warmup_steps))
+        progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
         return max(0.0, 0.5 * (1.0 + math.cos(math.pi * progress)))
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
@@ -37,7 +36,7 @@ def main():
     optimizer = AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.1)
     scheduler = cosine_warmup(optimizer, int(args.max_iters * args.warmup_ratio), args.max_iters)
 
-    # ⚠️ AMP и GradScaler ТОЛЬКО для CUDA. На CPU они часто вешают процесс.
+    # ⚠️ AMP и GradScaler ТОЛЬКО для CUDA. На CPU они часто вызывают deadlock или лишние аллокации.
     use_amp = device.type == 'cuda'
     scaler = GradScaler(enabled=use_amp)
 
@@ -45,6 +44,7 @@ def main():
     best_val_loss, best_step = float("inf"), 0
     start_time = time.time()
 
+    # Зацикливаем даталоадер, так как корпус маленький
     train_iter = itertools.cycle(train_dl)
     print("🔄 Цикл обучения запущен...", flush=True)
 
@@ -53,9 +53,7 @@ def main():
         x, y = x.to(device, non_blocking=use_amp), y.to(device, non_blocking=use_amp)
 
         optimizer.zero_grad(set_to_none=True)
-        
-        # Автокаст только если GPU
-        with torch.autocast(device_type=device.type, enabled=use_amp):
+        with torch.autocast(device_type="cuda", enabled=use_amp):
             logits = model(x)
             loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
 
@@ -81,11 +79,11 @@ def main():
                     vloss = torch.nn.functional.cross_entropy(vlogits.view(-1, vlogits.size(-1)), vy.view(-1))
                     val_losses.append(vloss.item())
             model.train()
-            
+
             val_loss = sum(val_losses) / len(val_losses)
-            ppl = math.exp(min(val_loss, 100))
+            perplexity = math.exp(min(val_loss, 100))
             elapsed = time.time() - start_time
-            print(f"step {step:5d} | loss {loss.item():.4f} | val_loss {val_loss:.4f} | ppl {ppl:.2f} | lr {optimizer.param_groups[0]['lr']:.2e} | {step/elapsed:.2f} it/s", flush=True)
+            print(f"step {step:5d} | loss {loss.item():.4f} | val_loss {val_loss:.4f} | ppl {perplexity:.2f} | lr {optimizer.param_groups[0]['lr']:.2e} | {step/elapsed:.2f} it/s", flush=True)
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss

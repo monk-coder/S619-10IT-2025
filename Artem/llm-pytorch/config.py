@@ -10,7 +10,7 @@ def parse_train_args():
     parser.add_argument("--eval_interval", type=int, default=500)
     parser.add_argument("--grad_clip", type=float, default=1.0)
     parser.add_argument("--warmup_ratio", type=float, default=0.1)
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -21,5 +21,6 @@ def parse_sample_args():
     parser.add_argument("--max_new_tokens", type=int, default=200)
     parser.add_argument("--temperature", type=float, default=0.8)
     parser.add_argument("--top_k", type=int, default=50)
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--block_size", type=int, default=128)
+    parser.add_argument("--device", type=str, default="cpu")
     return parser.parse_args()

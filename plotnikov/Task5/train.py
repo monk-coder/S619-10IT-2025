@@ -1,122 +1,200 @@
 import torch
-import argparse
+import torch.optim as optim
+import numpy as np
 import os
-import math
-import json
 import time
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from models.model import GPT, GPTConfig
-from utils.data import get_dataloaders
+from config import get_args
+from model import GPT
+from data import load_data, BPEEncoder
+from utils import estimate_loss, save_checkpoint, get_lr_scheduler, calculate_perplexity
 
-def get_lr(it, warmup_iters, lr_decay_iters, min_lr, learning_rate):
-    if it < warmup_iters: return learning_rate * it / warmup_iters
-    if it > lr_decay_iters: return min_lr
-    decay_ratio = (it - warmup_iters) / (lr_decay_iters - warmup_iters)
-    coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
-    return min_lr + coeff * (learning_rate - min_lr)
 
-def train():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='../data.txt')
-    parser.add_argument('--tokenizer_path', type=str, default='../tokenizer.json')
-    parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--block_size', type=int, default=128)
-    parser.add_argument('--n_layer', type=int, default=4)
-    parser.add_argument('--n_head', type=int, default=4)
-    parser.add_argument('--n_embd', type=int, default=128)
-    parser.add_argument('--lr', type=float, default=6e-4)
-    parser.add_argument('--max_iters', type=int, default=5000)
-    parser.add_argument('--eval_interval', type=int, default=500)
-    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--ckpt_dir', type=str, default='checkpoints')
-    args = parser.parse_args()
+def main():
+    args = get_args()
 
-    device = torch.device(args.device)
-    os.makedirs(args.ckpt_dir, exist_ok=True)
-    use_amp = device.type == 'cuda'
+    # Проверяем наличие файла данных
+    if not os.path.exists(args.data_path):
+        print(f"❌ Ошибка: файл {args.data_path} не найден!")
+        print("Создайте файл data.txt с текстом для обучения")
+        print("или укажите путь к существующему файлу: python train.py --data_path=путь_к_файлу")
+        return
 
-    train_loader, val_loader, tokenizer = get_dataloaders(
-        args.data_path, args.tokenizer_path, args.block_size, args.batch_size
+    print(f"✅ Файл данных найден: {args.data_path}")
+
+    # Создаем директорию для чекпоинтов
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
+
+    # Читаем текст для энкодера
+    with open(args.data_path, 'r', encoding='utf-8') as f:
+        full_text = f.read()
+
+    # Проверяем размер данных
+    if len(full_text) < 100:
+        print(f"⚠️ Внимание: текст слишком короткий ({len(full_text)} символов)")
+        print("Для качественного обучения нужно больше данных")
+
+    # Загружаем или создаем BPE энкодер
+    encoder_path = os.path.join(args.checkpoint_dir, 'bpe_encoder.pt')
+    encoder = BPEEncoder(args.vocab_size)
+
+    if os.path.exists(encoder_path):
+        print(f"Загрузка энкодера из {encoder_path}")
+        encoder.load(encoder_path)
+    else:
+        print("Обучение BPE энкодера...")
+        encoder.train(full_text)
+        encoder.save(encoder_path)
+        print(f"✅ Энкодер сохранен в {encoder_path}")
+        print(f"Размер словаря: {len(encoder.char_to_idx)}")
+
+    # Загружаем данные
+    print("Загрузка данных...")
+    train_loader, val_loader, vocab_size = load_data(
+        args.data_path, encoder, args.block_size,
+        args.batch_size, args.device
     )
 
-    config = GPTConfig(
-        vocab_size=tokenizer.vocab_size, block_size=args.block_size,
-        n_layer=args.n_layer, n_head=args.n_head, n_embd=args.n_embd
-    )
-    model = GPT(config).to(device)
-    
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-1)
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    print(f"Размер словаря: {vocab_size}")
+    print(f"Количество батчей в train: {len(train_loader)}")
+    print(f"Количество батчей в val: {len(val_loader)}")
 
-    train_losses, val_losses, iters = [], [], []
+    # Проверяем, что данные не пустые
+    if len(train_loader) == 0:
+        print("❌ Ошибка: недостаточно данных для обучения!")
+        print(f"Длина текста: {len(full_text)} символов")
+        print(f"Block size: {args.block_size}")
+        print("Увеличьте размер текста или уменьшите block_size")
+        return
+
+    # Создаем модель
+    print("Создание модели...")
+    model = GPT(
+        vocab_size=vocab_size,
+        embed_dim=args.embed_dim,
+        num_heads=args.num_heads,
+        num_layers=args.num_layers,
+        block_size=args.block_size
+    )
+
+    # Перемещаем на устройство
+    device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    print(f"Используется устройство: {device}")
+
+    # Подсчет параметров
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Всего параметров: {total_params:,}")
+    print(f"Обучаемых параметров: {trainable_params:,}")
+
+    # Оптимизатор AdamW
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=args.lr,
+        weight_decay=args.weight_decay
+    )
+
+    # Scheduler с warmup
+    scheduler = get_lr_scheduler(optimizer, args.warmup_iters, args.max_iters)
+
+    # Mixed precision
+    scaler = torch.cuda.amp.GradScaler() if args.mixed_precision and device.type == 'cuda' else None
+
+    # Переменные для отслеживания
     best_val_loss = float('inf')
-    train_iter = iter(train_loader)
-    warmup_iters = int(0.1 * args.max_iters)
+    train_losses = []
+    val_losses = []
+    times = []
 
-    print(f"🚀 Training on {device} | Params: {sum(p.numel() for p in model.parameters()):,}")
-    
-    pbar = tqdm(range(args.max_iters), desc="Training")
-    for iter_num in pbar:
+    print(f"\nНачало обучения на {args.max_iters} итераций")
+    print("=" * 60)
+
+    # Основной цикл обучения
+    step = 0
+    train_iter = iter(train_loader)
+
+    for step in range(args.max_iters):
+        start_time = time.time()
+
+        # Получаем батч
         try:
             x, y = next(train_iter)
         except StopIteration:
             train_iter = iter(train_loader)
             x, y = next(train_iter)
+
         x, y = x.to(device), y.to(device)
 
-        lr = get_lr(iter_num, warmup_iters, args.max_iters, args.lr * 0.1, args.lr)
-        for pg in optimizer.param_groups: pg['lr'] = lr
-
-        with torch.cuda.amp.autocast(enabled=use_amp):
+        # Forward pass с mixed precision
+        if scaler:
+            with torch.cuda.amp.autocast():
+                _, loss = model(x, y)
+        else:
             _, loss = model(x, y)
 
-        scaler.scale(loss).backward()
-        scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-        scaler.step(optimizer)
-        scaler.update()
+        # Backward pass
         optimizer.zero_grad(set_to_none=True)
 
-        train_losses.append(loss.item())
-        iters.append(iter_num)
+        if scaler:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            optimizer.step()
 
-        if iter_num % args.eval_interval == 0 or iter_num == args.max_iters - 1:
-            model.eval()
-            val_loss = 0.0
-            with torch.no_grad():
-                for xv, yv in val_loader:
-                    _, vloss = model(xv.to(device), yv.to(device))
-                    val_loss += vloss.item()
-            val_loss /= len(val_loader)
+        scheduler.step()
+
+        # Замер времени
+        step_time = time.time() - start_time
+        times.append(step_time)
+
+        # Оценка на валидации
+        if step % args.eval_interval == 0 or step == args.max_iters - 1:
+            val_loss = estimate_loss(model, val_loader, args.eval_iters, device)
+            val_perplexity = calculate_perplexity(val_loss)
+
+            train_losses.append(loss.item())
             val_losses.append(val_loss)
-            model.train()
 
-            val_ppl = math.exp(min(val_loss, 20))
-            pbar.set_postfix(val_ppl=f"{val_ppl:.2f}", val_loss=f"{val_loss:.4f}")
+            print(f"\nШаг {step}:")
+            print(f"  Train loss: {loss.item():.4f}")
+            print(f"  Val loss: {val_loss:.4f}")
+            print(f"  Val perplexity: {val_perplexity:.2f}")
+            print(f"  LR: {optimizer.param_groups[0]['lr']:.6f}")
+            print(f"  Время на шаг: {step_time * 1000:.2f}ms")
 
-            if val_loss < best_val_loss:
+            # Сохраняем лучшую модель
+            is_best = val_loss < best_val_loss
+            if is_best:
                 best_val_loss = val_loss
-                torch.save({
-                    'iter': iter_num, 'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'config': config.__dict__, 'val_loss': val_loss
-                }, os.path.join(args.ckpt_dir, 'best.pt'))
+                print(f"  *** Новая лучшая модель! ***")
 
-    torch.save({
-        'iter': args.max_iters, 'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'config': config.__dict__, 'val_loss': val_loss
-    }, os.path.join(args.ckpt_dir, 'final.pt'))
+            save_checkpoint(model, optimizer, scheduler, step, val_loss,
+                            args.checkpoint_dir, is_best)
 
-    plt.figure(figsize=(8,5))
-    plt.plot(iters, train_losses, label='Train Loss')
-    plt.plot(range(0, len(val_losses)*args.eval_interval, args.eval_interval), val_losses, label='Val Loss')
-    plt.xlabel('Iterations'); plt.ylabel('Loss')
-    plt.legend(); plt.grid(True)
-    plt.savefig('loss_curve.png')
-    print("✅ Training complete. Loss curve saved.")
+        # Регулярное сохранение
+        if step > 0 and step % args.save_interval == 0:
+            save_checkpoint(model, optimizer, scheduler, step, loss.item(),
+                            args.checkpoint_dir, False)
 
-if __name__ == '__main__':
-    train()
+    # Финальная статистика
+    print("\n" + "=" * 60)
+    print("Обучение завершено!")
+    print(f"Лучшая val loss: {best_val_loss:.4f}")
+    print(f"Лучшая perplexity: {calculate_perplexity(best_val_loss):.2f}")
+    print(f"Среднее время на шаг: {np.mean(times) * 1000:.2f}ms")
+    print(f"Итераций в секунду: {1 / np.mean(times):.2f}")
+
+    # Сохраняем историю обучения
+    np.save(os.path.join(args.checkpoint_dir, 'train_losses.npy'), train_losses)
+    np.save(os.path.join(args.checkpoint_dir, 'val_losses.npy'), val_losses)
+
+
+if __name__ == "__main__":
+    main()

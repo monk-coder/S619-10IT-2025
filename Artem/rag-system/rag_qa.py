@@ -4,7 +4,7 @@ from rag_pipeline import setup_rag_pipeline
 def main():
     print("🚀 Загрузка RAG-системы...")
     try:
-        chain, db = setup_rag()
+        chain, db = setup_rag_pipeline()
     except Exception as e:
         print(f"❌ Ошибка инициализации: {e}")
         sys.exit(1)

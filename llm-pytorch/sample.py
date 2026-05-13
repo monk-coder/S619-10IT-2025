@@ -4,55 +4,73 @@
 
 import torch
 import argparse
+import os
 from model import GPTLanguageModel
 
 def load_model(checkpoint_path, device):
     """Загрузка модели из чекпоинта"""
     print(f"📦 Загрузка модели из {checkpoint_path}")
     
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    args = checkpoint['args']
+    if not os.path.exists(checkpoint_path):
+        print(f"❌ Ошибка: файл {checkpoint_path} не найден!")
+        print("💡 Сначала обучите модель: python train.py")
+        exit(1)
     
-    # Создаем модель (vocab_size нужно знать)
-    # Для простоты используем стандартные размеры
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    
+    # Загружаем аргументы, если они есть в чекпоинте
+    if 'args' in checkpoint:
+        args = checkpoint['args']
+    else:
+        # Создаем объект с аргументами по умолчанию
+        class Args:
+            pass
+        args = Args()
+        args.n_embd = 384
+        args.n_head = 6
+        args.n_layer = 6
+        args.block_size = 256
+    
+    # Создаем модель
     model = GPTLanguageModel(
-        vocab_size=10000,  # Должно соответствовать при обучении
+        vocab_size=10000,
         n_embd=args.n_embd,
         n_head=args.n_head,
         n_layer=args.n_layer,
         block_size=args.block_size,
-        dropout=0  # Выключаем dropout при инференсе
+        dropout=0
     ).to(device)
     
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
+    # Загружаем веса (если структура не совпадает, пробуем загрузить только то, что есть)
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    except:
+        print("⚠️ Загружаем только совместимые веса...")
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v for k, v in checkpoint['model_state_dict'].items() 
+                          if k in model_dict and v.shape == model_dict[k].shape}
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
     
+    model.eval()
     return model, args
 
 def encode_text(text, vocab_size=10000):
     """Простая кодировка текста в токены"""
-    # Для production нужно использовать тот же токенизатор, что при обучении
-    # Здесь упрощенная версия - character-level
     chars = list(set(text))
     stoi = {ch: i for i, ch in enumerate(chars)}
-    
     tokens = [stoi.get(ch, 0) for ch in text]
     return torch.tensor(tokens, dtype=torch.long).unsqueeze(0)
 
 def decode_tokens(tokens, vocab_size=10000):
     """Декодировка токенов в текст"""
-    # Простая декодировка для character-level
-    # В production нужно использовать BPE декодер
     return ''.join([chr(t % 128) for t in tokens])
 
 def generate_text(model, prompt, max_new_tokens, temperature=0.8, top_k=50, device='cuda'):
-    """Генерация текста с продвинутыми параметрами"""
-    
-    # Кодируем промпт
+    """Генерация текста"""
     context = encode_text(prompt)
     context = context.to(device)
     
-    # Генерируем
     with torch.no_grad():
         generated = model.generate(
             context,
@@ -61,48 +79,84 @@ def generate_text(model, prompt, max_new_tokens, temperature=0.8, top_k=50, devi
             top_k=top_k
         )
     
-    # Декодируем
     generated_text = decode_tokens(generated[0].cpu().numpy())
-    
     return generated_text
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, required=True,
-                        help='Path to model checkpoint')
-    parser.add_argument('--prompt', type=str, default="ROMEO:",
-                        help='Prompt for generation')
-    parser.add_argument('--max_new_tokens', type=int, default=200,
-                        help='Number of tokens to generate')
-    parser.add_argument('--temperature', type=float, default=0.8,
-                        help='Sampling temperature (higher = more random)')
-    parser.add_argument('--top_k', type=int, default=50,
-                        help='Top-k sampling (0 = no top-k)')
-    parser.add_argument('--device', type=str, default='cuda',
-                        help='Device to use')
+    # ПРОВЕРКА: если нет аргументов, используем значения по умолчанию
+    import sys
     
-    args = parser.parse_args()
+    # Значения по умолчанию
+    default_values = {
+        'checkpoint': 'checkpoints/best_model.pt',
+        'prompt': 'ROMEO:',
+        'max_new_tokens': 200,
+        'temperature': 0.8,
+        'top_k': 50,
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu'
+    }
+    
+    # Если аргументов нет или их меньше 2, используем значения по умолчанию
+    if len(sys.argv) == 1:
+        print("⚠️ Аргументы не указаны, использую значения по умолчанию!")
+        print(f"   Проверьте: {default_values['checkpoint']}")
+        print("   Для указания своих аргументов используйте:")
+        print("   python sample.py --checkpoint=checkpoints/best_model.pt --prompt='ROMEO:'\n")
+        
+        checkpoint = default_values['checkpoint']
+        prompt = default_values['prompt']
+        max_new_tokens = default_values['max_new_tokens']
+        temperature = default_values['temperature']
+        top_k = default_values['top_k']
+        device = default_values['device']
+    else:
+        # Парсим аргументы командной строки
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--checkpoint', type=str, required=False, default='checkpoints/best_model.pt')
+        parser.add_argument('--prompt', type=str, default="ROMEO:")
+        parser.add_argument('--max_new_tokens', type=int, default=200)
+        parser.add_argument('--temperature', type=float, default=0.8)
+        parser.add_argument('--top_k', type=int, default=50)
+        parser.add_argument('--device', type=str, default='cuda')
+        args = parser.parse_args()
+        
+        checkpoint = args.checkpoint
+        prompt = args.prompt
+        max_new_tokens = args.max_new_tokens
+        temperature = args.temperature
+        top_k = args.top_k
+        device = args.device
     
     print("🎨 ГЕНЕРАЦИЯ ТЕКСТА")
     print("="*60)
-    print(f"Промпт: {args.prompt}")
-    print(f"Temperature: {args.temperature}")
-    print(f"Top-k: {args.top_k}")
-    print(f"Max tokens: {args.max_new_tokens}")
+    print(f"Промпт: {prompt}")
+    print(f"Temperature: {temperature}")
+    print(f"Top-k: {top_k}")
+    print(f"Max tokens: {max_new_tokens}")
+    print(f"Чекпоинт: {checkpoint}")
     print("="*60)
     
+    # Проверяем существование чекпоинта
+    if not os.path.exists(checkpoint):
+        print(f"\n❌ ОШИБКА: Файл {checkpoint} не найден!")
+        print("\nЧто делать:")
+        print("1. Сначала обучите модель: python train.py")
+        print("2. Или укажите правильный путь к чекпоинту:")
+        print("   python sample.py --checkpoint=checkpoints/final_model.pt")
+        return
+    
     # Загружаем модель
-    model, _ = load_model(args.checkpoint, args.device)
+    model, _ = load_model(checkpoint, device)
     
     # Генерируем
     print("\n🎬 Генерация...\n")
     generated_text = generate_text(
         model,
-        args.prompt,
-        args.max_new_tokens,
-        args.temperature,
-        args.top_k,
-        args.device
+        prompt,
+        max_new_tokens,
+        temperature,
+        top_k,
+        device
     )
     
     print("="*60)

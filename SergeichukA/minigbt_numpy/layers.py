@@ -16,9 +16,16 @@ class Linear:
         self.grads = {'W': None, 'b': None}
         self._adam_state = {}
         
-    def forward(self, x):
-        self.cache = x
-        return x @ self.W + self.b
+    def backward(self, grad_output):
+    x = self.cache
+    # Используем einsum для эффективного вычисления градиента
+    if x.ndim == 3:
+        self.grads['W'] = np.einsum('bti,bto->io', x, grad_output)
+        self.grads['b'] = np.sum(grad_output, axis=(0, 1))
+    else:
+        self.grads['W'] = x.T @ grad_output
+        self.grads['b'] = np.sum(grad_output, axis=0)
+    return grad_output @ self.W.T
     
     def backward(self, grad_output):
         x = self.cache

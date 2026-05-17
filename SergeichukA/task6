@@ -2,6 +2,8 @@ https://www.kaggle.com/code/zenechko/task6
 # Cell 1
 !pip install -q trl accelerate peft datasets
 print("✅ Готово")
+
+
 # Cell 2: Обучение (С предварительной токенизацией — надёжно!)
 import torch
 from datasets import load_dataset
@@ -103,6 +105,9 @@ trainer.train()
 trainer.save_model(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 print(f"✅ Сохранено: {OUTPUT_DIR}")
+
+
+
 #cell 3
 import re, string
 from collections import Counter

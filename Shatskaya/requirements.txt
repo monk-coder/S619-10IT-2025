@@ -1,9 +1,4 @@
 torch
-transformers
-peft
-datasets
-evaluate
-accelerate
-bitsandbytes
-trl
-huggingface_hub
+torchvision
+torchaudio
+tqdm

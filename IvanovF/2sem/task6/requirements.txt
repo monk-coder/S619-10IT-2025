@@ -1,0 +1,5 @@
+# Единственная команда для установки — всё остальное подтягивается автоматически
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+datasets==2.19.2
+tqdm>=4.66.0
+numpy>=1.24.0

@@ -1,4 +1,3 @@
-torch
-torchvision
-torchaudio
+numpy
 tqdm
+matplotlib

@@ -1,6 +1,7 @@
-# Mini-LLM (Decoder-only Transformer)
+# BPE Tokenizer
 
-## Как запустить
+Реализация Byte Pair Encoding токенизатора с нуля.
+
+## Установка
 `bash
-python train.py --batch_size 32 --eval_interval 200
-python sample.py --prompt "Romeo and Juliet"
+pip install -r requirements.txt

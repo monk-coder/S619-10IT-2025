@@ -1,7 +1,7 @@
 # Fine-tuning Llama-3.2-1B on SQuAD 2.0
 
 ## Ссылка на модель Hugging Face Hub
-[carozyyx/squad-llama-lora](https://huggingface.co/ТВОЙ_ЛОГИН/squad-llama-lora)
+[carozyyx/squad-llama-lora](https://huggingface.co/carozyyx/squad-llama-lora)
 
 ## 3. Оценка (Результаты на валидационной выборке)
 *Примечание: Метрики рассчитаны на репрезентативной подвыборке валидационного датасета для локального инференса.*

@@ -1,0 +1,10 @@
+torch
+transformers>=4.43.0
+datasets
+peft
+bitsandbytes
+trl
+accelerate
+evaluate
+huggingface_hub
+scikit-learn
